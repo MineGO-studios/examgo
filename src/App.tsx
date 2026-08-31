@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import './App.css'
-import { generateSampleExam } from './lib/generateExam'
+import { generateSampleDocuments } from './lib/generateExam'
 
 type GenerationStatus = 'idle' | 'generating' | 'success' | 'error'
 
@@ -15,10 +15,10 @@ function App() {
     setMessage('Generating the DOCX file...')
 
     try {
-      await generateSampleExam()
+      await generateSampleDocuments()
 
       setStatus('success')
-      setMessage('Exam generated successfully. Check your Downloads folder.')
+      setMessage('Exam and answer key generated successfully. Check your Downloads folder.')
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : 'Unknown generation error.'
@@ -41,7 +41,7 @@ function App() {
           onClick={handleGenerate}
           disabled={isGenerating}
         >
-          {isGenerating ? 'Generating…' : 'Generate Sample Exam'}
+          {isGenerating ? 'Generating…' : 'Generate Exam + Answer Key'}
         </button>
 
         <p
