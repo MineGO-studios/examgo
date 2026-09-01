@@ -3,6 +3,11 @@ import {
   sampleQuestions,
   type ExamQuestion,
 } from '../data/sampleQuestions'
+import type { ExamSettings } from '../types/exam'
+import {
+  getFirstValidationError,
+  validateExamSettings,
+} from './validateExamSettings'
 
 const EXAM_TEMPLATE_PATH = '/templates/exam-template-v1.docx'
 const ANSWER_KEY_TEMPLATE_PATH =
@@ -10,7 +15,6 @@ const ANSWER_KEY_TEMPLATE_PATH =
 
 const EXAM_FILENAME = 'ExamGO-Unit1-Sample.docx'
 const ANSWER_KEY_FILENAME = 'ExamGO-Unit1-Answer-Key.docx'
-const MARKS_PER_QUESTION = 1
 
 async function loadTemplate(
   path: string,
@@ -50,18 +54,22 @@ function downloadBlob(filename: string, blob: Blob): void {
   }, 0)
 }
 
-function buildExamData(questions: readonly ExamQuestion[]) {
+function buildExamData(
+  questions: readonly ExamQuestion[],
+  settings: ExamSettings,
+) {
   return {
-    ExamTitle: 'First Monthly Test',
-    SchoolName: 'MineGO Test School',
-    Grade: '6',
+    ExamTitle: settings.examTitle.trim(),
+    SchoolName: settings.schoolName.trim(),
+    Grade: String(settings.grade),
     Instructions: 'Choose the correct answer.',
-    SectionMarks: questions.length * MARKS_PER_QUESTION,
+    SectionMarks:
+      questions.length * settings.marksPerQuestion,
 
     Questions: questions.map((question, index) => ({
       Number: index + 1,
       Prompt: question.prompt,
-      Marks: MARKS_PER_QUESTION,
+      Marks: settings.marksPerQuestion,
 
       Options: question.options.map((option) => ({
         Label: option.label,
@@ -71,39 +79,64 @@ function buildExamData(questions: readonly ExamQuestion[]) {
   }
 }
 
-function buildAnswerKeyData(questions: readonly ExamQuestion[]) {
+function buildAnswerKeyData(
+  questions: readonly ExamQuestion[],
+  settings: ExamSettings,
+) {
   return {
-    ExamTitle: 'First Monthly Test',
-    SchoolName: 'MineGO Test School',
-    Grade: '6',
+    ExamTitle: settings.examTitle.trim(),
+    SchoolName: settings.schoolName.trim(),
+    Grade: String(settings.grade),
 
     Questions: questions.map((question, index) => ({
       Number: index + 1,
       Prompt: question.prompt,
-      Answer: `${question.correctAnswer.label}. ${question.correctAnswer.text}`,
+      Answer:
+        `${question.correctAnswer.label}. ` +
+        question.correctAnswer.text,
     })),
   }
 }
 
-export async function generateSampleDocuments(): Promise<void> {
+export async function generateExamDocuments(
+  settings: ExamSettings,
+): Promise<void> {
   try {
-    const selectedQuestions: readonly ExamQuestion[] = sampleQuestions
+    const errors = validateExamSettings(
+      settings,
+      sampleQuestions.length,
+    )
+    const validationMessage = getFirstValidationError(errors)
 
-    const [examTemplate, answerKeyTemplate] = await Promise.all([
-      loadTemplate(EXAM_TEMPLATE_PATH, 'Exam template'),
-      loadTemplate(ANSWER_KEY_TEMPLATE_PATH, 'Answer-key template'),
-    ])
+    if (validationMessage) {
+      throw new Error(validationMessage)
+    }
 
-    const [generatedExam, generatedAnswerKey] = await Promise.all([
-      new TemplateHandler().process(
-        examTemplate,
-        buildExamData(selectedQuestions),
-      ),
-      new TemplateHandler().process(
-        answerKeyTemplate,
-        buildAnswerKeyData(selectedQuestions),
-      ),
-    ])
+    // Sequential selection is temporary.
+    // Seeded random selection comes in the next roadmap task.
+    const selectedQuestions: readonly ExamQuestion[] =
+      sampleQuestions.slice(0, settings.questionCount)
+
+    const [examTemplate, answerKeyTemplate] =
+      await Promise.all([
+        loadTemplate(EXAM_TEMPLATE_PATH, 'Exam template'),
+        loadTemplate(
+          ANSWER_KEY_TEMPLATE_PATH,
+          'Answer-key template',
+        ),
+      ])
+
+    const [generatedExam, generatedAnswerKey] =
+      await Promise.all([
+        new TemplateHandler().process(
+          examTemplate,
+          buildExamData(selectedQuestions, settings),
+        ),
+        new TemplateHandler().process(
+          answerKeyTemplate,
+          buildAnswerKeyData(selectedQuestions, settings),
+        ),
+      ])
 
     downloadBlob(EXAM_FILENAME, generatedExam)
     downloadBlob(ANSWER_KEY_FILENAME, generatedAnswerKey)
