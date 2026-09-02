@@ -10,9 +10,10 @@ import {
 } from './validateExamSettings'
 import { selectQuestions } from './selectQuestions'
 
-const EXAM_TEMPLATE_PATH = '/templates/exam-template-v1.docx'
+const EXAM_TEMPLATE_PATH =
+  '/templates/iraqi-mainstream-exam-v1.docx'
 const ANSWER_KEY_TEMPLATE_PATH =
-  '/templates/answer-key-template-v1.docx'
+  '/templates/iraqi-mainstream-answer-key-v1.docx'
 
 const EXAM_FILENAME = 'ExamGO-Unit1-Sample.docx'
 const ANSWER_KEY_FILENAME = 'ExamGO-Unit1-Answer-Key.docx'
