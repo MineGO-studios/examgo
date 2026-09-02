@@ -100,6 +100,30 @@ function buildAnswerKeyData(
   }
 }
 
+type TemplateBinary = Blob | ArrayBuffer
+
+export async function createExamDocumentBlobs<
+  T extends TemplateBinary,
+>(
+  questions: readonly ExamQuestion[],
+  settings: ExamSettings,
+  examTemplate: T,
+  answerKeyTemplate: T,
+): Promise<{ exam: T; answerKey: T }> {
+  const [exam, answerKey] = await Promise.all([
+    new TemplateHandler().process(
+      examTemplate,
+      buildExamData(questions, settings),
+    ),
+    new TemplateHandler().process(
+      answerKeyTemplate,
+      buildAnswerKeyData(questions, settings),
+    ),
+  ])
+
+  return { exam, answerKey }
+}
+
 export async function generateExamDocuments(
   settings: ExamSettings,
 ): Promise<void> {
@@ -130,17 +154,13 @@ export async function generateExamDocuments(
         ),
       ])
 
-    const [generatedExam, generatedAnswerKey] =
-      await Promise.all([
-        new TemplateHandler().process(
-          examTemplate,
-          buildExamData(selectedQuestions, settings),
-        ),
-        new TemplateHandler().process(
-          answerKeyTemplate,
-          buildAnswerKeyData(selectedQuestions, settings),
-        ),
-      ])
+    const { exam: generatedExam, answerKey: generatedAnswerKey } =
+      await createExamDocumentBlobs(
+        selectedQuestions,
+        settings,
+        examTemplate,
+        answerKeyTemplate,
+      )
 
     downloadBlob(EXAM_FILENAME, generatedExam)
     downloadBlob(ANSWER_KEY_FILENAME, generatedAnswerKey)

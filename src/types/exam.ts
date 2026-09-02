@@ -14,7 +14,7 @@ export const EXAM_LIMITS = {
   minimumMarksPerQuestion: 1,
   maximumMarksPerQuestion: 20,
   minimumQuestionCount: 1,
-  maximumQuestionCount: 5,
+  maximumQuestionCount: 50,
   minimumSelectionSeed: 0,
   maximumSelectionSeed: 4294967295,
 } as const
