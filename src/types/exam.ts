@@ -5,6 +5,7 @@ export type ExamSettings = {
   unit: number
   marksPerQuestion: number
   questionCount: number
+  selectionSeed: number
 }
 
 export const EXAM_LIMITS = {
@@ -14,6 +15,8 @@ export const EXAM_LIMITS = {
   maximumMarksPerQuestion: 20,
   minimumQuestionCount: 1,
   maximumQuestionCount: 5,
+  minimumSelectionSeed: 0,
+  maximumSelectionSeed: 4294967295,
 } as const
 
 export const DEFAULT_EXAM_SETTINGS: ExamSettings = {
@@ -23,4 +26,5 @@ export const DEFAULT_EXAM_SETTINGS: ExamSettings = {
   unit: 1,
   marksPerQuestion: 1,
   questionCount: 5,
+  selectionSeed: 1,
 }

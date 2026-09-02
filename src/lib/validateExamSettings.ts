@@ -52,6 +52,19 @@ export function validateExamSettings(
       `${EXAM_LIMITS.maximumMarksPerQuestion}.`
   }
 
+  if (
+    !Number.isSafeInteger(settings.selectionSeed) ||
+    settings.selectionSeed <
+      EXAM_LIMITS.minimumSelectionSeed ||
+    settings.selectionSeed >
+      EXAM_LIMITS.maximumSelectionSeed
+  ) {
+    errors.selectionSeed =
+      `Paper seed must be a whole number between ` +
+      `${EXAM_LIMITS.minimumSelectionSeed} and ` +
+      `${EXAM_LIMITS.maximumSelectionSeed}.`
+  }
+
   const maximumQuestionCount = Math.min(
     EXAM_LIMITS.maximumQuestionCount,
     availableQuestionCount,

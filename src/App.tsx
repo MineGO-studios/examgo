@@ -217,6 +217,32 @@ function App() {
             </span>
           )}
         </label>
+        <label style={fieldStyle}>
+          Paper seed
+          <input
+            type="number"
+            min={EXAM_LIMITS.minimumSelectionSeed}
+            max={EXAM_LIMITS.maximumSelectionSeed}
+            step="1"
+            value={settings.selectionSeed}
+            onChange={(event) =>
+              updateSetting(
+                'selectionSeed',
+                event.target.valueAsNumber || 0,
+              )
+            }
+            aria-invalid={Boolean(errors.selectionSeed)}
+            style={inputStyle}
+          />
+          <small>
+            The same seed produces the same question selection.
+          </small>
+          {errors.selectionSeed && (
+            <span role="alert" style={errorStyle}>
+              {errors.selectionSeed}
+            </span>
+          )}
+        </label>
 
         <output>
           Total marks: <strong>{totalMarks}</strong>

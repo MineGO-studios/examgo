@@ -8,6 +8,7 @@ import {
   getFirstValidationError,
   validateExamSettings,
 } from './validateExamSettings'
+import { selectQuestions } from './selectQuestions'
 
 const EXAM_TEMPLATE_PATH = '/templates/exam-template-v1.docx'
 const ANSWER_KEY_TEMPLATE_PATH =
@@ -112,10 +113,12 @@ export async function generateExamDocuments(
       throw new Error(validationMessage)
     }
 
-    // Sequential selection is temporary.
-    // Seeded random selection comes in the next roadmap task.
-    const selectedQuestions: readonly ExamQuestion[] =
-      sampleQuestions.slice(0, settings.questionCount)
+    const selectedQuestions = selectQuestions(sampleQuestions, {
+      unit: settings.unit,
+      type: 'multiple-choice',
+      count: settings.questionCount,
+      seed: settings.selectionSeed,
+    })
 
     const [examTemplate, answerKeyTemplate] =
       await Promise.all([
