@@ -11,6 +11,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@supabase/supabase-js": "2.114.0",
     "easy-template-x": "^7.2.8",
     "react": "^19.2.8",
     "react-dom": "^19.2.8"
@@ -24,5 +25,8 @@
     "typescript": "~6.0.2",
     "vite": "^8.2.2",
     "vitest": "^4.1.11"
+  },
+  "overrides": {
+  "@xmldom/xmldom": "0.8.15"
   }
 }

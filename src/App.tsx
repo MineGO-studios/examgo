@@ -1,7 +1,11 @@
+import type { Session } from '@supabase/supabase-js'
 import {
   type FormEvent,
+  useEffect,
   useState,
 } from 'react'
+import AuthForm from './components/AuthForm'
+import { supabase } from './lib/supabase'
 import './App.css'
 import { sampleQuestions } from './data/sampleQuestions'
 import { generateExamDocuments } from './lib/generateExam'
@@ -39,6 +43,12 @@ const errorStyle = {
 } as const
 
 function App() {
+  const [session, setSession] =
+    useState<Session | null>(null)
+  const [authReady, setAuthReady] = useState(false)
+  const [authError, setAuthError] =
+    useState<string | null>(null)
+
   const [settings, setSettings] = useState<ExamSettings>({
     ...DEFAULT_EXAM_SETTINGS,
   })
@@ -105,15 +115,72 @@ function App() {
     }
   }
 
+  useEffect(() => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(
+      (_event, nextSession) => {
+        setSession(nextSession)
+        setAuthReady(true)
+      },
+    )
+
+    return () => {
+      subscription.unsubscribe()
+    }
+  }, [])
+
+  const handleSignOut = async (): Promise<void> => {
+    setAuthError(null)
+
+    const { error } = await supabase.auth.signOut()
+
+    if (error) {
+      console.error('[auth] Sign-out failed', error)
+      setAuthError('Unable to sign out. Please try again.')
+    }
+  }
+
   const totalMarks =
     settings.questionCount * settings.marksPerQuestion
   const isGenerating = status === 'generating'
+  if (!authReady) {
+    return (
+      <main>
+        <h1>ExamGO</h1>
+        <p role="status">Checking your session…</p>
+      </main>
+    )
+  }
+
+  if (!session) {
+    return <AuthForm />
+  }
 
   return (
     <main>
       <h1>ExamGO</h1>
       <p>Grade 6 Iraqi English monthly-test generator</p>
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          gap: '1rem',
+          marginBottom: '1rem',
+        }}
+      >
+        <span>Signed in as {session.user.email}</span>
+        <button type="button" onClick={handleSignOut}>
+          Sign out
+        </button>
+      </div>
 
+      {authError && (
+        <p role="alert" style={errorStyle}>
+          {authError}
+        </p>
+      )}
       <form
         className="card"
         onSubmit={handleSubmit}
