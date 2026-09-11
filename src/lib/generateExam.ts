@@ -1,6 +1,10 @@
 import { TemplateHandler } from 'easy-template-x'
 import type { ExamQuestion } from '../types/question'
-import type { ExamSettings } from '../types/exam'
+import {
+  DEFAULT_EXAM_QUESTION_FILTERS,
+  type ExamQuestionFilters,
+  type ExamSettings,
+} from '../types/exam'
 import {
   getFirstValidationError,
   validateExamSettings,
@@ -121,11 +125,15 @@ export async function createExamDocumentBlobs<
 export function prepareExamQuestions(
   settings: ExamSettings,
   questions: readonly ExamQuestion[],
+  filters: ExamQuestionFilters = DEFAULT_EXAM_QUESTION_FILTERS,
 ): ExamQuestion[] {
   const eligibleQuestionCount = questions.filter(
     (question) =>
       question.unit === settings.unit &&
-      question.type === 'multiple-choice',
+      question.type === filters.questionType &&
+      (!filters.lesson || question.lesson === filters.lesson) &&
+      (!filters.difficulty ||
+        question.difficulty === filters.difficulty),
   ).length
   const errors = validateExamSettings(
     settings,
@@ -139,7 +147,9 @@ export function prepareExamQuestions(
 
   return selectQuestions(questions, {
     unit: settings.unit,
-    type: 'multiple-choice',
+    type: filters.questionType,
+    lesson: filters.lesson || undefined,
+    difficulty: filters.difficulty || undefined,
     count: settings.questionCount,
     seed: settings.selectionSeed,
   })
@@ -148,38 +158,16 @@ export function prepareExamQuestions(
 export async function generateExamDocuments(
   settings: ExamSettings,
   questions: readonly ExamQuestion[],
+  filters: ExamQuestionFilters = DEFAULT_EXAM_QUESTION_FILTERS,
 ): Promise<void> {
   try {
     const selectedQuestions = prepareExamQuestions(
       settings,
       questions,
+      filters,
     )
 
-    const [examTemplate, answerKeyTemplate] =
-      await Promise.all([
-        loadTemplate(EXAM_TEMPLATE_PATH, 'Exam template'),
-        loadTemplate(
-          ANSWER_KEY_TEMPLATE_PATH,
-          'Answer-key template',
-        ),
-      ])
-
-    const { exam: generatedExam, answerKey: generatedAnswerKey } =
-      await createExamDocumentBlobs(
-        selectedQuestions,
-        settings,
-        examTemplate,
-        answerKeyTemplate,
-      )
-
-    downloadBlob(
-      `ExamGO-Unit${settings.unit}-Exam.docx`,
-      generatedExam,
-    )
-    downloadBlob(
-      `ExamGO-Unit${settings.unit}-Answer-Key.docx`,
-      generatedAnswerKey,
-    )
+    await generateReviewedExamDocuments(settings, selectedQuestions)
   } catch (error) {
     console.error('[ExamGO] document generation failed:', error)
 
@@ -189,4 +177,39 @@ export async function generateExamDocuments(
 
     throw new Error('An unknown document-generation error occurred.')
   }
+}
+
+export async function generateReviewedExamDocuments(
+  settings: ExamSettings,
+  selectedQuestions: readonly ExamQuestion[],
+): Promise<void> {
+  const validationMessage = getFirstValidationError(
+    validateExamSettings(settings, selectedQuestions.length),
+  )
+
+  if (validationMessage) {
+    throw new Error(validationMessage)
+  }
+
+  const [examTemplate, answerKeyTemplate] = await Promise.all([
+    loadTemplate(EXAM_TEMPLATE_PATH, 'Exam template'),
+    loadTemplate(ANSWER_KEY_TEMPLATE_PATH, 'Answer-key template'),
+  ])
+
+  const { exam: generatedExam, answerKey: generatedAnswerKey } =
+    await createExamDocumentBlobs(
+      selectedQuestions,
+      settings,
+      examTemplate,
+      answerKeyTemplate,
+    )
+
+  downloadBlob(
+    `ExamGO-Unit${settings.unit}-Exam.docx`,
+    generatedExam,
+  )
+  downloadBlob(
+    `ExamGO-Unit${settings.unit}-Answer-Key.docx`,
+    generatedAnswerKey,
+  )
 }

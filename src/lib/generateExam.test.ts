@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import type { ExamSettings } from '../types/exam'
 import type { ExamQuestion } from '../types/question'
-import { prepareExamQuestions } from './generateExam'
+import {
+  generateReviewedExamDocuments,
+  prepareExamQuestions,
+} from './generateExam'
 
 const SETTINGS: ExamSettings = {
   schoolName: 'Test School',
@@ -60,5 +63,39 @@ describe('prepareExamQuestions', () => {
     expect(() =>
       prepareExamQuestions(SETTINGS, [makeQuestion('unit-2', 2)]),
     ).toThrow('No approved questions are available for this test.')
+  })
+
+  it('applies lesson and difficulty controls to generation', () => {
+    const approvedQuestions = [
+      makeQuestion('lesson-1'),
+      {
+        ...makeQuestion('lesson-2'),
+        lesson: '2',
+        difficulty: 'hard' as const,
+      },
+    ]
+
+    expect(
+      prepareExamQuestions(
+        { ...SETTINGS, questionCount: 1 },
+        approvedQuestions,
+        {
+          questionType: 'multiple-choice',
+          lesson: '2',
+          difficulty: 'hard',
+        },
+      ).map((question) => question.id),
+    ).toEqual(['lesson-2'])
+  })
+})
+
+describe('generateReviewedExamDocuments', () => {
+  it('revalidates settings after questions are previewed', async () => {
+    await expect(
+      generateReviewedExamDocuments(
+        { ...SETTINGS, schoolName: ' ' },
+        [makeQuestion('Q-1')],
+      ),
+    ).rejects.toThrow('School name is required.')
   })
 })

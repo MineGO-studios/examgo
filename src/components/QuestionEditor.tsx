@@ -1,4 +1,5 @@
 import {
+  type ChangeEvent,
   type FormEvent,
   useEffect,
   useState,
@@ -10,9 +11,11 @@ import {
 } from '../lib/questionBankRepository'
 import {
   createQuestion,
+  createQuestions,
   getQuestions,
   updateQuestion,
 } from '../lib/questionRepository'
+import { parseQuestionCsv } from '../lib/questionCsv'
 import {
   getFirstQuestionValidationError,
   questionToInput,
@@ -238,6 +241,48 @@ export default function QuestionEditor() {
     }
   }
 
+  const handleCsvImport = async (
+    event: ChangeEvent<HTMLInputElement>,
+  ): Promise<void> => {
+    const input = event.currentTarget
+    const file = input.files?.[0]
+
+    if (!file) {
+      return
+    }
+
+    if (file.size > 1024 * 1024) {
+      setStatus('error')
+      setMessage('CSV files must be 1 MB or smaller.')
+      input.value = ''
+      return
+    }
+
+    setStatus('saving')
+    setMessage(`Importing ${file.name}…`)
+
+    try {
+      const parsedQuestions = parseQuestionCsv(
+        await file.text(),
+        selectedBankId,
+      )
+      const importedQuestions = await createQuestions(parsedQuestions)
+
+      setQuestions((current) =>
+        sortQuestions([...current, ...importedQuestions]),
+      )
+      setStatus('idle')
+      setMessage(
+        `${importedQuestions.length} question${importedQuestions.length === 1 ? '' : 's'} imported successfully.`,
+      )
+    } catch (error) {
+      setStatus('error')
+      setMessage(getErrorMessage(error))
+    } finally {
+      input.value = ''
+    }
+  }
+
   const editQuestion = (question: Question): void => {
     try {
       setDraft(questionToInput(question))
@@ -339,6 +384,27 @@ export default function QuestionEditor() {
           Create bank
         </button>
       </form>
+
+      {selectedBankId && (
+        <section className="csv-import" aria-labelledby="csv-import-title">
+          <div>
+            <h3 id="csv-import-title">Import questions from CSV</h3>
+            <p>
+              Required headers: external_id, unit, lesson, difficulty,
+              prompt, option_a, option_b, and correct_option_label.
+            </p>
+          </div>
+          <label>
+            CSV file
+            <input
+              type="file"
+              accept=".csv,text/csv"
+              disabled={isBusy}
+              onChange={(event) => void handleCsvImport(event)}
+            />
+          </label>
+        </section>
+      )}
 
       <p
         className={`editor-message ${status === 'error' ? 'error' : ''}`}
