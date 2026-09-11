@@ -149,6 +149,14 @@ export async function getQuestions(
   return data ?? []
 }
 
+export async function getActiveQuestions(
+  bankId: string,
+): Promise<Question[]> {
+  const questions = await getQuestions(bankId)
+
+  return questions.filter((question) => question.is_active)
+}
+
 export async function updateQuestion(
   questionId: string,
   input: QuestionInput,
