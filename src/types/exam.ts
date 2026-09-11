@@ -8,6 +8,12 @@ export type ExamSettings = {
   selectionSeed: number
 }
 
+export type ExamQuestionFilters = {
+  questionType: 'multiple-choice'
+  lesson: string
+  difficulty: '' | 'easy' | 'medium' | 'hard'
+}
+
 export const EXAM_LIMITS = {
   schoolNameMaxLength: 80,
   examTitleMaxLength: 80,
@@ -27,4 +33,10 @@ export const DEFAULT_EXAM_SETTINGS: ExamSettings = {
   marksPerQuestion: 1,
   questionCount: 5,
   selectionSeed: 1,
+}
+
+export const DEFAULT_EXAM_QUESTION_FILTERS: ExamQuestionFilters = {
+  questionType: 'multiple-choice',
+  lesson: '',
+  difficulty: '',
 }

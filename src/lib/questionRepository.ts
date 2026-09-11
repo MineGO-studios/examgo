@@ -48,24 +48,30 @@ function validateAndNormalizeQuestionInput(
   return normalizeQuestionInput(input)
 }
 
+function questionInputToRow(
+  input: QuestionInput,
+): TablesInsert<'questions'> {
+  return {
+    bank_id: input.bankId,
+    external_id: input.externalId,
+    unit: input.unit,
+    lesson: input.lesson,
+    question_type: input.questionType,
+    difficulty: input.difficulty,
+    prompt: input.prompt,
+    options: input.options,
+    correct_option_label: input.correctOptionLabel,
+    is_active: input.isActive,
+  }
+}
+
 export async function createQuestion(
   input: QuestionInput,
 ): Promise<Question> {
   const normalized = validateAndNormalizeQuestionInput(input)
 
 
-  const row: TablesInsert<'questions'> = {
-    bank_id: normalized.bankId,
-    external_id: normalized.externalId,
-    unit: normalized.unit,
-    lesson: normalized.lesson,
-    question_type: normalized.questionType,
-    difficulty: normalized.difficulty,
-    prompt: normalized.prompt,
-    options: normalized.options,
-    correct_option_label: normalized.correctOptionLabel,
-    is_active: normalized.isActive,
-  }
+  const row = questionInputToRow(normalized)
 
   const { data, error } = await supabase
     .from('questions')
@@ -102,6 +108,59 @@ export async function createQuestion(
     throw new QuestionDataError(
       'create-failed',
       'The question was saved but could not be returned.',
+    )
+  }
+
+  return data
+}
+
+export async function createQuestions(
+  inputs: readonly QuestionInput[],
+): Promise<Question[]> {
+  if (inputs.length < 1) {
+    throw new QuestionDataError(
+      'validation',
+      'Import at least one question.',
+    )
+  }
+
+  const rows = inputs.map((input) =>
+    questionInputToRow(validateAndNormalizeQuestionInput(input)),
+  )
+  const { data, error } = await supabase
+    .from('questions')
+    .insert(rows)
+    .select('*')
+
+  if (error) {
+    console.error('[ExamGO questions] import failed', {
+      code: error.code,
+    })
+
+    if (error.code === '23505') {
+      throw new QuestionDataError(
+        'duplicate',
+        'One or more question IDs already exist in this bank.',
+      )
+    }
+
+    if (error.code === '42501') {
+      throw new QuestionDataError(
+        'access-denied',
+        'You do not have access to import into this question bank.',
+      )
+    }
+
+    throw new QuestionDataError(
+      'create-failed',
+      'Unable to import questions. Please try again.',
+    )
+  }
+
+  if (!data || data.length !== rows.length) {
+    throw new QuestionDataError(
+      'create-failed',
+      'The questions were imported but could not be returned.',
     )
   }
 

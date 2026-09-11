@@ -28,6 +28,7 @@ vi.mock('./supabase', () => ({
 
 import {
   createQuestion,
+  createQuestions,
   getActiveQuestions,
   getQuestions,
   updateQuestion,
@@ -207,6 +208,62 @@ describe('createQuestion', () => {
     await expect(createQuestion(INPUT)).rejects.toMatchObject({
       code: 'create-failed',
       message: 'Unable to save the question. Please try again.',
+    })
+  })
+})
+
+describe('createQuestions', () => {
+  it('imports normalized questions in one database statement', async () => {
+    mocks.select.mockResolvedValueOnce({
+      data: [QUESTION_ROW],
+      error: null,
+    })
+
+    await expect(createQuestions([INPUT])).resolves.toEqual([
+      QUESTION_ROW,
+    ])
+
+    expect(mocks.insert).toHaveBeenCalledTimes(1)
+    expect(mocks.insert).toHaveBeenCalledWith([
+      {
+        bank_id: '123e4567-e89b-42d3-a456-426614174000',
+        external_id: 'U1-Q001',
+        unit: 1,
+        lesson: 'Lesson 1',
+        question_type: 'multiple-choice',
+        difficulty: 'medium',
+        prompt: 'Choose the correct answer.',
+        options: [
+          { label: 'A', text: 'First answer' },
+          { label: 'B', text: 'Second answer' },
+        ],
+        correct_option_label: 'B',
+        is_active: true,
+      },
+    ])
+    expect(mocks.select).toHaveBeenCalledWith('*')
+  })
+
+  it('rejects an empty import before contacting Supabase', async () => {
+    await expect(createQuestions([])).rejects.toMatchObject({
+      code: 'validation',
+      message: 'Import at least one question.',
+    })
+
+    expect(mocks.from).not.toHaveBeenCalled()
+  })
+
+  it('reports duplicate database IDs without exposing details', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {})
+    mocks.select.mockResolvedValueOnce({
+      data: null,
+      error: { code: '23505' },
+    })
+
+    await expect(createQuestions([INPUT])).rejects.toMatchObject({
+      code: 'duplicate',
+      message:
+        'One or more question IDs already exist in this bank.',
     })
   })
 })
