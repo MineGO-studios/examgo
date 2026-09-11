@@ -1,4 +1,5 @@
 import type { Tables } from '../types/database'
+import type { ExamQuestion } from '../types/question'
 
 export type Question = Tables<'questions'>
 
@@ -136,4 +137,74 @@ export function getFirstQuestionValidationError(
   errors: QuestionValidationErrors,
 ): string | null {
   return Object.values(errors)[0] ?? null
+}
+
+function isQuestionOption(
+  value: unknown,
+): value is QuestionOptionInput {
+  if (!value || typeof value !== 'object') {
+    return false
+  }
+
+  const option = value as Record<string, unknown>
+
+  return (
+    typeof option.label === 'string' &&
+    typeof option.text === 'string'
+  )
+}
+
+export function questionToInput(
+  question: Question,
+): QuestionInput {
+  const options = Array.isArray(question.options)
+    ? question.options.filter(isQuestionOption)
+    : []
+
+  const input: QuestionInput = {
+    bankId: question.bank_id,
+    externalId: question.external_id,
+    unit: question.unit,
+    lesson: question.lesson,
+    questionType: 'multiple-choice',
+    difficulty: question.difficulty as QuestionInput['difficulty'],
+    prompt: question.prompt,
+    options,
+    correctOptionLabel: question.correct_option_label,
+    isActive: question.is_active,
+  }
+
+  if (Object.keys(validateQuestionInput(input)).length > 0) {
+    throw new Error(
+      'This question contains invalid saved data and cannot be used safely.',
+    )
+  }
+
+  return normalizeQuestionInput(input)
+}
+
+export function questionToExamQuestion(
+  question: Question,
+): ExamQuestion {
+  const input = questionToInput(question)
+  const correctAnswer = input.options.find(
+    (option) => option.label === input.correctOptionLabel,
+  )
+
+  if (!correctAnswer) {
+    throw new Error(
+      'This question does not have a valid correct answer.',
+    )
+  }
+
+  return {
+    id: question.id,
+    unit: input.unit,
+    lesson: input.lesson,
+    type: input.questionType,
+    difficulty: input.difficulty,
+    prompt: input.prompt,
+    options: input.options,
+    correctAnswer,
+  }
 }

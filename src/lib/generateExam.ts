@@ -1,8 +1,5 @@
 import { TemplateHandler } from 'easy-template-x'
-import {
-  sampleQuestions,
-  type ExamQuestion,
-} from '../data/sampleQuestions'
+import type { ExamQuestion } from '../types/question'
 import type { ExamSettings } from '../types/exam'
 import {
   getFirstValidationError,
@@ -14,9 +11,6 @@ const EXAM_TEMPLATE_PATH =
   '/templates/iraqi-mainstream-exam-v1.docx'
 const ANSWER_KEY_TEMPLATE_PATH =
   '/templates/iraqi-mainstream-answer-key-v1.docx'
-
-const EXAM_FILENAME = 'ExamGO-Unit1-Sample.docx'
-const ANSWER_KEY_FILENAME = 'ExamGO-Unit1-Answer-Key.docx'
 
 async function loadTemplate(
   path: string,
@@ -124,26 +118,42 @@ export async function createExamDocumentBlobs<
   return { exam, answerKey }
 }
 
+export function prepareExamQuestions(
+  settings: ExamSettings,
+  questions: readonly ExamQuestion[],
+): ExamQuestion[] {
+  const eligibleQuestionCount = questions.filter(
+    (question) =>
+      question.unit === settings.unit &&
+      question.type === 'multiple-choice',
+  ).length
+  const errors = validateExamSettings(
+    settings,
+    eligibleQuestionCount,
+  )
+  const validationMessage = getFirstValidationError(errors)
+
+  if (validationMessage) {
+    throw new Error(validationMessage)
+  }
+
+  return selectQuestions(questions, {
+    unit: settings.unit,
+    type: 'multiple-choice',
+    count: settings.questionCount,
+    seed: settings.selectionSeed,
+  })
+}
+
 export async function generateExamDocuments(
   settings: ExamSettings,
+  questions: readonly ExamQuestion[],
 ): Promise<void> {
   try {
-    const errors = validateExamSettings(
+    const selectedQuestions = prepareExamQuestions(
       settings,
-      sampleQuestions.length,
+      questions,
     )
-    const validationMessage = getFirstValidationError(errors)
-
-    if (validationMessage) {
-      throw new Error(validationMessage)
-    }
-
-    const selectedQuestions = selectQuestions(sampleQuestions, {
-      unit: settings.unit,
-      type: 'multiple-choice',
-      count: settings.questionCount,
-      seed: settings.selectionSeed,
-    })
 
     const [examTemplate, answerKeyTemplate] =
       await Promise.all([
@@ -162,8 +172,14 @@ export async function generateExamDocuments(
         answerKeyTemplate,
       )
 
-    downloadBlob(EXAM_FILENAME, generatedExam)
-    downloadBlob(ANSWER_KEY_FILENAME, generatedAnswerKey)
+    downloadBlob(
+      `ExamGO-Unit${settings.unit}-Exam.docx`,
+      generatedExam,
+    )
+    downloadBlob(
+      `ExamGO-Unit${settings.unit}-Answer-Key.docx`,
+      generatedAnswerKey,
+    )
   } catch (error) {
     console.error('[ExamGO] document generation failed:', error)
 

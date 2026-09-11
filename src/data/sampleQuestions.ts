@@ -1,18 +1,9 @@
-export type QuestionOption = {
-  label: string
-  text: string
-}
+import type { ExamQuestion } from '../types/question'
 
-export type ExamQuestion = {
-  id: string
-  unit: number
-  lesson: string
-  type: 'multiple-choice'
-  difficulty: 'easy' | 'medium' | 'hard'
-  prompt: string
-  options: QuestionOption[]
-  correctAnswer: QuestionOption
-}
+export type {
+  ExamQuestion,
+  QuestionOption,
+} from '../types/question'
 
 export const sampleQuestions: ExamQuestion[] = [
   {

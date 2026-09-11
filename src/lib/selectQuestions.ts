@@ -1,4 +1,4 @@
-import type { ExamQuestion } from '../data/sampleQuestions'
+import type { ExamQuestion } from '../types/question'
 
 export type QuestionSelectionRequest = {
   unit: number

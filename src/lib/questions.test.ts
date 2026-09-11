@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import {
   normalizeQuestionInput,
+  questionToExamQuestion,
   validateQuestionInput,
+  type Question,
   type QuestionInput,
 } from './questions'
 
@@ -149,4 +151,52 @@ describe('question input', () => {
         'The correct answer must match one of the option labels.',
     )
     })
+})
+
+describe('database question conversion', () => {
+  const question: Question = {
+    id: '223e4567-e89b-42d3-a456-426614174000',
+    bank_id: '123e4567-e89b-42d3-a456-426614174000',
+    external_id: 'U1-Q001',
+    unit: 1,
+    lesson: '1',
+    question_type: 'multiple-choice',
+    difficulty: 'medium',
+    prompt: 'Choose the correct answer.',
+    options: [
+      { label: 'A', text: 'First answer' },
+      { label: 'B', text: 'Second answer' },
+    ],
+    correct_option_label: 'B',
+    is_active: true,
+    created_at: '2026-09-10T12:00:00.000Z',
+    updated_at: '2026-09-10T12:00:00.000Z',
+  }
+
+  it('maps a validated database row into an exam question', () => {
+    expect(questionToExamQuestion(question)).toEqual({
+      id: question.id,
+      unit: 1,
+      lesson: '1',
+      type: 'multiple-choice',
+      difficulty: 'medium',
+      prompt: 'Choose the correct answer.',
+      options: [
+        { label: 'A', text: 'First answer' },
+        { label: 'B', text: 'Second answer' },
+      ],
+      correctAnswer: { label: 'B', text: 'Second answer' },
+    })
+  })
+
+  it('rejects invalid database rows before generation', () => {
+    expect(() =>
+      questionToExamQuestion({
+        ...question,
+        correct_option_label: 'C',
+      }),
+    ).toThrow(
+      'This question contains invalid saved data and cannot be used safely.',
+    )
+  })
 })

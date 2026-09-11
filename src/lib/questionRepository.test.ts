@@ -28,6 +28,7 @@ vi.mock('./supabase', () => ({
 
 import {
   createQuestion,
+  getActiveQuestions,
   getQuestions,
   updateQuestion,
 } from './questionRepository'
@@ -282,6 +283,22 @@ describe('getQuestions', () => {
       code: 'read-failed',
       message: 'Unable to load questions. Please try again.',
     })
+  })
+})
+
+describe('getActiveQuestions', () => {
+  it('returns only active questions from the owned bank', async () => {
+    mocks.order
+      .mockReturnValueOnce({ order: mocks.order })
+      .mockReturnValueOnce({ order: mocks.order })
+      .mockResolvedValueOnce({
+        data: [QUESTION_ROW, { ...QUESTION_ROW, id: 'inactive', is_active: false }],
+        error: null,
+      })
+
+    await expect(
+      getActiveQuestions(QUESTION_ROW.bank_id),
+    ).resolves.toEqual([QUESTION_ROW])
   })
 })
 
