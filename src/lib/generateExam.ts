@@ -1,4 +1,3 @@
-import { TemplateHandler } from 'easy-template-x'
 import type { ExamQuestion } from '../types/question'
 import {
   DEFAULT_EXAM_QUESTION_FILTERS,
@@ -109,6 +108,7 @@ export async function createExamDocumentBlobs<
   examTemplate: T,
   answerKeyTemplate: T,
 ): Promise<{ exam: T; answerKey: T }> {
+  const { TemplateHandler } = await import('easy-template-x')
   const [exam, answerKey] = await Promise.all([
     new TemplateHandler().process(
       examTemplate,
