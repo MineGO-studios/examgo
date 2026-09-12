@@ -2,6 +2,7 @@ import {
   type FormEvent,
   useState,
 } from 'react'
+import { getSafeErrorDetails } from '../lib/safeErrorDetails'
 import { supabase } from '../lib/supabase'
 
 type AuthMode = 'sign-in' | 'sign-up'
@@ -99,7 +100,10 @@ export default function AuthForm() {
         throw error
       }
     } catch (error) {
-      console.error('[auth] Request failed', error)
+      console.error(
+        '[auth] Request failed',
+        getSafeErrorDetails(error),
+      )
 
       setFeedback({
         type: 'error',
