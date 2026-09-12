@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import AuthForm from './components/AuthForm'
 import ExamBuilder from './components/ExamBuilder'
 import QuestionEditor from './components/QuestionEditor'
+import { getSafeErrorDetails } from './lib/safeErrorDetails'
 import { supabase } from './lib/supabase'
 import './App.css'
 
@@ -42,7 +43,10 @@ function App() {
     const { error } = await supabase.auth.signOut()
 
     if (error) {
-      console.error('[auth] Sign-out failed', error)
+      console.error(
+        '[auth] Sign-out failed',
+        getSafeErrorDetails(error),
+      )
       setAuthError('Unable to sign out. Please try again.')
     }
   }

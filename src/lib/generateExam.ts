@@ -9,6 +9,7 @@ import {
   getFirstValidationError,
   validateExamSettings,
 } from './validateExamSettings'
+import { getSafeErrorDetails } from './safeErrorDetails'
 import { selectQuestions } from './selectQuestions'
 
 const EXAM_TEMPLATE_PATH =
@@ -169,7 +170,10 @@ export async function generateExamDocuments(
 
     await generateReviewedExamDocuments(settings, selectedQuestions)
   } catch (error) {
-    console.error('[ExamGO] document generation failed:', error)
+    console.error(
+      '[ExamGO] document generation failed:',
+      getSafeErrorDetails(error),
+    )
 
     if (error instanceof Error) {
       throw error
