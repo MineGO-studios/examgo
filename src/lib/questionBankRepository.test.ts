@@ -14,22 +14,26 @@ const mocks = vi.hoisted(() => ({
   order: vi.fn(),
   insert: vi.fn(),
   single: vi.fn(),
+  rpc: vi.fn(),
 }))
 
 vi.mock('./supabase', () => ({
   supabase: {
     from: mocks.from,
+    rpc: mocks.rpc,
   },
 }))
 
 import {
   createQuestionBank,
+  createQuestionBankFromBanks,
   getQuestionBanks,
 } from './questionBankRepository'
 
 const BANK: QuestionBank = {
   id: '123e4567-e89b-42d3-a456-426614174000',
   owner_id: '223e4567-e89b-42d3-a456-426614174000',
+  collection_unit: null,
   name: 'Unit 1 approved questions',
   grade: 6,
   subject: 'English',
@@ -52,6 +56,23 @@ beforeEach(() => {
   })
   mocks.eq.mockReturnValue({ order: mocks.order })
   mocks.insert.mockReturnValue({ select: mocks.select })
+})
+
+describe('createQuestionBankFromBanks', () => {
+  it('creates a bank of existing memberships and confirms readback', async () => {
+    mocks.rpc.mockResolvedValue({ data: BANK.id, error: null })
+    mocks.order.mockResolvedValue({ data: [BANK], error: null })
+    await expect(createQuestionBankFromBanks(' Combined ', [BANK.id])).resolves.toEqual(BANK)
+    expect(mocks.rpc).toHaveBeenCalledWith('create_bank_from_banks', {
+      p_name: 'Combined', p_source_bank_ids: [BANK.id],
+    })
+  })
+
+  it('rejects duplicate sources before a write', async () => {
+    await expect(createQuestionBankFromBanks('Combined', [BANK.id, BANK.id]))
+      .rejects.toMatchObject({ code: 'validation' })
+    expect(mocks.rpc).not.toHaveBeenCalled()
+  })
 })
 
 describe('getQuestionBanks', () => {

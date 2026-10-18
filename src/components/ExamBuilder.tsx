@@ -1,16 +1,28 @@
 import {
   type FormEvent,
   useEffect,
+  useRef,
   useState,
 } from 'react'
 import {
   generateReviewedExamDocuments,
   prepareExamQuestions,
 } from '../lib/generateExam'
-import { saveExamDraft } from '../lib/examDraftRepository'
+import {
+  downloadPreparedDocument,
+  requestBrowserDownload,
+  retryFailedDocumentDownloads,
+  type PairedDownloadResult,
+  type PreparedExamDocumentPair,
+} from '../lib/documentDelivery'
+import {
+  saveExamDraft,
+  type ReopenedExamDraft,
+} from '../lib/examDraftRepository'
 import { getQuestionBanks } from '../lib/questionBankRepository'
-import { getActiveQuestions } from '../lib/questionRepository'
+import { getActiveStandaloneQuestionsForBanks } from '../lib/questionMembershipRepository'
 import { questionToExamQuestion } from '../lib/questions'
+import { assignMarks } from '../domain/markAllocation'
 import {
   estimateQuestionPages,
   getPageTargetWarning,
@@ -32,11 +44,18 @@ import {
   DEFAULT_EXAM_QUESTION_FILTERS,
   DEFAULT_EXAM_SETTINGS,
   EXAM_LIMITS,
+  getQuestionQuantities,
+  SIMPLE_QUESTION_TYPES,
   type ExamQuestionFilters,
   type ExamSettings,
 } from '../types/exam'
-import type { ExamQuestion } from '../types/question'
+import {
+  isSimpleQuestionType,
+  type ExamQuestion,
+  type SimpleQuestionType,
+} from '../types/question'
 import type { QuestionBank } from '../lib/questionBankRepository'
+import { teacherErrorMessage } from '../lib/safeErrorDetails'
 
 type GenerationStatus =
   | 'idle'
@@ -64,27 +83,42 @@ const errorStyle = {
 } as const
 
 function getErrorMessage(error: unknown): string {
-  return error instanceof Error
-    ? error.message
-    : 'Unable to load approved questions. Please try again.'
+  return teacherErrorMessage(error, 'Unable to load approved questions. Please try again.')
 }
 
-function getAvailableQuestionCount(
+function getAvailableQuestionCounts(
   questions: readonly ExamQuestion[],
   unit: number,
   filters: ExamQuestionFilters,
-): number {
-  return questions.filter(
-    (question) =>
-      question.unit === unit &&
-      question.type === filters.questionType &&
-      (!filters.lesson || question.lesson === filters.lesson) &&
-      (!filters.difficulty ||
-        question.difficulty === filters.difficulty),
-  ).length
+): Record<SimpleQuestionType, number> {
+  const counts: Record<SimpleQuestionType, number> = {
+    'multiple-choice': 0,
+    binary: 0,
+    'short-answer': 0,
+  }
+  questions.forEach((question) => {
+    if (question.unit === unit && (!filters.lesson || question.lesson === filters.lesson) && (!filters.difficulty || question.difficulty === filters.difficulty)) {
+      counts[question.type] += 1
+    }
+  })
+  return counts
 }
 
-export default function ExamBuilder() {
+const questionTypeLabels: Record<SimpleQuestionType, string> = {
+  'multiple-choice': 'Multiple choice',
+  binary: 'True/False or Yes/No',
+  'short-answer': 'Short open answer',
+}
+
+interface ExamBuilderProps {
+  reopenedDraft: ReopenedExamDraft | null
+  onViewDrafts: () => void
+}
+
+export default function ExamBuilder({
+  reopenedDraft,
+  onViewDrafts,
+}: ExamBuilderProps) {
   const [settings, setSettings] = useState<ExamSettings>({
     ...DEFAULT_EXAM_SETTINGS,
   })
@@ -100,6 +134,8 @@ export default function ExamBuilder() {
   )
   const [banks, setBanks] = useState<QuestionBank[]>([])
   const [selectedBankId, setSelectedBankId] = useState('')
+  const [selectedBankIds, setSelectedBankIds] = useState<string[]>([])
+  const bankLoadVersion = useRef(0)
   const [questions, setQuestions] = useState<ExamQuestion[]>([])
   const [review, setReview] = useState<ReviewedQuestion[] | null>(
     null,
@@ -107,6 +143,11 @@ export default function ExamBuilder() {
   const [pageTarget, setPageTarget] = useState<PageTarget>(1)
   const [questionLoadStatus, setQuestionLoadStatus] =
     useState<QuestionLoadStatus>('loading')
+  const [generatedDocuments, setGeneratedDocuments] =
+    useState<PreparedExamDocumentPair | null>(null)
+  const [downloadResult, setDownloadResult] =
+    useState<PairedDownloadResult | null>(null)
+  const [draftSaved, setDraftSaved] = useState(false)
 
   useEffect(() => {
     let active = true
@@ -129,30 +170,52 @@ export default function ExamBuilder() {
           return
         }
 
-        const bankId = loadedBanks[0].id
-        const rows = await getActiveQuestions(bankId)
+        const bankIds = reopenedDraft?.draft.bank_ids?.length
+          ? reopenedDraft.draft.bank_ids : [reopenedDraft?.draft.bank_id ?? loadedBanks[0].id]
+        const bankId = bankIds[0]
+        const rows = reopenedDraft
+          ? null
+          : await getActiveStandaloneQuestionsForBanks(bankIds)
 
         if (!active) {
           return
         }
 
-        const examQuestions = rows.map(questionToExamQuestion)
-        const availableCount = getAvailableQuestionCount(
+        const examQuestions = reopenedDraft
+          ? reopenedDraft.bankQuestions
+          : (rows ?? [])
+              .filter((row) => isSimpleQuestionType(row.question_type))
+              .map((row) => questionToExamQuestion(row, { marks: DEFAULT_EXAM_SETTINGS.marksPerQuestion }))
+        const availableCounts = getAvailableQuestionCounts(
           examQuestions,
           DEFAULT_EXAM_SETTINGS.unit,
           DEFAULT_EXAM_QUESTION_FILTERS,
         )
         setSelectedBankId(bankId)
+        setSelectedBankIds(bankIds)
         setQuestions(examQuestions)
-        setSettings((current) =>
-          availableCount > 0 &&
-          current.questionCount > availableCount
-            ? { ...current, questionCount: availableCount }
-            : current,
-        )
+        if (reopenedDraft) {
+          const restoredQuantities = { 'multiple-choice': 0, binary: 0, 'short-answer': 0 } satisfies Record<SimpleQuestionType, number>
+          reopenedDraft.review.forEach(({ question }) => { restoredQuantities[question.type] += 1 })
+          setSettings({ ...reopenedDraft.settings, questionQuantities: restoredQuantities })
+          setReview(reopenedDraft.review)
+        } else {
+          setSettings((current) => {
+            const quantities = getQuestionQuantities(current)
+            const next = { ...quantities }
+            SIMPLE_QUESTION_TYPES.forEach((type) => { next[type] = Math.min(next[type], availableCounts[type]) })
+            if (Object.values(next).every((count) => count === 0)) {
+              const firstAvailable = SIMPLE_QUESTION_TYPES.find((type) => availableCounts[type] > 0)
+              if (firstAvailable) next[firstAvailable] = 1
+            }
+            return { ...current, questionQuantities: next, questionCount: Object.values(next).reduce((sum, count) => sum + count, 0) }
+          })
+        }
         setQuestionLoadStatus('ready')
         setMessage(
-          `${examQuestions.length} active question${examQuestions.length === 1 ? '' : 's'} available from ${loadedBanks[0].name}.`,
+          reopenedDraft
+            ? `${reopenedDraft.draft.exam_title} reopened with its saved question order and locks.`
+            : `${examQuestions.length} active question${examQuestions.length === 1 ? '' : 's'} available from selected banks.`,
         )
       } catch (error) {
         if (!active) {
@@ -169,7 +232,7 @@ export default function ExamBuilder() {
     return () => {
       active = false
     }
-  }, [])
+  }, [reopenedDraft])
 
   const updateSetting = <K extends keyof ExamSettings>(
     field: K,
@@ -185,6 +248,9 @@ export default function ExamBuilder() {
       [field]: undefined,
     }))
     setStatus('idle')
+    setGeneratedDocuments(null)
+    setDownloadResult(null)
+    setDraftSaved(false)
 
     if (
       field === 'questionCount' ||
@@ -199,41 +265,49 @@ export default function ExamBuilder() {
     }
   }
 
-  const changeBank = async (bankId: string): Promise<void> => {
-    const bank = banks.find((candidate) => candidate.id === bankId)
-    setSelectedBankId(bankId)
+  const changeBanks = async (bankIds: string[]): Promise<void> => {
+    if (bankIds.length === 0) return
+    const loadVersion = ++bankLoadVersion.current
+    setSelectedBankId(bankIds[0])
+    setSelectedBankIds(bankIds)
     setQuestions([])
     setReview(null)
     setQuestionLoadStatus('loading')
     setStatus('idle')
+    setDraftSaved(false)
+    setGeneratedDocuments(null)
+    setDownloadResult(null)
     setMessage('Loading approved questions…')
 
     try {
-      const rows = await getActiveQuestions(bankId)
-      const examQuestions = rows.map(questionToExamQuestion)
-      const availableCount = getAvailableQuestionCount(
+      const rows = await getActiveStandaloneQuestionsForBanks(bankIds)
+      if (loadVersion !== bankLoadVersion.current) return
+      const examQuestions = rows
+        .filter((row) => isSimpleQuestionType(row.question_type))
+        .map((row) => questionToExamQuestion(row, { marks: settings.marksPerQuestion }))
+      const availableCounts = getAvailableQuestionCounts(
         examQuestions,
         settings.unit,
         filters,
       )
       setQuestions(examQuestions)
-      setSettings((current) =>
-        availableCount > 0 &&
-        current.questionCount > availableCount
-          ? { ...current, questionCount: availableCount }
-          : current,
-      )
+      setSettings((current) => {
+        const next = { ...getQuestionQuantities(current) }
+        SIMPLE_QUESTION_TYPES.forEach((type) => { next[type] = Math.min(next[type], availableCounts[type]) })
+        return { ...current, questionQuantities: next, questionCount: Object.values(next).reduce((sum, count) => sum + count, 0) }
+      })
       setQuestionLoadStatus('ready')
       setMessage(
-        `${examQuestions.length} active question${examQuestions.length === 1 ? '' : 's'} available${bank ? ` from ${bank.name}` : ''}.`,
+        `${examQuestions.length} active question${examQuestions.length === 1 ? '' : 's'} available from ${bankIds.length} selected bank${bankIds.length === 1 ? '' : 's'}.`,
       )
     } catch (error) {
+      if (loadVersion !== bankLoadVersion.current) return
       setQuestionLoadStatus('error')
       setMessage(getErrorMessage(error))
     }
   }
 
-  const eligibleQuestionCount = getAvailableQuestionCount(
+  const eligibleQuestionCounts = getAvailableQuestionCounts(
     questions,
     settings.unit,
     filters,
@@ -245,7 +319,7 @@ export default function ExamBuilder() {
         .filter(
           (question) =>
             question.unit === settings.unit &&
-            question.type === filters.questionType,
+            SIMPLE_QUESTION_TYPES.includes(question.type),
         )
         .map((question) => question.lesson),
     ),
@@ -258,28 +332,30 @@ export default function ExamBuilder() {
     value: ExamQuestionFilters[K],
   ): void => {
     const nextFilters = { ...filters, [field]: value }
-    const nextAvailableCount = getAvailableQuestionCount(
+    const nextAvailableCounts = getAvailableQuestionCounts(
       questions,
       settings.unit,
       nextFilters,
     )
 
     setFilters(nextFilters)
-    setSettings((current) =>
-      nextAvailableCount > 0 &&
-      current.questionCount > nextAvailableCount
-        ? { ...current, questionCount: nextAvailableCount }
-        : current,
-    )
+    setSettings((current) => {
+      const next = { ...getQuestionQuantities(current) }
+      SIMPLE_QUESTION_TYPES.forEach((type) => { next[type] = Math.min(next[type], nextAvailableCounts[type]) })
+      return { ...current, questionQuantities: next, questionCount: Object.values(next).reduce((sum, count) => sum + count, 0) }
+    })
     setErrors((current) => ({
       ...current,
       questionCount: undefined,
     }))
     setStatus('idle')
+    setGeneratedDocuments(null)
+    setDownloadResult(null)
+    setDraftSaved(false)
     setReview(null)
     setMessage(
-      nextAvailableCount > 0
-        ? `${nextAvailableCount} approved question${nextAvailableCount === 1 ? '' : 's'} match the selected controls.`
+      Object.values(nextAvailableCounts).some((count) => count > 0)
+        ? `${Object.values(nextAvailableCounts).reduce((sum, count) => sum + count, 0)} approved questions match the selected controls.`
         : 'No approved questions match the selected controls.',
     )
   }
@@ -291,7 +367,7 @@ export default function ExamBuilder() {
 
     const nextErrors = validateExamSettings(
       settings,
-      eligibleQuestionCount,
+      Object.values(eligibleQuestionCounts).reduce((sum, count) => sum + count, 0),
     )
     const firstError = getFirstValidationError(nextErrors)
 
@@ -310,19 +386,34 @@ export default function ExamBuilder() {
       )
       setErrors({})
       setReview(createQuestionReview(selectedQuestions))
+      setDraftSaved(false)
+      setGeneratedDocuments(null)
+      setDownloadResult(null)
       setStatus('success')
       setMessage(
         'Question preview ready. Lock, remove, or replace questions before generating.',
       )
     } catch (error) {
       const errorMessage =
-        error instanceof Error
-          ? error.message
-          : 'Unknown generation error.'
+        teacherErrorMessage(error, 'Unknown generation error.')
 
       setStatus('error')
       setMessage(`Preview failed: ${errorMessage}`)
     }
+  }
+
+  const updateQuestionQuantity = (type: SimpleQuestionType, value: number): void => {
+    setSettings((current) => {
+      const quantities = { ...getQuestionQuantities(current), [type]: value }
+      return { ...current, questionQuantities: quantities, questionCount: Object.values(quantities).reduce((sum, count) => sum + count, 0) }
+    })
+    setErrors((current) => ({ ...current, questionCount: undefined }))
+    setReview(null)
+    setDraftSaved(false)
+    setGeneratedDocuments(null)
+    setDownloadResult(null)
+    setStatus('idle')
+    setMessage('Selection quantities changed. Preview questions again.')
   }
 
   const handleLock = (questionId: string): void => {
@@ -330,27 +421,52 @@ export default function ExamBuilder() {
 
     setReview(toggleQuestionLock(review, questionId))
     setStatus('idle')
+    setDraftSaved(false)
     setMessage('Question lock updated.')
+  }
+
+  const updateQuestionMarks = (questionId: string, marks: number): void => {
+    if (!review) return
+    setReview(review.map((item) => item.question.id === questionId
+      ? { ...item, question: { ...item.question, marks } as ExamQuestion }
+      : item))
+    setDraftSaved(false)
+    setGeneratedDocuments(null)
+    setDownloadResult(null)
+    setStatus('idle')
+  }
+
+  const validateReviewMarks = (): void => {
+    if (!review) throw new Error('Preview questions before assigning marks.')
+    review.forEach(({ question }, index) => {
+      try { assignMarks([question.id], question.marks, { mode: 'equal' }) }
+      catch (error) { throw new Error(`Question ${index + 1}: ${teacherErrorMessage(error, 'invalid marks')}`) }
+    })
   }
 
   const handleRemove = (questionId: string): void => {
     if (!review) return
 
     try {
+      const removed = review.find((item) => item.question.id === questionId)
       const nextReview = removeQuestionFromReview(review, questionId)
       setReview(nextReview)
       setSettings((current) => ({
         ...current,
         questionCount: nextReview.length,
+        questionQuantities: removed
+          ? { ...getQuestionQuantities(current), [removed.question.type]: Math.max(0, getQuestionQuantities(current)[removed.question.type] - 1) }
+          : getQuestionQuantities(current),
       }))
       setStatus('idle')
+      setDraftSaved(false)
+      setGeneratedDocuments(null)
+      setDownloadResult(null)
       setMessage('Question removed from this exam preview.')
     } catch (error) {
       setStatus('error')
       setMessage(
-        error instanceof Error
-          ? error.message
-          : 'Unable to remove question.',
+        teacherErrorMessage(error, 'Unable to remove question.'),
       )
     }
   }
@@ -369,13 +485,14 @@ export default function ExamBuilder() {
         ),
       )
       setStatus('idle')
+      setDraftSaved(false)
+      setGeneratedDocuments(null)
+      setDownloadResult(null)
       setMessage('Question replaced with another eligible question.')
     } catch (error) {
       setStatus('error')
       setMessage(
-        error instanceof Error
-          ? error.message
-          : 'Unable to replace question.',
+        teacherErrorMessage(error, 'Unable to replace question.'),
       )
     }
   }
@@ -391,23 +508,83 @@ export default function ExamBuilder() {
     setMessage('Generating the reviewed exam and answer key…')
 
     try {
-      await generateReviewedExamDocuments(
+      validateReviewMarks()
+      const result = await generateReviewedExamDocuments(
         settings,
         review.map((item) => item.question),
       )
-      setStatus('success')
-      setMessage(
-        'Exam and answer key generated successfully from the reviewed questions.',
-      )
+      setGeneratedDocuments(result.documents)
+      setDownloadResult(result.delivery)
+
+      if (result.delivery.hasFailures) {
+        setStatus('error')
+        setMessage(
+          'The documents are ready, but one or more download requests were blocked. Retry the failed file below.',
+        )
+      } else {
+        setStatus('success')
+        setMessage(
+          'Exam and answer key are ready. Both named DOCX downloads were requested.',
+        )
+      }
     } catch (error) {
       const errorMessage =
-        error instanceof Error
-          ? error.message
-          : 'Unknown generation error.'
+        teacherErrorMessage(error, 'Unknown generation error.')
 
       setStatus('error')
       setMessage(`Generation failed: ${errorMessage}`)
     }
+  }
+
+  const handleRetryFailedDownloads = async (): Promise<void> => {
+    if (!generatedDocuments || !downloadResult) {
+      return
+    }
+
+    setStatus('generating')
+    setMessage('Retrying the blocked document download…')
+
+    const nextResult = await retryFailedDocumentDownloads(
+      generatedDocuments,
+      downloadResult,
+    )
+
+    setDownloadResult(nextResult)
+    setStatus(nextResult.hasFailures ? 'error' : 'success')
+    setMessage(
+      nextResult.hasFailures
+        ? 'A download request is still blocked. Use the individual file buttons or check browser download permissions.'
+        : 'The failed download was requested again successfully.',
+    )
+  }
+
+  const handleIndividualDownload = async (
+    kind: 'exam' | 'answerKey',
+  ): Promise<void> => {
+    if (!generatedDocuments || !downloadResult) {
+      return
+    }
+
+    const preparedDocument = generatedDocuments[kind]
+    const outcome = await downloadPreparedDocument(
+      preparedDocument,
+      requestBrowserDownload,
+    )
+    const nextResult = {
+      ...downloadResult,
+      [kind]: outcome,
+    }
+    nextResult.hasFailures =
+      nextResult.exam.status === 'failed' ||
+      nextResult.answerKey.status === 'failed'
+
+    setDownloadResult(nextResult)
+    setStatus(outcome.status === 'failed' ? 'error' : 'success')
+    setMessage(
+      outcome.status === 'failed'
+        ? `${outcome.filename} could not be requested. Check browser download permissions and try again.`
+        : `${outcome.filename} download requested.`,
+    )
   }
 
   const handleSaveDraft = async (): Promise<void> => {
@@ -421,22 +598,22 @@ export default function ExamBuilder() {
     setMessage('Saving the exam draft…')
 
     try {
-      await saveExamDraft(selectedBankId, settings, review)
+      validateReviewMarks()
+      await saveExamDraft(selectedBankId, settings, review, selectedBankIds)
       setStatus('success')
-      setMessage('Exam draft saved successfully.')
+      setDraftSaved(true)
+      setMessage('Exam draft saved in My papers.')
     } catch (error) {
       setStatus('error')
       setMessage(
-        error instanceof Error
-          ? error.message
-          : 'Unable to save the exam draft.',
+        teacherErrorMessage(error, 'Unable to save the exam draft.'),
       )
     }
   }
 
-  const totalMarks =
-    (review?.length ?? settings.questionCount) *
-    settings.marksPerQuestion
+  const totalMarks = review?.every((item) => Number.isSafeInteger(item.question.marks) &&
+    item.question.marks >= 1 && item.question.marks <= 1000)
+    ? review.reduce((total, item) => total + item.question.marks, 0) : null
   const effectiveQuestionCount = review?.length ?? settings.questionCount
   const estimatedQuestionPages = estimateQuestionPages(
     effectiveQuestionCount,
@@ -462,31 +639,26 @@ export default function ExamBuilder() {
           <h2>Build exam</h2>
           <p>
             Generate a student paper and matching answer key from
-            your approved question bank.
+            your selected question banks.
           </p>
         </div>
       </div>
 
       {banks.length > 0 && (
-        <label style={fieldStyle}>
-          Question bank
-          <select
-            value={selectedBankId}
-            disabled={isLoadingQuestions || isBusy}
-            onChange={(event) => void changeBank(event.target.value)}
-            style={inputStyle}
-          >
-            {banks.map((bank) => (
-              <option key={bank.id} value={bank.id}>
-                {bank.name}
-              </option>
-            ))}
-          </select>
-          <small>
-            {eligibleQuestionCount} active Unit {settings.unit}{' '}
-            question{eligibleQuestionCount === 1 ? '' : 's'}
-          </small>
-        </label>
+        <fieldset className="structured-fields bank-pool-selection" disabled={isLoadingQuestions || isBusy}>
+          <legend>Question banks</legend>
+          {banks.map((bank) => {
+            const checked = selectedBankIds.includes(bank.id)
+            return <label key={bank.id} className="checkbox-field">
+              <input type="checkbox" checked={checked}
+                disabled={checked && selectedBankIds.length === 1}
+                onChange={() => void changeBanks(checked
+                  ? selectedBankIds.filter((id) => id !== bank.id)
+                  : [...selectedBankIds, bank.id])} /> <span>{bank.name}</span>
+            </label>
+          })}
+          <small>{Object.values(eligibleQuestionCounts).reduce((sum, count) => sum + count, 0)} active Unit {settings.unit} questions, counted once across selected banks</small>
+        </fieldset>
       )}
 
       <label style={fieldStyle}>
@@ -527,29 +699,32 @@ export default function ExamBuilder() {
         )}
       </label>
 
+      <label style={fieldStyle}>
+        Teacher name for footer
+        <input
+          type="text"
+          value={settings.teacherName ?? ''}
+          maxLength={EXAM_LIMITS.teacherNameMaxLength}
+          onChange={(event) =>
+            updateSetting('teacherName', event.target.value)
+          }
+          aria-invalid={Boolean(errors.teacherName)}
+          style={inputStyle}
+        />
+        <small>Leave blank to print a handwriting line.</small>
+        {errors.teacherName && (
+          <span role="alert" style={errorStyle}>
+            {errors.teacherName}
+          </span>
+        )}
+      </label>
+
       <fieldset>
-        <legend>V1 scope</legend>
+        <legend>Supported content</legend>
         <p>Grade 6 · Unit 1</p>
       </fieldset>
 
       <div className="exam-filter-grid">
-        <label style={fieldStyle}>
-          Question type
-          <select
-            value={filters.questionType}
-            disabled={isLoadingQuestions || isBusy}
-            onChange={(event) =>
-              updateFilter(
-                'questionType',
-                event.target.value as ExamQuestionFilters['questionType'],
-              )
-            }
-            style={inputStyle}
-          >
-            <option value="multiple-choice">Multiple choice</option>
-          </select>
-        </label>
-
         <label style={fieldStyle}>
           Lesson
           <select
@@ -590,57 +765,31 @@ export default function ExamBuilder() {
         </label>
       </div>
 
-      <label style={fieldStyle}>
-        Question quantity
-        <input
-          type="number"
-          min={EXAM_LIMITS.minimumQuestionCount}
-          max={Math.min(
-            EXAM_LIMITS.maximumQuestionCount,
-            Math.max(1, eligibleQuestionCount),
-          )}
-          step="1"
-          value={settings.questionCount}
-          onChange={(event) =>
-            updateSetting(
-              'questionCount',
-              event.target.valueAsNumber || 0,
-            )
-          }
-          aria-invalid={Boolean(errors.questionCount)}
-          style={inputStyle}
-        />
-        {errors.questionCount && (
-          <span role="alert" style={errorStyle}>
-            {errors.questionCount}
-          </span>
-        )}
-      </label>
+      <fieldset>
+        <legend>Question quantities by type</legend>
+        <div className="exam-filter-grid">
+          {SIMPLE_QUESTION_TYPES.map((type) => (
+            <label style={fieldStyle} key={type}>
+              {questionTypeLabels[type]}
+              <input
+                type="number"
+                min="0"
+                max={eligibleQuestionCounts[type]}
+                step="1"
+                value={getQuestionQuantities(settings)[type]}
+                onChange={(event) => updateQuestionQuantity(type, event.target.valueAsNumber || 0)}
+                disabled={isLoadingQuestions || isBusy}
+                style={inputStyle}
+              />
+              <small>{eligibleQuestionCounts[type]} available</small>
+            </label>
+          ))}
+        </div>
+        {errors.questionCount && <span role="alert" style={errorStyle}>{errors.questionCount}</span>}
+      </fieldset>
 
-      <label style={fieldStyle}>
-        Marks per question
-        <input
-          type="number"
-          min={EXAM_LIMITS.minimumMarksPerQuestion}
-          max={EXAM_LIMITS.maximumMarksPerQuestion}
-          step="1"
-          value={settings.marksPerQuestion}
-          onChange={(event) =>
-            updateSetting(
-              'marksPerQuestion',
-              event.target.valueAsNumber || 0,
-            )
-          }
-          aria-invalid={Boolean(errors.marksPerQuestion)}
-          style={inputStyle}
-        />
-        {errors.marksPerQuestion && (
-          <span role="alert" style={errorStyle}>
-            {errors.marksPerQuestion}
-          </span>
-        )}
-      </label>
-
+      <details open={Boolean(errors.selectionSeed)}>
+      <summary>Advanced generation setting</summary>
       <label style={fieldStyle}>
         Paper seed
         <input
@@ -659,7 +808,7 @@ export default function ExamBuilder() {
           style={inputStyle}
         />
         <small>
-          The same seed produces the same question selection.
+          The same seed keeps the same selection when the banks and filters are unchanged. Preview again after changing it.
         </small>
         {errors.selectionSeed && (
           <span role="alert" style={errorStyle}>
@@ -667,9 +816,10 @@ export default function ExamBuilder() {
           </span>
         )}
       </label>
+      </details>
 
       <output>
-        Total marks: <strong>{totalMarks}</strong>
+        Total marks: <strong>{review ? totalMarks ?? 'Fix question marks' : 'Preview to calculate'}</strong>
       </output>
 
       <div className="page-target">
@@ -733,7 +883,7 @@ export default function ExamBuilder() {
               >
                 <div className="question-card-heading">
                   <strong>
-                    {index + 1}. {question.id}
+                    {index + 1}. {questionTypeLabels[question.type]}
                   </strong>
                   {locked && (
                     <span className="status-chip">Locked</span>
@@ -741,8 +891,16 @@ export default function ExamBuilder() {
                 </div>
                 <p>{question.prompt}</p>
                 <small>
-                  Lesson {question.lesson} · {question.difficulty}
+                  Lesson {question.lesson} · {question.difficulty} ·{' '}
+                  marks assigned for this exam
                 </small>
+                <label style={fieldStyle}>
+                  Total marks for question {index + 1}
+                  <input type="number" min="1" max="1000" step="1"
+                    value={Number.isNaN(question.marks) ? '' : question.marks}
+                    onChange={(event) => updateQuestionMarks(question.id, event.target.valueAsNumber)}
+                    disabled={isBusy} style={inputStyle} />
+                </label>
                 <div className="review-question-actions">
                   <button
                     type="button"
@@ -785,6 +943,15 @@ export default function ExamBuilder() {
             >
               {isSaving ? 'Saving…' : 'Save draft'}
             </button>
+            {draftSaved && (
+              <button
+                type="button"
+                className="button-quiet"
+                onClick={onViewDrafts}
+              >
+                View in My papers
+              </button>
+            )}
             <button
               type="button"
               onClick={() => void handleGenerate()}
@@ -795,6 +962,61 @@ export default function ExamBuilder() {
                 : 'Generate Exam + Answer Key'}
             </button>
           </div>
+
+          {generatedDocuments && downloadResult && (
+            <section
+              className="document-downloads"
+              aria-labelledby="document-downloads-title"
+            >
+              <h4 id="document-downloads-title">Prepared documents</h4>
+              <ul>
+                {([
+                  generatedDocuments.exam,
+                  generatedDocuments.answerKey,
+                ] as const).map((preparedDocument) => {
+                  const outcome =
+                    preparedDocument.kind === 'exam'
+                      ? downloadResult.exam
+                      : downloadResult.answerKey
+
+                  return (
+                    <li key={preparedDocument.kind}>
+                      <span>
+                        <strong>{preparedDocument.filename}</strong>{' '}
+                        —{' '}
+                        {outcome.status === 'failed'
+                          ? 'Download blocked'
+                          : 'Download requested'}
+                      </span>
+                      <button
+                        type="button"
+                        className="button-secondary"
+                        onClick={() =>
+                          void handleIndividualDownload(
+                            preparedDocument.kind,
+                          )
+                        }
+                        disabled={isBusy}
+                      >
+                        Download {preparedDocument.kind === 'exam'
+                          ? 'exam'
+                          : 'answer key'}
+                      </button>
+                    </li>
+                  )
+                })}
+              </ul>
+              {downloadResult.hasFailures && (
+                <button
+                  type="button"
+                  onClick={() => void handleRetryFailedDownloads()}
+                  disabled={isBusy}
+                >
+                  Retry failed download
+                </button>
+              )}
+            </section>
+          )}
         </section>
       )}
 

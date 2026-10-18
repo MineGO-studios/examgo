@@ -19,6 +19,7 @@ const questions: ExamQuestion[] = [
     type: 'multiple-choice',
     difficulty: 'medium',
     prompt: 'Question one',
+    marks: 1,
     options: [
       { label: 'A', text: 'One' },
       { label: 'B', text: 'Two' },
@@ -32,6 +33,7 @@ const questions: ExamQuestion[] = [
     type: 'multiple-choice',
     difficulty: 'medium',
     prompt: 'Question two',
+    marks: 1,
     options: [
       { label: 'A', text: 'One' },
       { label: 'B', text: 'Two' },
@@ -45,6 +47,7 @@ const questions: ExamQuestion[] = [
     type: 'multiple-choice',
     difficulty: 'medium',
     prompt: 'Question three',
+    marks: 1,
     options: [
       { label: 'A', text: 'One' },
       { label: 'B', text: 'Two' },
@@ -117,5 +120,18 @@ describe('question review controls', () => {
         },
       ),
     ).toThrow('Only 0 eligible questions are available')
+  })
+
+  it('preserves the teacher total on replacement without changing the bank question', () => {
+    const review = createQuestionReview([
+      { ...questions[0], marks: 7 }, questions[1],
+    ])
+    const replaced = replaceQuestionInReview(review, 'Q-1', questions,
+      { ...DEFAULT_EXAM_SETTINGS, questionCount: 2 }, DEFAULT_EXAM_QUESTION_FILTERS)
+
+    expect(replaced[0].question).toEqual({ ...questions[2], marks: 7 })
+    expect(questions[2].marks).toBe(1)
+    expect(review[0].question.marks).toBe(7)
+    expect(replaced[1]).toBe(review[1])
   })
 })
