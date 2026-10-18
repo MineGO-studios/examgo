@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   normalizeQuestionInput,
+  questionInputPayload,
   questionToExamQuestion,
   validateQuestionInput,
   type Question,
@@ -15,11 +16,18 @@ const VALID_INPUT: QuestionInput = {
   questionType: 'multiple-choice',
   difficulty: 'medium',
   prompt: ' Choose the correct answer. ',
+  marks: 1,
   options: [
     { label: ' a ', text: ' First answer ' },
     { label: ' b ', text: ' Second answer ' },
   ],
   correctOptionLabel: ' b ',
+  binaryLabelMode: 'true-false',
+  binaryAnswer: true,
+  canonicalAnswer: '',
+  approvedVariants: [],
+  caseSensitive: false,
+  answerLines: 2,
   isActive: true,
 }
 
@@ -72,11 +80,11 @@ describe('question input', () => {
         bankId: 'A valid question bank is required.',
         externalId:
         'Question ID must contain between 1 and 80 characters.',
-        unit: 'Unit must be a whole number between 1 and 20.',
+        unit: 'Unit must be a whole number between 1 and 8.',
         lesson:
         'Lesson must contain between 1 and 40 characters.',
         questionType:
-        'Only multiple-choice questions are currently supported.',
+        'Select a supported question type.',
         difficulty: 'Select a valid difficulty.',
         prompt:
         'Question text must contain between 1 and 2000 characters.',
@@ -151,11 +159,57 @@ describe('question input', () => {
         'The correct answer must match one of the option labels.',
     )
     })
+
+    it('validates binary labels and short-answer reference variants', () => {
+      expect(validateQuestionInput({
+        ...NORMALIZED_INPUT,
+        questionType: 'binary',
+        binaryLabelMode: 'yes-no',
+        binaryAnswer: false,
+      })).toEqual({})
+
+      expect(validateQuestionInput({
+        ...NORMALIZED_INPUT,
+        questionType: 'short-answer',
+        canonicalAnswer: 'Baghdad',
+        approvedVariants: ['baghdad'],
+      })).toMatchObject({
+        approvedVariants: 'List each other accepted answer once, without repeating the correct answer.',
+      })
+    })
+
+    it('persists typed binary and short-answer payloads without legacy MCQ columns', () => {
+      expect(questionInputPayload({
+        ...NORMALIZED_INPUT,
+        questionType: 'binary',
+        binaryLabelMode: 'yes-no',
+        binaryAnswer: false,
+      })).toMatchObject({
+        options: null,
+        correct_option_label: null,
+        content: { type: 'binary', labelMode: 'yes-no' },
+        answer: { type: 'binary', isTrue: false },
+      })
+
+      expect(questionInputPayload({
+        ...NORMALIZED_INPUT,
+        questionType: 'short-answer',
+        canonicalAnswer: 'Baghdad',
+        approvedVariants: ['Baghdad city'],
+        answerLines: 3,
+      })).toMatchObject({
+        options: null,
+        correct_option_label: null,
+        content: { type: 'short-answer', answerLines: 3 },
+        answer: { type: 'short-answer', canonicalAnswer: 'Baghdad', approvedVariants: ['Baghdad city'] },
+      })
+    })
 })
 
 describe('database question conversion', () => {
   const question: Question = {
     id: '223e4567-e89b-42d3-a456-426614174000',
+    owner_id: '323e4567-e89b-42d3-a456-426614174000',
     bank_id: '123e4567-e89b-42d3-a456-426614174000',
     external_id: 'U1-Q001',
     unit: 1,
@@ -168,6 +222,22 @@ describe('database question conversion', () => {
       { label: 'B', text: 'Second answer' },
     ],
     correct_option_label: 'B',
+    schema_version: 1,
+    marks: 1,
+    content: {
+      type: 'multiple-choice',
+      schemaVersion: 1,
+      options: [
+        { label: 'A', text: 'First answer' },
+        { label: 'B', text: 'Second answer' },
+      ],
+    },
+    answer: {
+      type: 'multiple-choice',
+      schemaVersion: 1,
+      correctOptionLabel: 'B',
+    },
+    current_revision: 1,
     is_active: true,
     created_at: '2026-09-10T12:00:00.000Z',
     updated_at: '2026-09-10T12:00:00.000Z',
@@ -181,6 +251,7 @@ describe('database question conversion', () => {
       type: 'multiple-choice',
       difficulty: 'medium',
       prompt: 'Choose the correct answer.',
+      marks: 1,
       options: [
         { label: 'A', text: 'First answer' },
         { label: 'B', text: 'Second answer' },
@@ -194,9 +265,38 @@ describe('database question conversion', () => {
       questionToExamQuestion({
         ...question,
         correct_option_label: 'C',
+        answer: {
+          type: 'multiple-choice',
+          schemaVersion: 1,
+          correctOptionLabel: 'C',
+        },
       }),
     ).toThrow(
       'This question contains invalid saved data and cannot be used safely.',
     )
+  })
+
+  it('maps binary and short-answer rows without legacy MCQ fields', () => {
+    expect(questionToExamQuestion({
+      ...question,
+      id: '423e4567-e89b-42d3-a456-426614174000',
+      question_type: 'binary',
+      options: null,
+      correct_option_label: null,
+      marks: 2,
+      content: { type: 'binary', schemaVersion: 1, labelMode: 'yes-no' },
+      answer: { type: 'binary', schemaVersion: 1, isTrue: false },
+    })).toMatchObject({ type: 'binary', labelMode: 'yes-no', isTrue: false, marks: 2 })
+
+    expect(questionToExamQuestion({
+      ...question,
+      id: '523e4567-e89b-42d3-a456-426614174000',
+      question_type: 'short-answer',
+      options: null,
+      correct_option_label: null,
+      marks: 3,
+      content: { type: 'short-answer', schemaVersion: 1, answerLines: 3 },
+      answer: { type: 'short-answer', schemaVersion: 1, canonicalAnswer: 'Baghdad', approvedVariants: ['Baghdad city'], caseSensitive: false },
+    })).toMatchObject({ type: 'short-answer', canonicalAnswer: 'Baghdad', approvedVariants: ['Baghdad city'], answerLines: 3, marks: 3 })
   })
 })

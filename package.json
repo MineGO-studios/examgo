@@ -8,25 +8,33 @@
     "build": "tsc -b && vite build",
     "lint": "oxlint",
     "preview": "vite preview",
-    "test": "vitest run"
+    "test": "npm run test:app",
+    "test:app": "vitest run src",
+    "test:e2e": "playwright test",
+    "typecheck:e2e": "tsc -p tsconfig.e2e.json"
   },
   "dependencies": {
     "@supabase/supabase-js": "2.114.0",
     "easy-template-x": "^7.2.8",
+    "jszip": "3.10.1",
     "react": "^19.2.8",
     "react-dom": "^19.2.8"
   },
   "devDependencies": {
+    "@playwright/test": "1.64.1",
     "@types/node": "^24.13.3",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.4",
     "@vitejs/plugin-react": "^6.1.0",
+    "@xmldom/xmldom": "0.8.15",
+    "axe-core": "4.14.0",
     "oxlint": "^1.79.0",
+    "pg": "8.23.1",
     "typescript": "~6.0.2",
     "vite": "^8.2.2",
     "vitest": "^4.1.11"
   },
   "overrides": {
-  "@xmldom/xmldom": "0.8.15"
+    "@xmldom/xmldom": "0.8.15"
   }
 }

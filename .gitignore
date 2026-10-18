@@ -10,6 +10,20 @@ lerna-debug.log*
 node_modules
 dist
 dist-ssr
+
+# Source exam papers, generated evidence and local caches stay local (not for the public repository).
+/Papers/
+/output/
+/tmp/
+
+# Local working notes stay out of the repository.
+*handoff*.md
+TASKS.md
+
+# Environment files
+.env
+.env.*
+!.env.example
 *.local
 
 # Editor directories and files
@@ -22,3 +36,6 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+__pycache__/
+*.py[cod]

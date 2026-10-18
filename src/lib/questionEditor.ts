@@ -6,23 +6,41 @@ import {
 
 const DEFAULT_OPTION_LABELS = ['A', 'B', 'C', 'D', 'E', 'F']
 
+export function createQuestionReference(
+  uuid: string = globalThis.crypto.randomUUID(),
+): string {
+  return `Q-${uuid}`
+}
+
 export function createEmptyQuestionInput(
   bankId: string,
 ): QuestionInput {
+  const matchingLeft = [{ id: globalThis.crypto.randomUUID(), text: '' }, { id: globalThis.crypto.randomUUID(), text: '' }]
+  const matchingRight = [{ id: globalThis.crypto.randomUUID(), text: '' }, { id: globalThis.crypto.randomUUID(), text: '' }]
   return {
     bankId,
-    externalId: '',
+    externalId: createQuestionReference(),
     unit: 1,
     lesson: '1',
     questionType: 'multiple-choice',
     difficulty: 'medium',
     prompt: '',
+    marks: null,
     options: [
       { label: 'A', text: '' },
       { label: 'B', text: '' },
       { label: 'C', text: '' },
     ],
     correctOptionLabel: 'A',
+    binaryLabelMode: 'true-false',
+    binaryAnswer: true,
+    canonicalAnswer: '',
+    approvedVariants: [],
+    caseSensitive: false,
+    answerLines: 2,
+    matchingLeft,
+    matchingRight,
+    matchingPairs: matchingLeft.map((item, index) => ({ leftId: item.id, rightId: matchingRight[index].id })),
     isActive: true,
   }
 }

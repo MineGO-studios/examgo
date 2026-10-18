@@ -14,6 +14,10 @@ const OPTION_HEADERS = [
   'option_f',
 ] as const
 
+export const LEGACY_CSV_HEADERS: readonly string[] = [
+  'external_id', 'unit', 'lesson', 'difficulty', 'prompt', 'option_a', 'option_b', 'correct_option_label',
+]
+
 const REQUIRED_HEADERS = [
   'external_id',
   'unit',
@@ -32,7 +36,7 @@ export class QuestionCsvError extends Error {
   }
 }
 
-function parseCsvRecords(csv: string): string[][] {
+export function parseCsvRecords(csv: string): string[][] {
   const records: string[][] = []
   let record: string[] = []
   let field = ''
@@ -206,9 +210,16 @@ export function parseQuestionCsv(
       questionType,
       difficulty: difficulty as QuestionInput['difficulty'],
       prompt: values.get('prompt') ?? '',
+      marks: null,
       options,
       correctOptionLabel:
         values.get('correct_option_label') ?? '',
+      binaryLabelMode: 'true-false',
+      binaryAnswer: true,
+      canonicalAnswer: '',
+      approvedVariants: [],
+      caseSensitive: false,
+      answerLines: 2,
       isActive: parseActive(
         values.get('is_active') ?? '',
         rowNumber,

@@ -1,0 +1,152 @@
+import { createHash } from 'node:crypto'
+import { readFile } from 'node:fs/promises'
+import { expect, test } from '@playwright/test'
+import JSZip from 'jszip'
+import { syntheticBackend, syntheticSignIn } from './support/syntheticBackend.ts'
+import { checkAccessibility } from './support/accessibility.ts'
+
+for (const width of [320, 1280]) {
+  test(`teacher builder keyboard, automated WCAG A/AA and reflow at ${width}px`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 900 })
+    await syntheticBackend(page)
+    await syntheticSignIn(page)
+    await checkAccessibility(page)
+    await page.getByRole('button', { name: 'Preview questions', exact: true }).focus()
+    await page.keyboard.press('Enter')
+    await expect(page.getByRole('region', { name: 'Selected questions' })).toBeVisible()
+    await checkAccessibility(page)
+  })
+}
+
+test('interrupted intake preserves confirmed mapping and retries the same batch; reviewer diagnostics stay restricted', async ({ page }) => {
+  const state = await syntheticBackend(page)
+  await syntheticSignIn(page)
+  await page.getByRole('button', { name: 'Question banks', exact: true }).click()
+  await page.getByRole('button', { name: 'Import file', exact: true }).first().click()
+  await page.getByLabel('Question file', { exact: true }).setInputFiles({ name: 'synthetic-teacher.csv', mimeType: 'text/csv',
+    buffer: Buffer.from('id,unit,question,type,answer\nE2E-IMPORT-1,1,Where?,short-answer,Here') })
+  await page.getByRole('combobox', { name: /Recognised template/ }).selectOption('teacher')
+  const mapping = { 'each question ID': 'id', 'the unit': 'unit', 'the question text': 'question', 'the question type': 'type', 'the answer': 'answer' }
+  for (const [label, value] of Object.entries(mapping)) await page.getByRole('combobox', { name: new RegExp(`Which column contains ${label}`) }).selectOption(value)
+  await page.getByRole('checkbox', { name: 'I checked these columns and examples for this file' }).check()
+  await page.getByRole('button', { name: 'Save column choices on this device', exact: true }).click()
+  await page.getByRole('button', { name: 'Check imported questions', exact: true }).click()
+  await expect(page.getByRole('button', { name: 'Save privately for review', exact: true })).toBeVisible()
+  await page.getByRole('button', { name: 'Save privately for review', exact: true }).click()
+  await expect(page.getByRole('status').filter({ hasText: 'Import batch 1 could not be confirmed' })).toBeVisible()
+  await page.getByRole('button', { name: 'Save privately for review', exact: true }).click()
+  await expect.poll(() => state.stagedRequests.length).toBe(2)
+  expect(state.stagedRequests[0]).toEqual(state.stagedRequests[1])
+  expect(state.tables.catalogue_imports).toHaveLength(1)
+  await expect(page.getByRole('checkbox', { name: 'I checked these columns and examples for this file' })).toBeChecked()
+  await expect(page.locator('body')).not.toContainText('synthetic-private-import-detail')
+  await page.getByRole('button', { name: 'Show diagnostics (developers and authorized reviewers)', exact: true }).click()
+  await expect(page.getByRole('status').filter({ hasText: 'Diagnostics are restricted' })).toBeVisible()
+  await expect(page.locator('body')).not.toContainText('synthetic-private-reviewer-detail')
+  await page.getByRole('button', { name: 'Load saved column choices', exact: true }).click()
+  await expect(page.getByRole('checkbox', { name: 'I checked these columns and examples for this file' })).not.toBeChecked()
+  await expect(page.getByRole('button', { name: 'Save privately for review', exact: true })).toBeHidden()
+  expect(state.unhandled).toEqual([])
+})
+
+test('bank creation uses the normal teacher UI', async ({ page }) => {
+  const state = await syntheticBackend(page)
+  await syntheticSignIn(page)
+  await page.getByRole('button', { name: 'Question banks', exact: true }).click()
+  await page.getByRole('button', { name: 'Manage banks', exact: true }).click()
+  await page.getByRole('textbox', { name: 'New Grade 6 English bank', exact: true }).fill('New synthetic bank')
+  await page.getByRole('button', { name: 'Create bank', exact: true }).click()
+  await expect(page.getByLabel('Active bank')).toHaveValue(String(state.tables.question_banks.at(-1)!.id))
+  expect(state.tables.question_banks.map(row => row.name)).toContain('New synthetic bank')
+  expect(state.unhandled).toEqual([])
+})
+
+test('failed save preserves reviewed intent; retry saves and paired export retries unchanged bytes', async ({ page }) => {
+  const state = await syntheticBackend(page)
+  // Fail only the first answer-key download request. The app must retain both prepared blobs.
+  await page.addInitScript(() => {
+    const original = HTMLAnchorElement.prototype.click
+    let blocked = false
+    HTMLAnchorElement.prototype.click = function () {
+      if (!blocked && this.download.includes('Answer-Key')) { blocked = true; throw new DOMException('synthetic-private-download-detail', 'NotAllowedError') }
+      return original.call(this)
+    }
+  })
+  await syntheticSignIn(page)
+  await page.getByRole('spinbutton', { name: /Short open answer 2 available/ }).fill('2')
+  await page.getByRole('textbox', { name: 'Test title', exact: true }).fill('Recoverable synthetic paper')
+  await page.getByRole('button', { name: 'Preview questions', exact: true }).click()
+  await expect(page.getByRole('region', { name: 'Selected questions' })).toContainText('Synthetic question')
+  state.failDraftSave = true
+  await page.getByRole('button', { name: 'Save draft', exact: true }).click()
+  await expect(page.getByRole('alert')).toContainText('Unable to save the exam draft')
+  await expect(page.getByRole('region', { name: 'Selected questions' })).toContainText('2 selected')
+  await expect(page.getByRole('textbox', { name: 'Test title', exact: true })).toHaveValue('Recoverable synthetic paper')
+  await expect(page.locator('body')).not.toContainText('internal_relation_secret')
+  expect(state.tables.exam_drafts).toHaveLength(0)
+  state.failDraftSave = false
+  await page.getByRole('button', { name: 'Save draft', exact: true }).click()
+  await expect(page.getByRole('status').last()).toContainText('Exam draft saved')
+  expect(state.tables.exam_drafts).toHaveLength(1)
+  expect(state.tables.exam_draft_questions).toHaveLength(2)
+  const studentPending = page.waitForEvent('download')
+  await page.getByRole('button', { name: 'Generate Exam + Answer Key', exact: true }).click()
+  const first = await studentPending
+  const student = await readFile((await first.path())!)
+  await expect(page.getByRole('button', { name: 'Retry failed download', exact: true })).toBeVisible()
+  await expect(page.locator('body')).not.toContainText('synthetic-private-download-detail')
+  const keyPending = page.waitForEvent('download')
+  await page.getByRole('button', { name: 'Retry failed download', exact: true }).click()
+  const keyDownload = await keyPending
+  const key = await readFile((await keyDownload.path())!)
+  const retryPending = page.waitForEvent('download')
+  await page.getByRole('button', { name: 'Download exam', exact: true }).click()
+  const retryDownload = await retryPending
+  const retry = await readFile((await retryDownload.path())!)
+  expect(createHash('sha256').update(student).digest('hex')).toBe(createHash('sha256').update(retry).digest('hex'))
+  const studentXml = await (await JSZip.loadAsync(student)).file('word/document.xml')!.async('string')
+  const keyXml = await (await JSZip.loadAsync(key)).file('word/document.xml')!.async('string')
+  expect(studentXml).not.toContain('KEY_ONLY_')
+  expect(keyXml).toContain('KEY_ONLY_1')
+  expect(keyXml).toContain('KEY_ONLY_2')
+  expect(state.unhandled).toEqual([])
+})
+
+test('a failed server sign-out remains visible after the local session is cleared', async ({ page }) => {
+  const state = await syntheticBackend(page)
+  await syntheticSignIn(page)
+  state.failSignOut = true
+  await page.getByRole('button', { name: 'Account', exact: true }).click()
+  await page.getByRole('button', { name: 'Sign out', exact: true }).click()
+  await expect(page.getByRole('textbox', { name: 'Email', exact: true })).toBeVisible()
+  await expect(page.getByRole('alert')).toContainText('Server sign-out could not be confirmed')
+  await expect(page.getByRole('alert')).toContainText('Reference: EG-')
+})
+
+for (const sameAccount of [true, false]) {
+  test(`expired session ${sameAccount ? 'resumes same-account intent' : 'discards intent for another account'}`, async ({ page }) => {
+    const state = await syntheticBackend(page)
+    await page.clock.install()
+    await syntheticSignIn(page)
+    await page.getByRole('textbox', { name: 'Test title', exact: true }).fill('Private unsaved teacher intent')
+    await page.getByRole('spinbutton', { name: /Short open answer 2 available/ }).fill('2')
+    await page.getByRole('button', { name: 'Preview questions', exact: true }).click()
+    state.expireRefresh = true
+    await page.clock.fastForward(3 * 60 * 60 * 1000)
+    await expect(page.getByRole('textbox', { name: 'Email', exact: true })).toBeVisible()
+    await expect(page.getByRole('textbox', { name: 'Email', exact: true })).toBeFocused()
+    await expect(page.getByRole('heading', { name: 'Build exam', exact: true })).toBeHidden()
+    await expect(page.getByRole('alert')).toContainText('same account')
+    state.expireRefresh = false
+    if (!sameAccount) state.currentUser = { ...state.currentUser, id: '10000000-0000-4000-8000-000000000002', email: 'other@example.invalid' }
+    await syntheticSignIn(page, false, state.currentUser.email)
+    const title = page.getByRole('textbox', { name: 'Test title', exact: true })
+    if (sameAccount) {
+      await expect(title).toHaveValue('Private unsaved teacher intent')
+      await expect(page.getByRole('region', { name: 'Selected questions' })).toContainText('Synthetic question')
+    } else {
+      await expect(title).not.toHaveValue('Private unsaved teacher intent')
+      await expect(page.getByRole('region', { name: 'Selected questions' })).toBeHidden()
+    }
+  })
+}

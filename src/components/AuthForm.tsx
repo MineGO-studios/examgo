@@ -1,8 +1,10 @@
 import {
   type FormEvent,
+  useEffect,
+  useRef,
   useState,
 } from 'react'
-import { getSafeErrorDetails } from '../lib/safeErrorDetails'
+import { reportSafeError } from '../lib/safeErrorDetails'
 import { supabase } from '../lib/supabase'
 
 type AuthMode = 'sign-in' | 'sign-up'
@@ -32,7 +34,9 @@ const inputStyle = {
   font: 'inherit',
 } as const
 
-export default function AuthForm() {
+export default function AuthForm({ sessionNotice }: { sessionNotice?: string | null } = {}) {
+  const emailInput = useRef<HTMLInputElement>(null)
+  useEffect(() => { if (sessionNotice) emailInput.current?.focus() }, [sessionNotice])
   const [mode, setMode] =
     useState<AuthMode>('sign-in')
   const [email, setEmail] = useState('')
@@ -100,17 +104,12 @@ export default function AuthForm() {
         throw error
       }
     } catch (error) {
-      console.error(
-        '[auth] Request failed',
-        getSafeErrorDetails(error),
-      )
-
       setFeedback({
         type: 'error',
-        message:
+        message: reportSafeError(error,
           mode === 'sign-in'
             ? 'Unable to sign in. Check your email and password.'
-            : 'Unable to create the account. Check your details and try again.',
+            : 'Unable to create the account. Check your details and try again.'),
       })
     } finally {
       setLoading(false)
@@ -121,6 +120,7 @@ export default function AuthForm() {
     <main>
       <h1>ExamGO</h1>
       <p>Sign in to access your teacher workspace.</p>
+      {sessionNotice && <p role="alert">{sessionNotice}</p>}
 
       <form
         className="card"
@@ -150,6 +150,7 @@ export default function AuthForm() {
         <label style={fieldStyle}>
           Email
           <input
+            ref={emailInput}
             type="email"
             required
             autoComplete="email"

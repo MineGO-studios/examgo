@@ -24,6 +24,7 @@ function createSyntheticQuestions(): ExamQuestion[] {
       type: 'multiple-choice',
       difficulty: 'medium',
       prompt: `Performance test question ${questionNumber}?`,
+      marks: 1,
       options: [
         { label: 'A', text: `Option A ${questionNumber}` },
         correctAnswer,
@@ -66,10 +67,10 @@ describe('50-question document generation', () => {
       const [examTemplate, answerKeyTemplate] =
         await Promise.all([
           loadTemplate(
-            '../../public/templates/iraqi-mainstream-exam-v1.docx',
+            '../../public/templates/iraqi-mainstream-simple-types-exam-v2.docx',
           ),
           loadTemplate(
-            '../../public/templates/iraqi-mainstream-answer-key-v1.docx',
+            '../../public/templates/iraqi-mainstream-simple-types-answer-key-v2.docx',
           ),
         ])
 

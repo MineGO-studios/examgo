@@ -1,0 +1,80 @@
+name: ExamGO quality
+
+on:
+  pull_request:
+  push:
+    branches: [main, 'phase-*']
+  workflow_dispatch:
+    inputs:
+      preview_url:
+        description: 'Optional exact ExamGO Pages preview URL for synthetic browser checks'
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: quality-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  application:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      VITE_SUPABASE_URL: https://examgo-e2e.invalid
+      VITE_SUPABASE_PUBLISHABLE_KEY: synthetic-e2e-publishable-key
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: '24'
+      - run: npm ci
+      - run: npm audit --audit-level=high
+      - name: Application tests, including production DOCX package parity
+        run: npm test
+      - run: npm run lint
+      - run: npm run build
+      - run: npm run typecheck:e2e
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:e2e
+      - name: Locate the runner's disposable PostgreSQL binaries
+        run: echo "EXAMGO_TEST_PG_BIN=$(pg_config --bindir)" >> "$GITHUB_ENV"
+      - run: node scripts/verify-phase15-content-limits-local-db.mjs
+      - run: node scripts/verify-phase15-owner-quotas-local-db.mjs
+
+  deployed-preview:
+    if: github.event_name == 'workflow_dispatch' && inputs.preview_url != ''
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    env:
+      # The Playwright configuration validates the host; this value is never shell code.
+      EXAMGO_E2E_BASE_URL: ${{ inputs.preview_url }}
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: '24'
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:e2e
+
+  dependency-review:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      pull-requests: read
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294 # v5.0.0
+        with:
+          fail-on-severity: high
