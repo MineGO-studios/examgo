@@ -1,5 +1,5 @@
 -- Phase 15C (MIN-19): apply cheap preset filters before the expensive eligibility checks.
--- PENDING: install in Development only with separate owner authorization.
+-- Installed in Development 18 October 2026 (remote version 20261018165400) after owner authorization.
 --
 -- get_eligible_simple_presets evaluated private.preset_question_is_eligible (about 8.5 ms
 -- per call, nested definer functions) for every unit-1 simple candidate before the
