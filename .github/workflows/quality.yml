@@ -42,7 +42,16 @@ jobs:
       - run: npx playwright install --with-deps chromium
       - run: npm run test:e2e
       - name: Locate the runner's disposable PostgreSQL binaries
-        run: echo "EXAMGO_TEST_PG_BIN=$(pg_config --bindir)" >> "$GITHUB_ENV"
+        run: |
+          phase15_pg_bin=''
+          for candidate in /usr/lib/postgresql/*/bin; do
+            if [[ -x "$candidate/initdb" && -x "$candidate/pg_ctl" ]]; then
+              phase15_pg_bin="$candidate"
+            fi
+          done
+          test -n "$phase15_pg_bin"
+          echo "EXAMGO_TEST_PG_BIN=$phase15_pg_bin" >> "$GITHUB_ENV"
+          echo "::notice title=Disposable PostgreSQL::Using $($phase15_pg_bin/initdb --version); pg_config reports $(pg_config --bindir)"
       - run: node scripts/verify-phase15-content-limits-local-db.mjs
       - run: node scripts/verify-phase15-owner-quotas-local-db.mjs
 

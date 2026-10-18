@@ -8,6 +8,13 @@ import { Client } from 'pg'
 import net from 'node:net'
 import path from 'node:path'
 
+// Disposable fixtures contain no connected credentials or teacher data. Keep CI
+// failures visible through check annotations when log download is unavailable.
+process.on('uncaughtExceptionMonitor', error => {
+  if (process.env.GITHUB_ACTIONS === 'true') console.error('::error title=Disposable database verifier::' +
+    String(error.stderr || error.message).slice(0, 1200).replaceAll('%', '%25').replaceAll('\r', '%0D').replaceAll('\n', '%0A'))
+})
+
 const root = process.cwd()
 const runtime = path.join(root, 'integration-c-baseline.local/pg-runtime')
 const bin = process.env.EXAMGO_TEST_PG_BIN ?? path.join(runtime, 'node_modules/@embedded-postgres/windows-x64/native/bin')
