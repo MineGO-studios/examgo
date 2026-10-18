@@ -67,7 +67,16 @@ async function constraintCount(client) {
 try {
   const options = { windowsHide: true, encoding: 'utf8', timeout: 60000 }
   execFileSync(binary('initdb'), ['-D', data, '-U', 'postgres', '-A', 'scram-sha-256', '--pwfile', pwfile, '--encoding=UTF8', '--locale=C'], options)
-  execFileSync(binary('pg_ctl'), ['-D', data, '-l', path.join(runDir, 'postgres.log'), '-o', `-h 127.0.0.1 -p ${port}`, '-w', 'start'], { ...options, stdio: 'ignore' })
+  // Clients use loopback TCP. Do not require the runner to own the distro's
+  // default Unix socket directory (Windows already defaults to no Unix socket).
+  const socketOptions = process.platform === 'win32' ? '' : " -k ''"
+  try {
+    execFileSync(binary('pg_ctl'), ['-D', data, '-l', path.join(runDir, 'postgres.log'), '-o', `-h 127.0.0.1 -p ${port}${socketOptions}`, '-w', 'start'], { ...options, stdio: 'ignore' })
+  } catch (error) {
+    const log = await readFile(path.join(runDir, 'postgres.log'), 'utf8').catch(() => '')
+    const fatal = log.split('\n').filter(line => /FATAL|PANIC|ERROR/.test(line)).slice(-3).join('; ')
+    throw new Error('Disposable PostgreSQL startup failed: ' + (fatal || 'inspect the local postgres.log'), { cause: error })
+  }
   started = true
   const admin = await connect()
   await admin.query(`create role anon nologin; create role authenticated nologin; create role service_role nologin bypassrls;
