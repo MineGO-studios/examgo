@@ -54,6 +54,7 @@ jobs:
           echo "::notice title=Disposable PostgreSQL::Using $($phase15_pg_bin/initdb --version); pg_config reports $(pg_config --bindir)"
       - run: node scripts/verify-phase15-content-limits-local-db.mjs
       - run: node scripts/verify-phase15-owner-quotas-local-db.mjs
+      - run: node scripts/verify-phase15-preset-list-local-db.mjs
 
   deployed-preview:
     if: github.event_name == 'workflow_dispatch' && inputs.preview_url != ''
