@@ -12,6 +12,9 @@ const mocks = vi.hoisted(() => ({
   questionCalls: 0,
   inFlight: 0,
   maxInFlight: 0,
+  groupCalls: 0,
+  groupInFlight: 0,
+  maxGroupInFlight: 0,
   passageChildren: [] as string[],
 }))
 
@@ -39,8 +42,15 @@ vi.mock('./supabase', () => ({
           if (table === 'question_banks') data = mocks.banks.filter((bank) => selectedIds.includes(bank.id))
           else if (table === 'question_bank_memberships') data = mocks.memberships
             .filter((membership) => selectedBankIds.includes(membership.bank_id)).slice(start, end + 1)
-          else if (table === 'question_group_questions') data = mocks.passageChildren
-            .filter((id) => selectedIds.includes(id)).map((question_id) => ({ question_id })).slice(start,end+1)
+          else if (table === 'question_group_questions') {
+            mocks.groupCalls += 1
+            mocks.groupInFlight += 1
+            mocks.maxGroupInFlight = Math.max(mocks.maxGroupInFlight, mocks.groupInFlight)
+            data = mocks.passageChildren
+              .filter((id) => selectedIds.includes(id)).map((question_id) => ({ question_id })).slice(start,end+1)
+            setTimeout(() => { mocks.groupInFlight -= 1; resolve({ data, error: null }) }, 1)
+            return
+          }
           else {
             mocks.questionCalls += 1
             mocks.inFlight += 1
@@ -66,6 +76,9 @@ beforeEach(() => {
   mocks.questionCalls = 0
   mocks.inFlight = 0
   mocks.maxInFlight = 0
+  mocks.groupCalls = 0
+  mocks.groupInFlight = 0
+  mocks.maxGroupInFlight = 0
   mocks.passageChildren = []
 })
 
@@ -103,6 +116,20 @@ describe('membership based question pool', () => {
     expect(mocks.questionCalls).toBe(33)
     expect(mocks.maxInFlight).toBeGreaterThan(1)
     expect(mocks.maxInFlight).toBeLessThanOrEqual(6)
+  })
+
+  it('checks passage membership a few batches at a time and still excludes every passage child', async () => {
+    const ids = Array.from({ length: 1605 }, (_, index) => questionId(index + 1))
+    mocks.memberships = ids.map((id) => ({ bank_id: BANK_A, question_id: id }))
+    mocks.questions = ids.map((id) => ({ id, owner_id: OWNER, is_active: true }))
+    mocks.passageChildren = [ids[0], ids[799], ids[1604]]
+
+    const standalone = await getActiveStandaloneQuestionsForBanks([BANK_A])
+    expect(standalone).toHaveLength(1602)
+    expect(standalone.map((question) => question.id)).not.toContain(ids[799])
+    expect(mocks.groupCalls).toBe(33)
+    expect(mocks.maxGroupInFlight).toBeGreaterThan(1)
+    expect(mocks.maxGroupInFlight).toBeLessThanOrEqual(6)
   })
 
   it('rejects missing banks and incomplete canonical readback', async () => {

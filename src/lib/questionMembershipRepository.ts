@@ -6,6 +6,15 @@ const PAGE_SIZE = 1000
 const QUESTION_BATCH_SIZE = 50
 const QUESTION_BATCH_CONCURRENCY = 6
 
+/** Run batch reads a few at a time: hides network latency without flooding the API. */
+async function forEachConcurrently<T>(items: readonly T[], run: (item: T) => Promise<void>): Promise<void> {
+  let next = 0
+  const worker = async (): Promise<void> => {
+    while (next < items.length) await run(items[next++])
+  }
+  await Promise.all(Array.from({ length: Math.min(QUESTION_BATCH_CONCURRENCY, items.length) }, worker))
+}
+
 /** Read one current canonical row per question across owned, active banks. */
 export async function getQuestionsForBanks(bankIds: readonly string[]): Promise<Question[]> {
   const ids = [...new Set(bankIds.map((id) => id.trim().toLowerCase()))]
@@ -38,19 +47,13 @@ export async function getQuestionsForBanks(bankIds: readonly string[]): Promise<
     batches.push(orderedIds.slice(index, index + QUESTION_BATCH_SIZE))
   }
   const questions: Question[] = []
-  // A few batches in flight hide network latency without flooding the API; order is restored below.
-  let next = 0
-  const worker = async (): Promise<void> => {
-    while (next < batches.length) {
-      const batch = batches[next++]
-      const result = await supabase.from('questions').select('*')
-        .in('id', batch)
-        .abortSignal(AbortSignal.timeout(60_000))
-      if (result.error || !result.data) throw new Error('Unable to load canonical questions.')
-      questions.push(...result.data)
-    }
-  }
-  await Promise.all(Array.from({ length: Math.min(QUESTION_BATCH_CONCURRENCY, batches.length) }, worker))
+  await forEachConcurrently(batches, async (batch) => {
+    const result = await supabase.from('questions').select('*')
+      .in('id', batch)
+      .abortSignal(AbortSignal.timeout(60_000))
+    if (result.error || !result.data) throw new Error('Unable to load canonical questions.')
+    questions.push(...result.data)
+  })
   if (questions.length !== orderedIds.length || questions.some((question) => question.owner_id !== ownerId)) {
     throw new Error('Question membership readback is incomplete or disagrees with bank ownership.')
   }
@@ -65,8 +68,11 @@ export async function getActiveQuestionsForBanks(bankIds: readonly string[]): Pr
 export async function getStandaloneQuestionsForBanks(bankIds: readonly string[]): Promise<Question[]> {
   const questions = await getQuestionsForBanks(bankIds)
   const passageChildren = new Set<string>()
+  const batches: string[][] = []
   for (let first = 0; first < questions.length; first += QUESTION_BATCH_SIZE) {
-    const ids = questions.slice(first, first + QUESTION_BATCH_SIZE).map((q) => q.id)
+    batches.push(questions.slice(first, first + QUESTION_BATCH_SIZE).map((q) => q.id))
+  }
+  await forEachConcurrently(batches, async (ids) => {
     for (let offset = 0; ; offset += PAGE_SIZE) {
       const result = await supabase.from('question_group_questions')
         .select('question_id,question_groups!inner(group_type)')
@@ -77,7 +83,7 @@ export async function getStandaloneQuestionsForBanks(bankIds: readonly string[])
       for (const member of result.data) passageChildren.add(member.question_id)
       if (result.data.length < PAGE_SIZE) break
     }
-  }
+  })
   return questions.filter((question) => !passageChildren.has(question.id))
 }
 
