@@ -7,6 +7,19 @@ const now = '2026-10-18T00:00:00Z'
 const user = { id: owner, email: 'synthetic@example.invalid', aud: 'authenticated', role: 'authenticated', app_metadata: {}, user_metadata: {}, created_at: now }
 type Row = Record<string, unknown>
 
+const provenance = { schemaVersion: 2, sourceReference: 'Synthetic public reference', corpusScope: '', ministerialOccurrences: null, missingEvidence: [] }
+const presetMember = <Q extends Row>(n: number, question: Q & { prompt: string }) => ({ revisionId: `40000000-0000-4000-8000-00000000000${n}`, curationId: `50000000-0000-4000-8000-00000000000${n}`,
+  reviewVersion: 1, revision: 1, reviewer: 'Synthetic reviewer', approvedAt: now, publisher: 'Synthetic publisher', publishedAt: now, provenance,
+  question: { id: `60000000-0000-4000-8000-00000000000${n}`, unit: 1, lesson: '1', difficulty: 'easy', marks: 1, ...question } })
+/** One published exercise in source order; only two of three displayed points are attempted. */
+export const presetGroup = { id: '70000000-0000-4000-8000-000000000001', revision: 1, instruction: 'Answer two of the following questions.', attemptCount: 2,
+  members: [
+    presetMember(1, { type: 'multiple-choice', prompt: 'Synthetic group choice?', options: [{ label: 'A', text: 'Choice one' }, { label: 'B', text: 'Choice two' }],
+      correctAnswer: { label: 'B', text: 'Choice two' } }),
+    presetMember(2, { type: 'binary', prompt: 'Synthetic group statement.', labelMode: 'true-false', isTrue: false }),
+    presetMember(3, { type: 'short-answer', prompt: 'Synthetic group short answer?', answerLines: 1, canonicalAnswer: 'KEY_ONLY_GROUP', approvedVariants: [], caseSensitive: false }),
+  ] }
+
 /** Network fixtures exercise the real browser UI; they do not prove database/RLS behavior. */
 export async function syntheticBackend(page: Page) {
   const tables: Record<string, Row[]> = {
@@ -18,7 +31,9 @@ export async function syntheticBackend(page: Page) {
       answer: { type: 'short-answer', schemaVersion: 1, canonicalAnswer: `KEY_ONLY_${n}`, approvedVariants: [], caseSensitive: false }, created_at: now, updated_at: now })),
     exam_drafts: [], exam_draft_questions: [], question_group_questions: [], question_groups: [], catalogue_imports: [], catalogue_import_rows: [],
   }
-  const state = { tables, failDraftSave: false, failBlueprintSave: false, failSignOut: false, expireRefresh: false, currentUser: user, stagedRequests: [] as Row[], blueprintRequests: [] as Row[], unhandled: [] as string[] }
+  const state = { tables, failDraftSave: false, failBlueprintSave: false, failSignOut: false, expireRefresh: false, currentUser: user, stagedRequests: [] as Row[], blueprintRequests: [] as Row[], unhandled: [] as string[],
+    // Lose the next finalization response after the synthetic server has committed it.
+    dropGroupFinalizeResponse: false, groupFinalizeRequests: [] as Row[], groupPapers: new Map<string, Row>() }
   await page.route(/^https:\/\/[^/]+\/(?:auth|rest)\/v1\//, async route => {
     const request = route.request(), url = new URL(request.url())
     const respond = (body: unknown, status = 200) => route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(body) })
@@ -43,6 +58,24 @@ export async function syntheticBackend(page: Page) {
       return respond({ code: 'XX000', message: 'synthetic-private-import-detail' }, 500)
     }
     if (url.pathname === '/rest/v1/rpc/get_preset_curation') return respond({ code: '42501', message: 'synthetic-private-reviewer-detail' }, 403)
+    if (['/rest/v1/rpc/get_grade_six_preset_coverage', '/rest/v1/rpc/get_reviewed_preset_exercises'].includes(url.pathname)) {
+      return respond({ code: 'XX000', message: 'synthetic-private-coverage-detail' }, 503)
+    }
+    if (['/rest/v1/rpc/get_eligible_simple_presets', '/rest/v1/rpc/get_simple_preset_exams'].includes(url.pathname)) return respond([])
+    if (url.pathname === '/rest/v1/rpc/get_eligible_simple_preset_groups') return respond(request.postDataJSON().p_after ? [] : [presetGroup])
+    if (url.pathname === '/rest/v1/rpc/get_simple_preset_group_exams') return respond([...state.groupPapers.values()])
+    if (url.pathname === '/rest/v1/rpc/finalize_simple_preset_group') {
+      const payload = request.postDataJSON()
+      state.groupFinalizeRequests.push(payload)
+      // Same request identity returns the already-sealed paper, as the database RPC does.
+      if (!state.groupPapers.has(payload.p_request_id)) {
+        const marks = payload.p_marks
+        state.groupPapers.set(payload.p_request_id, { id: randomUUID(), ownerId: owner, sealed: true, savedAt: now, settings: payload.p_settings,
+          group: { ...presetGroup, members: presetGroup.members.map(m => ({ ...m, question: { ...m.question, marks } })) }, totalMarks: marks * presetGroup.attemptCount })
+      }
+      if (state.dropGroupFinalizeResponse) { state.dropGroupFinalizeResponse = false; return route.abort('connectionreset') }
+      return respond(state.groupPapers.get(payload.p_request_id))
+    }
     const table = url.pathname.split('/rest/v1/')[1]
     if (!table || !(table in tables) && table !== 'question_bank_memberships') {
       state.unhandled.push(url.pathname)

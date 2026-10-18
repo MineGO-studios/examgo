@@ -2,7 +2,7 @@ import { createHash } from 'node:crypto'
 import { readFile } from 'node:fs/promises'
 import { expect, test } from '@playwright/test'
 import JSZip from 'jszip'
-import { syntheticBackend, syntheticSignIn } from './support/syntheticBackend.ts'
+import { presetGroup, syntheticBackend, syntheticSignIn } from './support/syntheticBackend.ts'
 import { checkAccessibility } from './support/accessibility.ts'
 
 for (const width of [320, 1280]) {
@@ -150,3 +150,51 @@ for (const sameAccount of [true, false]) {
     }
   })
 }
+
+test('grouped preset finalization survives a lost response, keeps source order and seals one paired snapshot', async ({ page }) => {
+  const state = await syntheticBackend(page)
+  await syntheticSignIn(page)
+  await page.getByRole('button', { name: 'Approved preset papers', exact: true }).click()
+  const exercise = page.getByRole('region', { name: 'Complete preset exercise' })
+  await expect(exercise.getByRole('combobox', { name: 'Published exercise' })).toHaveValue(presetGroup.id)
+  await expect(page.getByRole('alert').filter({ hasText: 'Coverage overview unavailable' })).toBeVisible()
+  await exercise.getByRole('textbox', { name: 'Exercise test title', exact: true }).fill('Synthetic grouped paper')
+  await exercise.getByRole('spinbutton', { name: 'Marks per attempted point' }).fill('3')
+  await expect(exercise).toContainText('Displayed: 3. Answer: 2. Total: 6 marks.')
+  await checkAccessibility(page)
+  state.dropGroupFinalizeResponse = true
+  await exercise.getByRole('button', { name: 'Finalize complete preset exercise', exact: true }).click()
+  await expect(exercise.getByRole('alert')).toBeVisible()
+  await expect(exercise.getByRole('heading', { name: 'Synthetic grouped paper' })).toBeHidden()
+  // The commit happened server-side; retrying the unchanged request must return that same paper.
+  await exercise.getByRole('button', { name: 'Finalize complete preset exercise', exact: true }).click()
+  await expect(exercise.getByText('Sealed exercise: 3 displayed, answer 2, 6 marks.')).toBeVisible()
+  expect(state.groupFinalizeRequests).toHaveLength(2)
+  expect(state.groupFinalizeRequests[0]).toEqual(state.groupFinalizeRequests[1])
+  expect(state.groupPapers.size).toBe(1)
+  await expect(exercise.getByRole('list').last().getByRole('button')).toHaveCount(1)
+  await expect(exercise.getByRole('textbox', { name: 'Exercise test title', exact: true })).toBeDisabled()
+  await exercise.getByRole('button', { name: 'Reload complete presets', exact: true }).click()
+  await exercise.getByRole('button', { name: /^Synthetic grouped paper — 6 marks/ }).click()
+  await exercise.getByRole('button', { name: 'Prepare captured exercise documents', exact: true }).click()
+  const files: Buffer[] = []
+  for (const name of ['Download exercise student paper', 'Download exercise answer key']) {
+    const pending = page.waitForEvent('download')
+    await exercise.getByRole('button', { name, exact: true }).click()
+    files.push(await readFile((await (await pending).path())!))
+  }
+  const [studentXml, keyXml] = await Promise.all(files.map(async file => (await JSZip.loadAsync(file)).file('word/document.xml')!.async('string')))
+  const text = (xml: string) => xml.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ')
+  const inOrder = (body: string, values: string[]) => {
+    const positions = values.map(value => body.indexOf(value))
+    expect(positions.every(index => index >= 0)).toBe(true)
+    expect(positions).toEqual([...positions].sort((a, b) => a - b))
+  }
+  // The student paper keeps prompts in source order; the key keeps the attempt rule and answers in that order.
+  inOrder(text(studentXml), presetGroup.members.map(m => m.question.prompt))
+  inOrder(text(keyXml), ['Answer 2 of 3', 'Choice two', 'False', 'KEY_ONLY_GROUP'])
+  expect(studentXml).not.toContain('KEY_ONLY_GROUP')
+  expect(keyXml).toContain('KEY_ONLY_GROUP')
+  await expect(page.locator('body')).not.toContainText('synthetic-private-coverage-detail')
+  expect(state.unhandled).toEqual([])
+})
