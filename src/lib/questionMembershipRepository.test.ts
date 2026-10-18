@@ -10,6 +10,8 @@ const mocks = vi.hoisted(() => ({
   memberships: [] as Array<{ bank_id: string; question_id: string }>,
   questions: [] as Array<{ id: string; owner_id: string; is_active: boolean }>,
   questionCalls: 0,
+  inFlight: 0,
+  maxInFlight: 0,
   passageChildren: [] as string[],
 }))
 
@@ -41,7 +43,11 @@ vi.mock('./supabase', () => ({
             .filter((id) => selectedIds.includes(id)).map((question_id) => ({ question_id })).slice(start,end+1)
           else {
             mocks.questionCalls += 1
+            mocks.inFlight += 1
+            mocks.maxInFlight = Math.max(mocks.maxInFlight, mocks.inFlight)
             data = mocks.questions.filter((question) => selectedIds.includes(question.id))
+            setTimeout(() => { mocks.inFlight -= 1; resolve({ data, error: null }) }, 1)
+            return
           }
           resolve({ data, error: null })
         },
@@ -58,6 +64,8 @@ beforeEach(() => {
   mocks.memberships = []
   mocks.questions = []
   mocks.questionCalls = 0
+  mocks.inFlight = 0
+  mocks.maxInFlight = 0
   mocks.passageChildren = []
 })
 
@@ -82,6 +90,19 @@ describe('membership based question pool', () => {
     expect(new Set(all.map((question) => question.id)).size).toBe(1001)
     expect(active).toHaveLength(1000)
     expect(mocks.questionCalls).toBe(42)
+    expect(all.map((question) => question.id)).toEqual([...ids].sort())
+  })
+
+  it('reads question batches a few at a time and keeps canonical order', async () => {
+    const ids = Array.from({ length: 1605 }, (_, index) => questionId(1605 - index))
+    mocks.memberships = ids.map((id) => ({ bank_id: BANK_A, question_id: id }))
+    mocks.questions = ids.map((id) => ({ id, owner_id: OWNER, is_active: true }))
+
+    const all = await getQuestionsForBanks([BANK_A])
+    expect(all.map((question) => question.id)).toEqual([...ids].sort())
+    expect(mocks.questionCalls).toBe(33)
+    expect(mocks.maxInFlight).toBeGreaterThan(1)
+    expect(mocks.maxInFlight).toBeLessThanOrEqual(6)
   })
 
   it('rejects missing banks and incomplete canonical readback', async () => {

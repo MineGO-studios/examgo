@@ -4,6 +4,7 @@ import { isValidUuid, type Question } from './questions'
 const PAGE_SIZE = 1000
 // Keep encoded UUID filters well below gateway URL limits for populated banks.
 const QUESTION_BATCH_SIZE = 50
+const QUESTION_BATCH_CONCURRENCY = 6
 
 /** Read one current canonical row per question across owned, active banks. */
 export async function getQuestionsForBanks(bankIds: readonly string[]): Promise<Question[]> {
@@ -32,14 +33,24 @@ export async function getQuestionsForBanks(bankIds: readonly string[]): Promise<
   }
 
   const orderedIds = [...questionIds].sort()
-  const questions: Question[] = []
+  const batches: string[][] = []
   for (let index = 0; index < orderedIds.length; index += QUESTION_BATCH_SIZE) {
-    const result = await supabase.from('questions').select('*')
-      .in('id', orderedIds.slice(index, index + QUESTION_BATCH_SIZE))
-      .abortSignal(AbortSignal.timeout(60_000))
-    if (result.error || !result.data) throw new Error('Unable to load canonical questions.')
-    questions.push(...result.data)
+    batches.push(orderedIds.slice(index, index + QUESTION_BATCH_SIZE))
   }
+  const questions: Question[] = []
+  // A few batches in flight hide network latency without flooding the API; order is restored below.
+  let next = 0
+  const worker = async (): Promise<void> => {
+    while (next < batches.length) {
+      const batch = batches[next++]
+      const result = await supabase.from('questions').select('*')
+        .in('id', batch)
+        .abortSignal(AbortSignal.timeout(60_000))
+      if (result.error || !result.data) throw new Error('Unable to load canonical questions.')
+      questions.push(...result.data)
+    }
+  }
+  await Promise.all(Array.from({ length: Math.min(QUESTION_BATCH_CONCURRENCY, batches.length) }, worker))
   if (questions.length !== orderedIds.length || questions.some((question) => question.owner_id !== ownerId)) {
     throw new Error('Question membership readback is incomplete or disagrees with bank ownership.')
   }
