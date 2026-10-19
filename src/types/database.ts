@@ -685,6 +685,11 @@ export type Database = {
       get_simple_preset_exams: { Args: Record<string, never>; Returns: Json }
       publish_preset_revision: { Args: { p_id: string; p_expected_version: number; p_public_provenance: Json; p_reason: string }; Returns: Json }
       get_preset_curation: { Args: { p_bank_id: string }; Returns: Json }
+      get_preset_curation_view: {
+        Args: { p_bank_id: string; p_search?: string; p_revision_id?: string | null; p_record_limit?: number; p_target_limit?: number }
+        Returns: Json
+      }
+      get_preset_provenance_readback: { Args: { p_bank_id: string; p_ids: string[] }; Returns: Json }
       save_preset_provenance: {
         Args: { p_id: string; p_bank_id: string; p_revision_id: string | null; p_expected_version: number;
           p_provenance: Json; p_private_notes: string; p_reason: string }

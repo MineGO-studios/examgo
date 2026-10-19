@@ -128,6 +128,33 @@ test('failed save preserves reviewed intent; retry saves and paired export retri
   expect(state.unhandled).toEqual([])
 })
 
+test('preset review loads a large bank one searched page at a time', async ({ page }) => {
+  const state = await syntheticBackend(page)
+  state.curationReviewer = true
+  await syntheticSignIn(page)
+  await page.getByRole('button', { name: 'Account', exact: true }).click()
+  await page.getByRole('combobox', { name: 'Bank', exact: true }).selectOption({ label: 'Browser synthetic bank' })
+  await page.getByText('Preset trust, provenance and review').click()
+  await expect(page.getByText('Authorized reviewer: Synthetic reviewer')).toBeVisible()
+  await expect(page.getByText('Record list shows 25 of 1606 matching records.')).toBeVisible()
+  await expect(page.getByText('Question picker shows 100 of 1605 matching questions.')).toBeVisible()
+  expect(state.curationRequests[0]).toMatchObject({ p_search: '', p_revision_id: null, p_record_limit: 25, p_target_limit: 100 })
+
+  await page.getByRole('searchbox', { name: 'Find a question or record' }).fill('APPLE')
+  await expect(page.getByText('Question picker shows 33 of 33 matching questions.')).toBeVisible()
+  await expect(page.getByText('Record list shows 25 of 33 matching records.')).toBeVisible()
+  // Typing is debounced into one search request rather than one per keystroke.
+  expect(state.curationRequests.filter(payload => payload.p_search !== '' && payload.p_search !== 'APPLE')).toEqual([])
+
+  const picker = page.getByRole('combobox', { name: 'Evidence applies to' })
+  await picker.selectOption({ index: 2 })
+  await expect(page.getByRole('heading', { name: 'Exact source revision' })).toBeVisible()
+  await expect(page.getByText('Synthetic apple question 51?', { exact: true })).toBeVisible()
+  expect(state.curationRequests.at(-1)).toMatchObject({ p_search: 'APPLE', p_revision_id: '90000000-0000-4000-8000-000000000051' })
+  await expect(picker).toHaveValue('90000000-0000-4000-8000-000000000051')
+  expect(state.unhandled).toEqual([])
+})
+
 test('a failed server sign-out remains visible after the local session is cleared', async ({ page }) => {
   const state = await syntheticBackend(page)
   await syntheticSignIn(page)

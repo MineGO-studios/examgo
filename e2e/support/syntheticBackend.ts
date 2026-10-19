@@ -20,6 +20,26 @@ export const presetGroup = { id: '70000000-0000-4000-8000-000000000001', revisio
     presetMember(3, { type: 'short-answer', prompt: 'Synthetic group short answer?', answerLines: 1, canonicalAnswer: 'KEY_ONLY_GROUP', approvedVariants: [], caseSensitive: false }),
   ] }
 
+/** A large reviewed bank served one searched page at a time, like get_preset_curation_view. */
+const curationId = (n: number) => `80000000-0000-4000-8000-${String(n).padStart(12, '0')}`
+const curationRevision = (n: number) => `90000000-0000-4000-8000-${String(n).padStart(12, '0')}`
+const curationTargets = Array.from({ length: 1605 }, (_, i) => ({ revisionId: curationRevision(i + 1), bankId, questionId: curationRevision(i + 1),
+  externalId: `MY-${String(i + 1).padStart(4, '0')}`, revision: 1, unit: 1, lesson: '1', prompt: i % 50 === 0 ? `Synthetic apple question ${i + 1}?` : `Synthetic question ${i + 1}?`,
+  content: { type: 'short-answer', schemaVersion: 1, answerLines: 1 }, answer: { type: 'short-answer', schemaVersion: 1, canonicalAnswer: 'KEY' }, ideaKey: null }))
+const curationRecord = (n: number) => ({ id: curationId(n), bankId, revisionId: n ? curationRevision(n) : null, version: 1, state: 'draft', provenance,
+  reviewer: null, approvedAt: null, privateNotes: '', unit: n ? 1 : null, lesson: n ? '1' : null, prompt: n ? curationTargets[n - 1].prompt : null,
+  currentRevision: n ? 1 : null, sourceRevision: n ? 1 : null, published: false, publication: null, history: [] })
+function curationView(payload: Row) {
+  const needle = String(payload.p_search ?? '').toLowerCase(), selected = payload.p_revision_id as string | null
+  const records = Array.from({ length: 1606 }, (_, n) => curationRecord(n))
+    .filter(record => `${record.prompt ?? 'Bank'} ${record.provenance.sourceReference}`.toLowerCase().includes(needle))
+  const targets = curationTargets.filter(target => `${target.externalId} ${target.prompt}`.toLowerCase().includes(needle))
+  const index = curationTargets.findIndex(target => target.revisionId === selected)
+  return { reviewer: 'Synthetic reviewer', recordCount: records.length, records: records.slice(0, Number(payload.p_record_limit)),
+    bankRecord: curationRecord(0), selectedRecord: index < 0 ? null : curationRecord(index + 1),
+    targetCount: targets.length, targets: targets.slice(0, Number(payload.p_target_limit)), selectedTarget: index < 0 ? null : curationTargets[index] }
+}
+
 /** Network fixtures exercise the real browser UI; they do not prove database/RLS behavior. */
 export async function syntheticBackend(page: Page) {
   const tables: Record<string, Row[]> = {
@@ -31,7 +51,7 @@ export async function syntheticBackend(page: Page) {
       answer: { type: 'short-answer', schemaVersion: 1, canonicalAnswer: `KEY_ONLY_${n}`, approvedVariants: [], caseSensitive: false }, created_at: now, updated_at: now })),
     exam_drafts: [], exam_draft_questions: [], question_group_questions: [], question_groups: [], catalogue_imports: [], catalogue_import_rows: [],
   }
-  const state = { tables, failDraftSave: false, failBlueprintSave: false, failSignOut: false, signOutScopes: [] as string[], poolRequests: [] as Row[], poolMissing: false, expireRefresh: false, currentUser: user, stagedRequests: [] as Row[], blueprintRequests: [] as Row[], unhandled: [] as string[],
+  const state = { tables, curationReviewer: false, curationRequests: [] as Row[], failDraftSave: false, failBlueprintSave: false, failSignOut: false, signOutScopes: [] as string[], poolRequests: [] as Row[], poolMissing: false, expireRefresh: false, currentUser: user, stagedRequests: [] as Row[], blueprintRequests: [] as Row[], unhandled: [] as string[],
     // Lose the next finalization response after the synthetic server has committed it.
     dropGroupFinalizeResponse: false, groupFinalizeRequests: [] as Row[], groupPapers: new Map<string, Row>() }
   await page.route(/^https:\/\/[^/]+\/(?:auth|rest)\/v1\//, async route => {
@@ -60,7 +80,12 @@ export async function syntheticBackend(page: Page) {
       state.stagedRequests.push(request.postDataJSON())
       return respond({ code: 'XX000', message: 'synthetic-private-import-detail' }, 500)
     }
-    if (url.pathname === '/rest/v1/rpc/get_preset_curation') return respond({ code: '42501', message: 'synthetic-private-reviewer-detail' }, 403)
+    if (url.pathname === '/rest/v1/rpc/get_preset_curation_view' && state.curationReviewer) {
+      const payload = request.postDataJSON()
+      state.curationRequests.push(payload)
+      return respond(curationView(payload))
+    }
+    if (['/rest/v1/rpc/get_preset_curation', '/rest/v1/rpc/get_preset_curation_view'].includes(url.pathname)) return respond({ code: '42501', message: 'synthetic-private-reviewer-detail' }, 403)
     if (['/rest/v1/rpc/get_grade_six_preset_coverage', '/rest/v1/rpc/get_reviewed_preset_exercises'].includes(url.pathname)) {
       return respond({ code: 'XX000', message: 'synthetic-private-coverage-detail' }, 503)
     }
