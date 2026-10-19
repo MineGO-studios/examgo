@@ -7,6 +7,7 @@ import QuestionEditor from './components/QuestionEditor'
 import type { ReopenedExamDraft } from './lib/examDraftRepository'
 import { getQuestionBanks } from './lib/questionBankRepository'
 import { reportSafeError } from './lib/safeErrorDetails'
+import { signOutWithRetry, type SignOutScope } from './lib/signOut'
 import { supabase } from './lib/supabase'
 import './App.css'
 import type { SavedPhaseNineWorkflow } from './lib/phaseNineRepository'
@@ -112,18 +113,20 @@ function App() {
     }
   }, [session])
 
-  const handleSignOut = async (): Promise<void> => {
+  const handleSignOut = async (scope: SignOutScope): Promise<void> => {
     if (explicitSignOut.current) return
     setAuthError(null)
     explicitSignOut.current = true
 
     try {
-      const { error } = await supabase.auth.signOut()
-      if (error) throw error
+      const { serverConfirmed, error } = await signOutWithRetry(supabase, scope)
+      if (!serverConfirmed) {
+        setAuthError(reportSafeError(error, activeOwner.current === null
+          ? 'You are signed out on this device, but the server could not be reached to end the session. If this device may have been shared or compromised, sign in when connected and choose "Sign out of all devices".'
+          : 'Server sign-out could not be confirmed. Check your connection and try again.'))
+      }
     } catch (error) {
-      setAuthError(reportSafeError(error, activeOwner.current === null
-        ? 'Your session is closed on this device. Server sign-out could not be confirmed. Other sessions may remain active; sign in and retry sign-out when connected.'
-        : 'Server sign-out could not be confirmed. Check your connection and try again.'))
+      setAuthError(reportSafeError(error, 'Sign-out could not be completed. Check your connection and try again.'))
     } finally {
       explicitSignOut.current = false
     }
@@ -291,10 +294,21 @@ function App() {
           <button
             type="button"
             className="button-secondary"
-            onClick={handleSignOut}
+            onClick={() => void handleSignOut('local')}
           >
             Sign out
+          </button>{' '}
+          <button
+            type="button"
+            className="button-secondary"
+            aria-describedby="sign-out-all-hint"
+            onClick={() => void handleSignOut('global')}
+          >
+            Sign out of all devices
           </button>
+          <p id="sign-out-all-hint" className="field-hint">
+            Ends ExamGO on every phone, tablet and computer where this account is signed in.
+          </p>
         </section>
       )}
       {workspaceView === 'account' && (

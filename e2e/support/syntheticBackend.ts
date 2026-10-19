@@ -31,7 +31,7 @@ export async function syntheticBackend(page: Page) {
       answer: { type: 'short-answer', schemaVersion: 1, canonicalAnswer: `KEY_ONLY_${n}`, approvedVariants: [], caseSensitive: false }, created_at: now, updated_at: now })),
     exam_drafts: [], exam_draft_questions: [], question_group_questions: [], question_groups: [], catalogue_imports: [], catalogue_import_rows: [],
   }
-  const state = { tables, failDraftSave: false, failBlueprintSave: false, failSignOut: false, expireRefresh: false, currentUser: user, stagedRequests: [] as Row[], blueprintRequests: [] as Row[], unhandled: [] as string[],
+  const state = { tables, failDraftSave: false, failBlueprintSave: false, failSignOut: false, signOutScopes: [] as string[], expireRefresh: false, currentUser: user, stagedRequests: [] as Row[], blueprintRequests: [] as Row[], unhandled: [] as string[],
     // Lose the next finalization response after the synthetic server has committed it.
     dropGroupFinalizeResponse: false, groupFinalizeRequests: [] as Row[], groupPapers: new Map<string, Row>() }
   await page.route(/^https:\/\/[^/]+\/(?:auth|rest)\/v1\//, async route => {
@@ -46,7 +46,10 @@ export async function syntheticBackend(page: Page) {
       const token = `${encode({ alg: 'HS256', typ: 'JWT' })}.${encode({ sub: state.currentUser.id, role: 'authenticated', exp: Math.floor(Date.now() / 1000) + 7200 })}.synthetic-signature`
       return respond({ access_token: token, refresh_token: 'synthetic-refresh-not-a-real-session', token_type: 'bearer', expires_in: 7200, user: state.currentUser })
     }
-    if (url.pathname === '/auth/v1/logout') return state.failSignOut ? route.abort('failed') : respond({})
+    if (url.pathname === '/auth/v1/logout') {
+      state.signOutScopes.push(url.searchParams.get('scope') ?? 'global')
+      return state.failSignOut ? route.abort('failed') : respond({})
+    }
     if (url.pathname === '/rest/v1/rpc/save_exam_blueprint') {
       const payload = request.postDataJSON()
       state.blueprintRequests.push(payload)

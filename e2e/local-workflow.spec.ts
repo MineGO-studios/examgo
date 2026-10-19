@@ -119,8 +119,22 @@ test('a failed server sign-out remains visible after the local session is cleare
   await page.getByRole('button', { name: 'Account', exact: true }).click()
   await page.getByRole('button', { name: 'Sign out', exact: true }).click()
   await expect(page.getByRole('textbox', { name: 'Email', exact: true })).toBeVisible()
-  await expect(page.getByRole('alert')).toContainText('Server sign-out could not be confirmed')
+  await expect(page.getByRole('alert')).toContainText('the server could not be reached to end the session')
+  await expect(page.getByRole('alert')).toContainText('Sign out of all devices')
   await expect(page.getByRole('alert')).toContainText('Reference: EG-')
+  // Three server attempts while the token still exists, then the device-only clear.
+  expect(state.signOutScopes).toEqual(['local', 'local', 'local', 'local'])
+})
+
+test('sign out of all devices ends every session on the server first', async ({ page }) => {
+  const state = await syntheticBackend(page)
+  await syntheticSignIn(page)
+  await page.getByRole('button', { name: 'Account', exact: true }).click()
+  await page.getByRole('button', { name: 'Sign out of all devices', exact: true }).click()
+  await expect(page.getByRole('textbox', { name: 'Email', exact: true })).toBeVisible()
+  await expect(page.getByRole('alert')).toHaveCount(0)
+  expect(state.signOutScopes[0]).toBe('global')
+  expect(state.unhandled).toEqual([])
 })
 
 for (const sameAccount of [true, false]) {
