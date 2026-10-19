@@ -33,6 +33,8 @@ import {
   createQuestionReview,
   removeQuestionFromReview,
   replaceQuestionInReview,
+  replaceQuestionWith,
+  replacementCandidates,
   toggleQuestionLock,
   type ReviewedQuestion,
 } from '../lib/reviewQuestions'
@@ -141,6 +143,7 @@ export default function ExamBuilder({
     useState<PairedDownloadResult | null>(null)
   const [draftSaved, setDraftSaved] = useState(false)
   const [focusedQuestion, setFocusedQuestion] = useState(0)
+  const [showStarts, setShowStarts] = useState(false)
 
   useEffect(() => {
     let active = true
@@ -490,6 +493,21 @@ export default function ExamBuilder({
     }
   }
 
+  const handleReplaceWith = (questionId: string, replacementId: string): void => {
+    if (!review) return
+    try {
+      setReview(replaceQuestionWith(review, questionId, replacementId, questions, settings, filters))
+      setStatus('idle')
+      setDraftSaved(false)
+      setGeneratedDocuments(null)
+      setDownloadResult(null)
+      setMessage('Question replaced with your choice.')
+    } catch (error) {
+      setStatus('error')
+      setMessage(teacherErrorMessage(error, 'Unable to replace question.'))
+    }
+  }
+
   const handleGenerate = async (): Promise<void> => {
     if (!review) {
       setStatus('error')
@@ -647,7 +665,9 @@ export default function ExamBuilder({
       </div>
 
       <div className="exam-settings">
-      {!review && startOptions}
+      {!review || showStarts
+        ? startOptions
+        : startOptions && <button type="button" className="button-quiet start-again" onClick={() => setShowStarts(true)}>Start from something else</button>}
       <FormGroup title="Paper details">
         <label className="text-field">
           School name
@@ -785,6 +805,7 @@ export default function ExamBuilder({
             stamp={documentsReady ? 'Ready' : undefined}
             focusedIndex={focusedQuestion}
             onFocusQuestion={setFocusedQuestion}
+            emptySlots={Math.max(Object.values(getQuestionQuantities(settings)).reduce((sum, count) => sum + count, 0) - review.length, 0)}
             renderControls={(question, index) => {
               const locked = review[index].locked
               return <>
@@ -833,6 +854,29 @@ export default function ExamBuilder({
           />
 
           <aside className="paper-actions" aria-label="Save and download">
+          {(() => {
+            const slot = Math.min(Math.max(focusedQuestion, 0), review.length - 1)
+            const target = review[slot]
+            if (!target) return null
+            const candidates = target.locked ? [] : replacementCandidates(review, target.question.id, questions, settings, filters)
+            return <section className="replace-panel" aria-labelledby="replace-panel-title">
+              <h4 id="replace-panel-title">Replace question {slot + 1}</h4>
+              {target.locked
+                ? <p className="field-help">Unlock this question to choose a replacement.</p>
+                : candidates.length === 0
+                  ? <p className="field-help">No other question of this type matches your banks and filters.</p>
+                  : <ul className="replace-candidates">
+                    {candidates.slice(0, 5).map((candidate) => <li key={candidate.id}>
+                      <p className="question-row-prompt">{candidate.prompt}</p>
+                      <p className="question-row-meta">Lesson {candidate.lesson} · {candidate.difficulty}</p>
+                      <button type="button" className="button-secondary" disabled={isBusy}
+                        aria-label={`Use this question instead of question ${slot + 1}: ${candidate.prompt}`}
+                        onClick={() => handleReplaceWith(target.question.id, candidate.id)}>Use this question</button>
+                    </li>)}
+                  </ul>}
+              {candidates.length > 5 && <p className="field-help">{candidates.length - 5} more match. Narrow the lesson or difficulty to see others.</p>}
+            </section>
+          })()}
           <CouponProgress working={isGenerating} steps={['Paper setup', 'Paper reviewed']} />
 
           <div className="review-final-actions">

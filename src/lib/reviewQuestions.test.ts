@@ -8,6 +8,8 @@ import {
   createQuestionReview,
   removeQuestionFromReview,
   replaceQuestionInReview,
+  replaceQuestionWith,
+  replacementCandidates,
   toggleQuestionLock,
 } from './reviewQuestions'
 
@@ -133,5 +135,28 @@ describe('question review controls', () => {
     expect(questions[2].marks).toBe(1)
     expect(review[0].question.marks).toBe(7)
     expect(replaced[1]).toBe(review[1])
+  })
+})
+
+describe('teacher-chosen replacement', () => {
+  const settings = { ...DEFAULT_EXAM_SETTINGS, unit: 1 }
+
+  it('lists only unselected questions of the same type that match the filters', () => {
+    const review = createQuestionReview([{ ...questions[0], marks: 4 }])
+    const candidates = replacementCandidates(review, 'Q-1', questions, settings, DEFAULT_EXAM_QUESTION_FILTERS)
+    expect(candidates.map((question) => question.id)).toEqual(['Q-2', 'Q-3'])
+    expect(replacementCandidates(review, 'Q-1', questions, settings, { ...DEFAULT_EXAM_QUESTION_FILTERS, lesson: 'none' })).toEqual([])
+  })
+
+  it('swaps in the chosen candidate and keeps the slot marks', () => {
+    const review = createQuestionReview([{ ...questions[0], marks: 4 }])
+    const next = replaceQuestionWith(review, 'Q-1', 'Q-3', questions, settings, DEFAULT_EXAM_QUESTION_FILTERS)
+    expect(next[0]).toEqual({ question: { ...questions[2], marks: 4 }, locked: false })
+  })
+
+  it('refuses a locked slot or an ineligible choice', () => {
+    const review = createQuestionReview([questions[0], questions[1]])
+    expect(() => replaceQuestionWith(toggleQuestionLock(review, 'Q-1'), 'Q-1', 'Q-3', questions, settings, DEFAULT_EXAM_QUESTION_FILTERS)).toThrow('Unlock')
+    expect(() => replaceQuestionWith(review, 'Q-1', 'Q-2', questions, settings, DEFAULT_EXAM_QUESTION_FILTERS)).toThrow('no longer replace')
   })
 })

@@ -19,7 +19,7 @@ const unitMarker = (unit: number): string => unit >= 1 && unit <= 4 ? `var(--eg-
  * Shows the simple paper through the same template data the Word documents use.
  * It is a content preview: page breaks and Word layout are not shown.
  */
-export default function SimplePaperReview({ questions, settings, totalMarks, renderControls, stamp, focusedIndex, onFocusQuestion }: {
+export default function SimplePaperReview({ questions, settings, totalMarks, renderControls, stamp, focusedIndex, onFocusQuestion, emptySlots = 0 }: {
   questions: readonly ExamQuestion[]
   settings: ExamSettings
   totalMarks: number | null
@@ -29,6 +29,8 @@ export default function SimplePaperReview({ questions, settings, totalMarks, ren
   /** Only the focused question shows its tools; the rest stay print-quiet. */
   focusedIndex: number
   onFocusQuestion: (index: number) => void
+  /** Requested questions the paper no longer has (removed during review). */
+  emptySlots?: number
 }) {
   const [mode, setMode] = useState<'student' | 'key'>('student')
   const exam = buildExamData(questions, settings)
@@ -50,7 +52,7 @@ export default function SimplePaperReview({ questions, settings, totalMarks, ren
         {questions.map((question, index) => {
           const marks = Number.isSafeInteger(question.marks) ? question.marks : 0
           return <li key={question.id} style={{ flexGrow: Math.max(marks, 1), ['--plan-unit' as string]: unitMarker(question.unit) }}
-            className={`paper-plan-block${question.unit === 2 ? ' is-light' : ''}${index === focused ? ' is-focused' : ''}`}>
+            className={`paper-plan-block${question.unit === 2 ? ' is-light' : ''}${index === focused ? ' is-focused' : ''}${marks ? '' : ' is-gap'}`}>
             <button type="button" onClick={() => focusQuestion(index)}
               aria-label={`Go to question ${index + 1}, unit ${question.unit}, ${marks ? markLabel(marks) : 'marks needed'}`}>
               <span>Q{index + 1} {TYPE_SHORT[question.type]}</span>
@@ -58,7 +60,11 @@ export default function SimplePaperReview({ questions, settings, totalMarks, ren
             </button>
           </li>
         })}
+        {Array.from({ length: emptySlots }, (_, gap) => <li key={`gap-${gap}`} className="paper-plan-block is-gap is-empty">
+          <span className="paper-plan-gap">Empty<span className="visually-hidden"> slot: preview again to fill it</span></span>
+        </li>)}
       </ol>
+      {emptySlots > 0 && <p className="field-help">{emptySlots} requested question{emptySlots === 1 ? ' is' : 's are'} missing. Preview again to fill the paper.</p>}
     </section>
 
     <div className="paper-toolbar">

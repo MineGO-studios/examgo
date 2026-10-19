@@ -1,21 +1,23 @@
 import { useId, type ReactNode } from 'react'
 
 /** One choice from a short list, as pills. Native radios underneath keep keyboard and screen-reader behaviour. */
-export function ChoiceChips<T extends string | number>({ legend, options, value, onChange, disabled, hint }: {
+export function ChoiceChips<T extends string | number>({ legend, options, value, onChange, disabled, hint, variant = 'chips' }: {
   legend: string
-  options: readonly { value: T; label: string }[]
+  options: readonly { value: T; label: string; detail?: string }[]
   value: T
   onChange: (value: T) => void
   disabled?: boolean
   hint?: ReactNode
+  /** "list" stacks full-width choices for long labels such as exercises or bank names. */
+  variant?: 'chips' | 'list'
 }) {
   const name = useId()
   return <fieldset className="chip-group" disabled={disabled}>
     <legend>{legend}</legend>
-    <div className="chips">
+    <div className={variant === 'list' ? 'chips chips-list' : 'chips'}>
       {options.map((option) => <label key={String(option.value)} className="chip">
         <input type="radio" name={name} checked={option.value === value} onChange={() => onChange(option.value)} />
-        <span>{option.label}</span>
+        <span>{option.label}{option.detail && <small className="chip-detail">{option.detail}</small>}</span>
       </label>)}
     </div>
     {hint && <p className="field-help">{hint}</p>}

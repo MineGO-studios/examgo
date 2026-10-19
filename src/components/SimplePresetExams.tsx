@@ -12,6 +12,7 @@ import PresetCoverageSummary from './PresetCoverageSummary'
 import { teacherErrorMessage } from '../lib/safeErrorDetails'
 import { Stepper } from './controls'
 import { PaperStamp } from './CouponProgress'
+import PaperProgress from './PaperProgress'
 
 const typeNames={'multiple-choice':'Multiple choice',binary:'True/False or Yes/No','short-answer':'Short answer'}
 const errorText=(e:unknown)=>teacherErrorMessage(e, 'Preset request failed. Reload and review again.')
@@ -53,6 +54,7 @@ export default function SimplePresetExams({ownerId}:{ownerId:string}){
   function openSaved(exam:SavedSimplePresetExam){setSaved(exam);setReview(null);setDocuments(null);setError('');setMessage('Historical paper opened. Later corrections or withdrawals do not alter this snapshot.')}
   return <section className="preset-page" aria-labelledby="simple-presets-title">
     <h2 id="simple-presets-title">Approved preset papers</h2>
+    <PaperProgress current={documents||saved?'download':review?'review':'setup'}/>
     <p>Questions reviewed and approved by MineGO. Make one complete exercise, or a paper from approved questions.</p>
     <PresetCoverageSummary key={ownerId} ownerId={ownerId}/>
     <GroupedPresetExams key={ownerId} ownerId={ownerId}/>

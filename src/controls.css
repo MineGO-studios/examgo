@@ -305,7 +305,7 @@ textarea:hover:not(:disabled) {
   gap: 5px;
   width: 100%;
   margin-bottom: var(--eg-space-2);
-  border-radius: 3px;
+  border-radius: var(--eg-radius-xs);
   background: #ffffff;
   box-shadow: 0 1px 2px rgb(17 12 8 / 10%), 0 6px 14px rgb(17 12 8 / 8%);
   padding: 9px 11px 11px;
@@ -332,7 +332,7 @@ textarea:hover:not(:disabled) {
 .mini-sheet-row i {
   flex: 1;
   height: 4px;
-  border-radius: 2px;
+  border-radius: var(--eg-radius-xs);
   background: #b9aca3;
 }
 
@@ -345,7 +345,7 @@ textarea:hover:not(:disabled) {
 
 .mini-sheet-passage {
   height: 18px;
-  border-radius: 2px;
+  border-radius: var(--eg-radius-xs);
   background: repeating-linear-gradient(#d8ccc4 0 3px, transparent 3px 6px);
 }
 

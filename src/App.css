@@ -557,7 +557,7 @@ button[aria-pressed='false']:hover:not(:disabled) {
 }
 
 .preset-coverage-heading h3 { margin: 0; }
-.preset-coverage-reload { width: 2.75rem; height: 2.75rem; padding: 0; font-size: 1.5rem; }
+.preset-coverage-reload { width: 2.75rem; height: 2.75rem; padding: 0; }
 .preset-coverage-scroll { max-width: 100%; overflow-x: auto; }
 .preset-coverage-scroll:focus-visible { outline: 2px solid var(--eg-color-focus); outline-offset: 3px; }
 .preset-coverage-table { width: 100%; min-width: 38rem; border-collapse: collapse; text-align: start; }
@@ -594,15 +594,15 @@ button[aria-pressed='false']:hover:not(:disabled) {
 .blueprint-controls .checkbox-label, .blueprint-review .checkbox-label { display: flex; align-items: center; gap: 0.5rem; min-height: 44px; }
 .blueprint-controls input[type="checkbox"], .blueprint-review input[type="checkbox"] { width: auto; }
 .blueprint-field-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.75rem; }
-.blueprint-paper { background: var(--eg-color-surface, #fff); color: var(--eg-color-text, #1c1917); padding: clamp(1rem, 3vw, 2.5rem); border: 1px solid var(--eg-color-border, #d6d3d1); overflow-wrap: anywhere; }
-.blueprint-paper header { text-align: center; border-bottom: 1px solid var(--eg-color-border, #d6d3d1); padding-bottom: 1rem; }
-.blueprint-paper-branch { padding-block: 1rem; border-bottom: 1px solid var(--eg-color-border, #d6d3d1); }
+.blueprint-paper { background: var(--eg-color-surface); color: var(--eg-color-text); padding: clamp(1rem, 3vw, 2.5rem); border: 1px solid var(--eg-color-border); overflow-wrap: anywhere; }
+.blueprint-paper header { text-align: center; border-bottom: 1px solid var(--eg-color-border); padding-bottom: 1rem; }
+.blueprint-paper-branch { padding-block: 1rem; border-bottom: 1px solid var(--eg-color-border); }
 .blueprint-paper footer { margin-top: 1.5rem; }
 .blueprint-answer-table { max-width: 100%; overflow-x: auto; }
 .blueprint-answer-table table { min-width: 32rem; }
 .blueprint-edit-fields { min-width: 0; margin: 0; padding: 0; border: 0; }
 .blueprint-answer-table th, .blueprint-answer-table td { padding: 0.5rem; text-align: start; white-space: normal; }
-.blueprint-candidate { padding-block: 1rem; border-bottom: 1px solid var(--eg-color-border, #d6d3d1); }
+.blueprint-candidate { padding-block: 1rem; border-bottom: 1px solid var(--eg-color-border); }
 @media (max-width: 900px) {
   .blueprint-workspace { grid-template-columns: minmax(0, 1fr); }
   .blueprint-mobile-review { display: inline-flex; }

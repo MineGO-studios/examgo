@@ -440,7 +440,7 @@ input[type='checkbox'] {
 
 /* Focused question: soft tint and ink outline; the others show only a unit tag. */
 .ministry-question.is-focused {
-  background: #f8faf7;
+  background: var(--eg-paper-hover);
   box-shadow: inset 0 0 0 1.5px var(--eg-color-text);
 }
 
@@ -472,7 +472,7 @@ input[type='checkbox'] {
   width: 0.75rem;
   height: 0.75rem;
   flex: none;
-  border-radius: 2px;
+  border-radius: var(--eg-radius-xs);
   background: var(--plan-unit);
   content: "";
 }
@@ -602,7 +602,7 @@ input[type='checkbox'] {
   }
 
   .shell-wordmark {
-    font-size: 1.125rem;
+    font-size: var(--eg-font-size-lg);
   }
 
   .shell-actions {
@@ -615,4 +615,71 @@ input[type='checkbox'] {
     padding-inline: var(--eg-space-2);
     font-size: var(--eg-font-size-sm);
   }
+}
+
+/* ---- Replacement choices for the focused question ---- */
+.replace-panel {
+  display: grid;
+  gap: var(--eg-space-2);
+  border: 1px solid var(--eg-color-border);
+  border-radius: var(--eg-radius-lg);
+  background: var(--eg-color-surface);
+  padding: var(--eg-space-4);
+}
+
+.replace-panel h4,
+.replace-panel p {
+  margin: 0;
+}
+
+.replace-candidates {
+  display: grid;
+  gap: var(--eg-space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.replace-candidates li {
+  display: grid;
+  gap: var(--eg-space-1);
+  border-top: 1px solid var(--eg-color-border);
+  padding-top: var(--eg-space-3);
+}
+
+.replace-candidates li:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.replace-candidates button {
+  justify-self: start;
+}
+
+/* ---- Choice lists for long labels ---- */
+.chips-list {
+  display: grid;
+  gap: var(--eg-space-2);
+}
+
+.chips-list .chip {
+  display: flex;
+}
+
+.chips-list .chip span {
+  display: grid;
+  gap: var(--eg-space-1);
+  width: 100%;
+  border-radius: var(--eg-radius-lg);
+  padding: var(--eg-space-3) var(--eg-space-4);
+}
+
+.chip-detail {
+  color: var(--eg-color-text-muted);
+  font-size: var(--eg-font-size-sm);
+  font-weight: 500;
+}
+
+.chip input:checked + span .chip-detail {
+  color: var(--eg-color-primary);
 }

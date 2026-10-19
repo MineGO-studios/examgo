@@ -392,25 +392,11 @@ export default function QuestionEditor({ ownerId }: { ownerId: string }) {
           <h2 id="question-editor-title">Question banks</h2>
           <p>Your questions, ready to use in papers.</p>
         </div>
-        {banks.length > 0 && (
-          <label className="bank-picker">
-            Active bank
-            <select
-              value={selectedBankId}
-              disabled={isBusy}
-              onChange={(event) =>
-                selectBank(event.target.value)
-              }
-            >
-              {banks.map((bank) => (
-                <option key={bank.id} value={bank.id}>
-                  {bank.name}
-                </option>
-              ))}
-            </select>
-          </label>
-        )}
       </div>
+
+      {banks.length > 0 && <ChoiceChips legend="Active bank" value={selectedBankId} disabled={isBusy}
+        onChange={(bankId) => selectBank(bankId)}
+        options={banks.map((bank) => ({ value: bank.id, label: bank.name }))} />}
 
       {banks.length > 0 && selectedBankId && <div className="view-tabs" role="group" aria-label="Question bank actions">
         <button type="button" aria-pressed={view === 'list'} disabled={isBusy} onClick={showList}>Questions</button>

@@ -1,5 +1,6 @@
 import { ChoiceChips, FormGroup, ToggleChip } from './controls'
 import { PaperStamp } from './CouponProgress'
+import PaperProgress from './PaperProgress'
 import { useEffect, useRef, useState } from 'react'
 import { questionRowToDomain, type DomainQuestion } from '../domain/questionDomain'
 import { DEFAULT_EXAM_SETTINGS, type ExamSettings } from '../types/exam'
@@ -111,6 +112,7 @@ export default function PhaseNineBuilder({ ownerId, reopened, onSavedWork, onAut
 
   return <section className="builder-page" aria-labelledby="structured-builder-title">
     <h2 id="structured-builder-title">Iraqi exercises and writing</h2>
+    <PaperProgress current={finalized ? 'download' : review ? 'review' : 'setup'} />
     {finalized && <PaperStamp label="Finalized" />}
     <p>Completion, odd words, word relationships, a rewrite and a writing task (Q3/A to Q5).
       {examOwnedMarks ? ` ${review?.snapshot.totalMarks ?? 60} marks to share between the questions.` : ' 60 marks.'} This is part of a paper, not a full Q1 to Q5 paper.</p>
