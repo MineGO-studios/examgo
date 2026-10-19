@@ -133,15 +133,17 @@ export default function AuthForm({ sessionNotice }: { sessionNotice?: string | n
         >
           <button
             type="button"
-            disabled={loading || mode === 'sign-in'}
-            onClick={() => changeMode('sign-in')}
+            aria-pressed={mode === 'sign-in'}
+            disabled={loading}
+            onClick={() => { if (mode !== 'sign-in') changeMode('sign-in') }}
           >
             Sign in
           </button>{' '}
           <button
             type="button"
-            disabled={loading || mode === 'sign-up'}
-            onClick={() => changeMode('sign-up')}
+            aria-pressed={mode === 'sign-up'}
+            disabled={loading}
+            onClick={() => { if (mode !== 'sign-up') changeMode('sign-up') }}
           >
             Create account
           </button>

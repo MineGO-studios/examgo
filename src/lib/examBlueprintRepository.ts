@@ -4,6 +4,7 @@ import { canonicalJson } from './canonicalQuestionCandidates'
 import { parseExamBlueprintIntent, type ExamBlueprintIntent } from './examBlueprintWorkflow'
 import { supabase } from './supabase'
 import { accountLimitError } from './accountLimits'
+import { reportSafeError } from './safeErrorDetails'
 
 export interface SavedExamBlueprint {
   id: string
@@ -29,13 +30,14 @@ function parseSaved(value: unknown): SavedExamBlueprint {
   return { id: row.id, version: row.version as number, savedAt: row.savedAt, intent }
 }
 
-function storageError(code?: string): Error {
+/** `unknown` replaces the save-specific fallback, e.g. for list loads. */
+function storageError(code?: string, unknown?: () => string): Error {
   if (code === 'PGRST202' || code === '42883') return new BlueprintStorageError('Blueprint storage is unavailable here. Keep this page open until the reviewed database update is installed.', true)
   if (code === '42501' || code === 'PGRST301') return new BlueprintStorageError('Your session cannot access this blueprint or an active selected bank. Sign in again and review saved work.', true)
   if (code === '40001') return new BlueprintStorageError('This blueprint changed in another session. Reopen its latest saved version before editing.', true)
   if (code === '23505') return new BlueprintStorageError('This save request already identifies different contents. Reopen saved work before editing.', true)
   if (code === '23514') return new BlueprintStorageError('Blueprint details, counts, instructions or marks are invalid. Review the complete configuration.', true)
-  return new BlueprintStorageError('The blueprint save could not be confirmed. Retry the same save before editing, or reopen saved work.', false)
+  return new BlueprintStorageError(unknown ? unknown() : 'The blueprint save could not be confirmed. Retry the same save before editing, or reopen saved work.', false)
 }
 
 export async function saveExamBlueprint(intent: ExamBlueprintIntent, id: string, expectedVersion: number, requestId: string): Promise<SavedExamBlueprint> {
@@ -56,7 +58,7 @@ export async function saveExamBlueprint(intent: ExamBlueprintIntent, id: string,
 export async function getExamBlueprints(ownerId: string, before?: Pick<SavedExamBlueprint, 'id' | 'savedAt'>): Promise<SavedExamBlueprint[]> {
   if (!isUuid(ownerId) || before && (!isUuid(before.id) || !Number.isFinite(Date.parse(before.savedAt)))) throw new Error('Blueprint page identity is invalid.')
   const { data, error } = await supabase.rpc('get_exam_blueprints', { p_before: before?.savedAt ?? null, p_before_id: before?.id ?? null, p_limit: 25 })
-  if (error) throw storageError(error.code)
+  if (error) throw storageError(error.code, () => reportSafeError(error, 'Saved blueprints could not be loaded. Retry, or reopen My papers.'))
   if (!Array.isArray(data) || data.length > 25) throw new Error('Saved blueprint list is invalid.')
   const rows = data.map(parseSaved)
   if (new Set(rows.map(row => row.id)).size !== rows.length || rows.some(row => row.intent.blueprint.ownerId !== ownerId)) {

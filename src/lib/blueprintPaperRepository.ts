@@ -5,6 +5,7 @@ import { parseBlueprintPaperIntent, type BlueprintPaperIntent } from './examBlue
 import { BlueprintStorageError, type SavedExamBlueprint } from './examBlueprintRepository'
 import { supabase } from './supabase'
 import { accountLimitError } from './accountLimits'
+import { reportSafeError } from './safeErrorDetails'
 
 export interface SavedBlueprintPaper {
   id: string
@@ -20,13 +21,14 @@ function parseSaved(value: unknown): SavedBlueprintPaper {
   return { id: row.id, savedAt: row.savedAt, intent: parseBlueprintPaperIntent(row.workflow) }
 }
 
-function storageError(code?: string): BlueprintStorageError {
+/** `unknown` replaces the finalization-specific fallback, e.g. for list loads. */
+function storageError(code?: string, unknown?: () => string): BlueprintStorageError {
   const message = code === 'PGRST202' || code === '42883' ? 'Generated paper storage is unavailable until the reviewed database update is installed.'
     : code === '42501' || code === 'PGRST301' ? 'Your session cannot access this paper or its current sources. Sign in again and reopen saved work.'
       : code === '40001' ? 'The blueprint or a chosen source changed. Reload current banks and deliberately resolve the change before finalizing.'
         : code === '23505' ? 'This request or blueprint version already identifies a different generated paper. Reopen its saved paper.'
           : code === '23514' ? 'The captured questions, group, order or marks differ from the saved blueprint. Review and save the complete paper again.'
-            : 'Finalization could not be confirmed. Retry this same request before editing, or open saved papers.'
+            : unknown ? unknown() : 'Finalization could not be confirmed. Retry this same request before editing, or open saved papers.'
   return new BlueprintStorageError(message, ['PGRST202', '42883', '42501', 'PGRST301', '40001', '23505', '23514'].includes(code ?? ''))
 }
 
@@ -45,7 +47,7 @@ export async function finalizeBlueprintPaper(blueprint: SavedExamBlueprint, valu
 export async function getBlueprintPapers(ownerId: string, before?: Pick<SavedBlueprintPaper, 'id' | 'savedAt'>): Promise<SavedBlueprintPaper[]> {
   if (!isUuid(ownerId) || before && (!isUuid(before.id) || !Number.isFinite(Date.parse(before.savedAt)))) throw new Error('Generated paper page identity is invalid.')
   const { data, error } = await supabase.rpc('get_blueprint_papers', { p_before: before?.savedAt ?? null, p_before_id: before?.id ?? null, p_limit: 25 })
-  if (error) throw storageError(error.code)
+  if (error) throw storageError(error.code, () => reportSafeError(error, 'Saved papers could not be loaded. Retry, or reopen My papers.'))
   if (!Array.isArray(data) || data.length > 25) throw new Error('Generated paper list is invalid.')
   const rows = data.map(parseSaved)
   if (new Set(rows.map(row => row.id)).size !== rows.length || rows.some(row => row.intent.snapshot.ownerId !== ownerId)) throw new Error('Generated paper list contains inaccessible or repeated papers.')

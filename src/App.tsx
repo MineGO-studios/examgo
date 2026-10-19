@@ -1,5 +1,5 @@
 import type { Session } from '@supabase/supabase-js'
-import { lazy, Suspense, useEffect, useRef, useState } from 'react'
+import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react'
 import AuthForm from './components/AuthForm'
 import ExamBuilder from './components/ExamBuilder'
 import MyDrafts from './components/MyDrafts'
@@ -33,10 +33,36 @@ const ExamBlueprintBuilder = import.meta.env.DEV ? lazy(() => import('./componen
   } }
 })) : null
 
-const errorStyle = {
-  color: '#e5484d',
-  margin: 0,
-} as const
+/** Collects load failures from one My papers section so it announces them once, with one retry. */
+function useSectionLoadFailures() {
+  const [failedLists, setFailedLists] = useState<ReadonlySet<string>>(new Set())
+  const [attempt, setAttempt] = useState(0)
+  const reporters = useRef(new Map<string, (failed: boolean) => void>())
+  const reporter = useCallback((list: string) => {
+    let report = reporters.current.get(list)
+    if (!report) {
+      report = (failed: boolean) => setFailedLists(previous => {
+        if (previous.has(list) === failed) return previous
+        const next = new Set(previous)
+        if (failed) next.add(list)
+        else next.delete(list)
+        return next
+      })
+      reporters.current.set(list, report)
+    }
+    return report
+  }, [])
+  const retry = (): void => { setFailedLists(new Set()); setAttempt(value => value + 1) }
+  return { failed: failedLists.size > 0, attempt, reporter, retry }
+}
+
+/** Retrying removes this alert, so focus moves to the section heading instead of being lost. */
+function SectionLoadFailure({ onRetry, headingId }: { onRetry: () => void; headingId: string }) {
+  return <div className="section-load-failure" role="alert">
+    <p>Some saved work in this section could not be loaded. Nothing was changed.</p>
+    <button type="button" className="button-secondary" onClick={() => { document.getElementById(headingId)?.focus(); onRetry() }}>Retry loading</button>
+  </div>
+}
 
 function App() {
   const [session, setSession] =
@@ -58,6 +84,8 @@ function App() {
   const activeOwner = useRef<string | null>(null)
   const explicitSignOut = useRef(false)
   const [workspaceUser, setWorkspaceUser] = useState<Pick<Session['user'], 'id' | 'email'> | null>(null)
+  const editableLoads = useSectionLoadFailures()
+  const finalizedLoads = useSectionLoadFailures()
 
   useEffect(() => {
     const {
@@ -198,7 +226,7 @@ function App() {
       </nav>
 
       {authError && (
-        <p role="alert" style={errorStyle}>
+        <p role="alert" className="session-notice">
           {authError}
         </p>
       )}
@@ -215,9 +243,10 @@ function App() {
             </div>
           </header>
           <section className="paper-group" aria-labelledby="editable-papers-title">
-            <h2 id="editable-papers-title">Editable configurations</h2>
+            <h2 id="editable-papers-title" tabIndex={-1}>Editable configurations</h2>
+            {editableLoads.failed && <SectionLoadFailure onRetry={editableLoads.retry} headingId="editable-papers-title" />}
             {EditableBlueprints && <Suspense fallback={<p role="status">Loading structured paper blueprints…</p>}>
-              <EditableBlueprints key={workspaceUser.id} ownerId={workspaceUser.id} onOpen={row => {
+              <EditableBlueprints key={`${workspaceUser.id}:${editableLoads.attempt}`} ownerId={workspaceUser.id} onLoadFailure={editableLoads.reporter('blueprints')} onOpen={row => {
                 if (blueprintEditor.current) blueprintEditor.current.open(row)
                 else setInitialBlueprint(row)
                 setBlueprintStarted(true); setExamMode('blueprint'); setWorkspaceView('exam')
@@ -239,23 +268,24 @@ function App() {
               }}
             />
             <Suspense fallback={<p role="status">Loading Iraqi exercises drafts…</p>}>
-              <PhaseNineSavedWork key={`${workspaceUser.id}:editable`} finalized={false} onOpen={(saved) => { setReopenedStructured(saved); setExamMode('phase-nine'); setWorkspaceView('exam') }} />
+              <PhaseNineSavedWork key={`${workspaceUser.id}:editable:${editableLoads.attempt}`} finalized={false} onLoadFailure={editableLoads.reporter('iraqi')} onOpen={(saved) => { setReopenedStructured(saved); setExamMode('phase-nine'); setWorkspaceView('exam') }} />
             </Suspense>
             {PhaseTenCandidateSavedWork && <Suspense fallback={<p role="status">Loading candidate drafts…</p>}>
-              <PhaseTenCandidateSavedWork key={`${workspaceUser.id}:editable`} finalized={false} onOpen={(saved) => { setReopenedCandidate(saved); setExamMode('phase-ten-candidate'); setWorkspaceView('exam') }} />
+              <PhaseTenCandidateSavedWork key={`${workspaceUser.id}:editable:${editableLoads.attempt}`} finalized={false} onLoadFailure={editableLoads.reporter('candidate')} onOpen={(saved) => { setReopenedCandidate(saved); setExamMode('phase-ten-candidate'); setWorkspaceView('exam') }} />
             </Suspense>}
           </section>
           <section className="paper-group" aria-labelledby="finalized-papers-title">
-            <h2 id="finalized-papers-title">Finalized papers</h2>
+            <h2 id="finalized-papers-title" tabIndex={-1}>Finalized papers</h2>
             <p>Reopening a finalized paper shows and downloads exactly what was captured. Simple question papers are downloaded directly and are not stored here.</p>
+            {finalizedLoads.failed && <SectionLoadFailure onRetry={finalizedLoads.retry} headingId="finalized-papers-title" />}
             {GeneratedBlueprintPapers && <Suspense fallback={<p role="status">Loading structured papers…</p>}>
-              <GeneratedBlueprintPapers key={'papers-' + workspaceUser.id} ownerId={workspaceUser.id} />
+              <GeneratedBlueprintPapers key={`papers-${workspaceUser.id}:${finalizedLoads.attempt}`} ownerId={workspaceUser.id} onLoadFailure={finalizedLoads.reporter('blueprints')} />
             </Suspense>}
             <Suspense fallback={<p role="status">Loading finalized Iraqi exercises papers…</p>}>
-              <PhaseNineSavedWork key={`${workspaceUser.id}:finalized`} finalized onOpen={(saved) => { setReopenedStructured(saved); setExamMode('phase-nine'); setWorkspaceView('exam') }} />
+              <PhaseNineSavedWork key={`${workspaceUser.id}:finalized:${finalizedLoads.attempt}`} finalized onLoadFailure={finalizedLoads.reporter('iraqi')} onOpen={(saved) => { setReopenedStructured(saved); setExamMode('phase-nine'); setWorkspaceView('exam') }} />
             </Suspense>
             {PhaseTenCandidateSavedWork && <Suspense fallback={<p role="status">Loading finalized complete papers…</p>}>
-              <PhaseTenCandidateSavedWork key={`${workspaceUser.id}:finalized`} finalized onOpen={(saved) => { setReopenedCandidate(saved); setExamMode('phase-ten-candidate'); setWorkspaceView('exam') }} />
+              <PhaseTenCandidateSavedWork key={`${workspaceUser.id}:finalized:${finalizedLoads.attempt}`} finalized onLoadFailure={finalizedLoads.reporter('candidate')} onOpen={(saved) => { setReopenedCandidate(saved); setExamMode('phase-ten-candidate'); setWorkspaceView('exam') }} />
             </Suspense>}
           </section>
         </div>

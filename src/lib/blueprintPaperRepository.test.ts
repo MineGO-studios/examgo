@@ -52,3 +52,9 @@ it('reads bounded immutable pages and refuses foreign, duplicate, oversized or e
   rpc.mockResolvedValue({ data: [response], error: null })
   await expect(getBlueprintPapers(id)).rejects.toThrow('inaccessible')
 })
+
+it('reports an unavailable list as a load failure, not an unconfirmed finalization', async () => {
+  vi.spyOn(console, 'error').mockImplementation(() => {})
+  rpc.mockResolvedValue({ data: null, error: { code: 'PGRST002' } })
+  await expect(getBlueprintPapers(id)).rejects.toThrow(/^Saved papers could not be loaded\. Retry, or reopen My papers\. Reference: EG-/)
+})

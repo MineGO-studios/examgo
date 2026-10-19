@@ -69,3 +69,9 @@ it('rejects foreign, duplicate or oversized configuration lists', async () => {
     await expect(getExamBlueprints(owner)).rejects.toThrow()
   }
 })
+
+it('reports an unavailable list as a load failure, not an unconfirmed save', async () => {
+  vi.spyOn(console, 'error').mockImplementation(() => {})
+  rpc.mockResolvedValue({ data: null, error: { code: 'PGRST002' } })
+  await expect(getExamBlueprints(owner)).rejects.toThrow(/^Saved blueprints could not be loaded\. Retry, or reopen My papers\. Reference: EG-/)
+})
