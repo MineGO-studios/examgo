@@ -3,7 +3,7 @@ import type { PresetProvenance } from '../domain/presetCuration'
 const PROVENANCE: PresetProvenance = { schemaVersion: 2, sourceReference: 'Neutral source 1', corpusScope: '', ministerialOccurrences: null, missingEvidence: [] }
 const mocks=vi.hoisted(()=>({rpc:vi.fn()}))
 vi.mock('./supabase',()=>({supabase:{rpc:mocks.rpc}}))
-import { assignPresetQuestionIdeas, curationViewFromDetails, getPresetCuration, getPresetCurationView, getPresetReviewer,
+import { assignPresetQuestionIdeas, curationViewFromDetails, getPresetCuration, getPresetCurationView, getPresetIntakeCandidates, getPresetReviewer,
   parseCurationDetails, readBackPresetProvenance, savePresetProvenance, transitionPresetCuration } from './presetCurationRepository'
 const ID='123e4567-e89b-42d3-a456-426614174000'
 const RECORD={id:ID,bankId:ID,revisionId:null,version:1,state:'draft' as const,provenance:PROVENANCE,
@@ -63,6 +63,20 @@ describe('curation repository',()=>{
     mocks.rpc.mockResolvedValue({data:null,error:{code:'42501'}})
     await expect(readBackPresetProvenance(ID,[ID])).rejects.toThrow('could not be loaded')
     await expect(readBackPresetProvenance(ID,[])).rejects.toThrow('10,000')
+  })
+  it('prepares intake from the converted questions only, with a legacy fallback that gives the same candidates',async()=>{
+    const OTHER='223e4567-e89b-42d3-a456-426614174000'
+    const candidate={revisionId:ID,questionId:ID,externalId:'Q1',revision:1,record:{id:ID,provenance:PROVENANCE,privateNotes:null}}
+    mocks.rpc.mockResolvedValue({data:{reviewer:'MineGO',candidates:[candidate]},error:null})
+    await expect(getPresetIntakeCandidates(ID,[ID])).resolves.toEqual({reviewer:'MineGO',candidates:[candidate]})
+    expect(mocks.rpc).toHaveBeenCalledWith('get_preset_intake_candidates',{p_bank_id:ID,p_question_ids:[ID]})
+    const target={revisionId:ID,bankId:ID,questionId:ID,externalId:'Q1',revision:1,unit:1,lesson:'L1',prompt:'Q?',content:{},answer:{}}
+    mocks.rpc.mockResolvedValueOnce({data:null,error:{code:'PGRST202'}}).mockResolvedValueOnce({data:{...DETAILS,
+      records:[{...RECORD,revisionId:ID}],targets:[target,{...target,revisionId:OTHER,questionId:OTHER,externalId:'Q2'}]},error:null})
+    await expect(getPresetIntakeCandidates(ID,[ID])).resolves.toEqual({reviewer:'MineGO',candidates:[candidate]})
+    mocks.rpc.mockResolvedValue({data:{reviewer:null,candidates:[{...candidate,revision:0}]},error:null})
+    await expect(getPresetIntakeCandidates(ID,[ID])).rejects.toThrow('version')
+    await expect(getPresetIntakeCandidates(ID,[])).rejects.toThrow('10,000')
   })
   it('rejects malformed or unsupported publication readback',()=>{
     expect(()=>parseCurationDetails({...DETAILS,records:[{...RECORD,published:true}]})).toThrow('publication')

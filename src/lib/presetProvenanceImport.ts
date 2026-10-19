@@ -2,7 +2,7 @@ import {parsePresetProvenance,provenanceApprovalProblems,type PresetProvenance} 
 import {isValidUuid} from './questions'
 import {supabase} from './supabase'
 import type {Json} from '../types/database'
-import {getPresetCuration,type CurationRecord} from './presetCurationRepository'
+import {getPresetIntakeCandidates,type CurationRecord} from './presetCurationRepository'
 
 /** Reuse exact persisted Phase 11D conversion; held source rows stay held. */
 export async function prepareCataloguePresetProvenance(bankId:string,importId:string):Promise<PresetImportDocument>{
@@ -20,10 +20,12 @@ export async function prepareCataloguePresetProvenance(bankId:string,importId:st
     }
     if(page.data.length<1000)break
   }
-  const details=await getPresetCuration(bankId)
+  if(!converted.size)throw new Error('No validated canonical source conversion is available for this import.')
+  // Only the converted questions' current revisions and existing records; no history or eligibility (MIN-49).
+  const details=await getPresetIntakeCandidates(bankId,[...converted])
   if(!details.reviewer)throw new Error('MineGO reviewer authority is required.')
-  const entries=details.targets.filter(t=>converted.has(t.questionId)).map(t=>{
-    const existing=details.records.find(r=>r.revisionId===t.revisionId)
+  const entries=details.candidates.map(t=>{
+    const existing=t.record
     return {id:existing?.id??crypto.randomUUID(),revisionId:t.revisionId,privateNotes:existing?.privateNotes??
       `Restricted original/normalized text, family/group relationships, source occurrences and answer evidence remain in saved intake ${importId}, catalogue ${t.externalId}.`,
       provenance:existing?.provenance??{schemaVersion:2 as const,

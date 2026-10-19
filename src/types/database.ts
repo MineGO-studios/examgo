@@ -690,6 +690,7 @@ export type Database = {
         Returns: Json
       }
       get_preset_provenance_readback: { Args: { p_bank_id: string; p_ids: string[] }; Returns: Json }
+      get_preset_intake_candidates: { Args: { p_bank_id: string; p_question_ids: string[] }; Returns: Json }
       save_preset_provenance: {
         Args: { p_id: string; p_bank_id: string; p_revision_id: string | null; p_expected_version: number;
           p_provenance: Json; p_private_notes: string; p_reason: string }

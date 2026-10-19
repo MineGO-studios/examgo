@@ -120,6 +120,33 @@ export async function getPresetCurationView(bankId: string, request: CurationVie
 export async function getPresetReviewer(bankId: string): Promise<string | null> {
   return (await getPresetCurationView(bankId, { recordLimit: 0, targetLimit: 0 })).reviewer
 }
+/** A converted question's current revision and any existing review record, for governed intake preparation. */
+export type IntakeCandidate = { revisionId: string; questionId: string; externalId: string; revision: number
+  record: Pick<CurationRecord,'id'|'provenance'|'privateNotes'> | null }
+export type IntakeCandidates = { reviewer: string | null; candidates: IntakeCandidate[] }
+export async function getPresetIntakeCandidates(bankId: string, questionIds: string[]): Promise<IntakeCandidates> {
+  uuid(bankId); questionIds.forEach(uuid)
+  if (questionIds.length < 1 || questionIds.length > 10000) throw new Error('Prepare one to 10,000 questions.')
+  const { data, error } = await supabase.rpc('get_preset_intake_candidates', { p_bank_id: bankId, p_question_ids: questionIds })
+  if (error && functionMissing(error.code)) {
+    const details = await getPresetCuration(bankId), wanted = new Set(questionIds)
+    return { reviewer: details.reviewer, candidates: details.targets.filter((t) => wanted.has(t.questionId)).map((t) => {
+      const existing = details.records.find((r) => r.revisionId === t.revisionId)
+      return { revisionId: t.revisionId, questionId: t.questionId, externalId: t.externalId, revision: t.revision,
+        record: existing ? { id: existing.id, provenance: existing.provenance, privateNotes: existing.privateNotes } : null }
+    }) }
+  }
+  if (error) throw new Error(LOAD_FAILED)
+  const result = object(data)
+  if (!Array.isArray(result.candidates)) throw new Error('Invalid curation records.')
+  return { reviewer: nullableText(result.reviewer), candidates: result.candidates.map((value) => {
+    const c = object(value)
+    if (typeof c.externalId !== 'string') throw new Error('Invalid source question.')
+    const record = c.record === null ? null : object(c.record)
+    return { revisionId: uuid(c.revisionId), questionId: uuid(c.questionId), externalId: c.externalId, revision: version(c.revision),
+      record: record && { id: uuid(record.id), provenance: parsePresetProvenance(record.provenance), privateNotes: nullableText(record.privateNotes) } }
+  }) }
+}
 export type ProvenanceReadback = Pick<CurationRecord,'id'|'revisionId'|'provenance'|'privateNotes'>
 export async function readBackPresetProvenance(bankId: string, ids: string[]): Promise<ProvenanceReadback[]> {
   uuid(bankId); ids.forEach(uuid)
