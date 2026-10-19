@@ -16,10 +16,16 @@ const mocks = vi.hoisted(() => ({
   groupInFlight: 0,
   maxGroupInFlight: 0,
   passageChildren: [] as string[],
+  rpcCalls: [] as Array<{ name: string; args: Record<string, unknown> }>,
+  rpcResult: { data: null, error: { code: 'PGRST202' } } as { data: unknown; error: { code: string } | null },
 }))
 
 vi.mock('./supabase', () => ({
   supabase: {
+    rpc(name: string, args: Record<string, unknown>) {
+      mocks.rpcCalls.push({ name, args })
+      return { abortSignal: (signal: AbortSignal) => { expect(signal).toBeInstanceOf(AbortSignal); return Promise.resolve(mocks.rpcResult) } }
+    },
     from(table: string) {
       let selectedIds: string[] = []
       let selectedBankIds: string[] = []
@@ -67,7 +73,7 @@ vi.mock('./supabase', () => ({
   },
 }))
 
-import { getActiveQuestionsForBanks, getQuestionsForBanks, getActiveStandaloneQuestionsForBanks } from './questionMembershipRepository'
+import { getActiveQuestionsForBanks, getQuestionsForBanks, getActiveStandaloneQuestionsForBanks, getStandaloneQuestionsForBanks } from './questionMembershipRepository'
 
 beforeEach(() => {
   mocks.banks = [{ id: BANK_A, owner_id: OWNER }, { id: BANK_B, owner_id: OWNER }]
@@ -80,6 +86,8 @@ beforeEach(() => {
   mocks.groupInFlight = 0
   mocks.maxGroupInFlight = 0
   mocks.passageChildren = []
+  mocks.rpcCalls = []
+  mocks.rpcResult = { data: null, error: { code: 'PGRST202' } }
 })
 
 describe('membership based question pool', () => {
@@ -138,5 +146,35 @@ describe('membership based question pool', () => {
     mocks.banks.push({ id: BANK_B, owner_id: OWNER })
     mocks.memberships = [{ bank_id: BANK_A, question_id: questionId(1) }]
     await expect(getQuestionsForBanks([BANK_A])).rejects.toThrow('readback is incomplete')
+  })
+
+  it('loads the whole pool in one database call when the function is installed', async () => {
+    const ids = [3, 1, 2].map(questionId)
+    mocks.rpcResult = { data: ids.map((id) => ({ id, owner_id: OWNER, is_active: true })), error: null }
+
+    const pool = await getActiveStandaloneQuestionsForBanks([BANK_B.toUpperCase(), BANK_A, BANK_A])
+    expect(pool.map((question) => question.id)).toEqual([questionId(1), questionId(2), questionId(3)])
+    expect(mocks.rpcCalls).toEqual([{ name: 'get_bank_question_pool',
+      args: { p_bank_ids: [BANK_B, BANK_A], p_active_only: true, p_standalone_only: true } }])
+    expect(mocks.questionCalls).toBe(0)
+    expect(mocks.groupCalls).toBe(0)
+  })
+
+  it('passes the right filters for each loader', async () => {
+    mocks.rpcResult = { data: [], error: null }
+    await getQuestionsForBanks([BANK_A])
+    await getActiveQuestionsForBanks([BANK_A])
+    await getStandaloneQuestionsForBanks([BANK_A])
+    expect(mocks.rpcCalls.map(({ args }) => [args.p_active_only, args.p_standalone_only])).toEqual([[false, false], [true, false], [false, true]])
+  })
+
+  it('rejects an inconsistent pool and maps database refusals to teacher messages', async () => {
+    mocks.rpcResult = { data: [{ id: questionId(1), owner_id: OWNER, is_active: true }, { id: questionId(2), owner_id: BANK_B, is_active: true }], error: null }
+    await expect(getQuestionsForBanks([BANK_A])).rejects.toThrow('readback is inconsistent')
+    mocks.rpcResult = { data: null, error: { code: '42501' } }
+    await expect(getQuestionsForBanks([BANK_A])).rejects.toThrow('missing, archived or inaccessible')
+    mocks.rpcResult = { data: null, error: { code: 'XX000' } }
+    await expect(getQuestionsForBanks([BANK_A])).rejects.toThrow('Unable to load the selected question banks')
+    expect(mocks.questionCalls).toBe(0)
   })
 })

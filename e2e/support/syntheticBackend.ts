@@ -31,7 +31,7 @@ export async function syntheticBackend(page: Page) {
       answer: { type: 'short-answer', schemaVersion: 1, canonicalAnswer: `KEY_ONLY_${n}`, approvedVariants: [], caseSensitive: false }, created_at: now, updated_at: now })),
     exam_drafts: [], exam_draft_questions: [], question_group_questions: [], question_groups: [], catalogue_imports: [], catalogue_import_rows: [],
   }
-  const state = { tables, failDraftSave: false, failBlueprintSave: false, failSignOut: false, signOutScopes: [] as string[], expireRefresh: false, currentUser: user, stagedRequests: [] as Row[], blueprintRequests: [] as Row[], unhandled: [] as string[],
+  const state = { tables, failDraftSave: false, failBlueprintSave: false, failSignOut: false, signOutScopes: [] as string[], poolRequests: [] as Row[], poolMissing: false, expireRefresh: false, currentUser: user, stagedRequests: [] as Row[], blueprintRequests: [] as Row[], unhandled: [] as string[],
     // Lose the next finalization response after the synthetic server has committed it.
     dropGroupFinalizeResponse: false, groupFinalizeRequests: [] as Row[], groupPapers: new Map<string, Row>() }
   await page.route(/^https:\/\/[^/]+\/(?:auth|rest)\/v1\//, async route => {
@@ -78,6 +78,18 @@ export async function syntheticBackend(page: Page) {
       }
       if (state.dropGroupFinalizeResponse) { state.dropGroupFinalizeResponse = false; return route.abort('connectionreset') }
       return respond(state.groupPapers.get(payload.p_request_id))
+    }
+    if (url.pathname === '/rest/v1/rpc/get_bank_question_pool') {
+      const payload = request.postDataJSON()
+      state.poolRequests.push(payload)
+      // Emulates the database before the function is installed: callers fall back to batched reads.
+      if (state.poolMissing) return respond({ code: 'PGRST202', message: 'Could not find the function' }, 404)
+      const passageChildren = new Set(tables.question_group_questions
+        .filter(member => tables.question_groups.some(group => group.id === member.group_id && group.group_type === 'passage'))
+        .map(member => member.question_id))
+      const pool = tables.questions.filter(q => payload.p_bank_ids.includes(q.bank_id) &&
+        (!payload.p_active_only || q.is_active) && (!payload.p_standalone_only || !passageChildren.has(q.id)))
+      return respond([...pool].sort((a, b) => String(a.id).localeCompare(String(b.id))))
     }
     const table = url.pathname.split('/rest/v1/')[1]
     if (!table || !(table in tables) && table !== 'question_bank_memberships') {
