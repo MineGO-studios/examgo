@@ -1,10 +1,32 @@
-import type { ExamQuestion } from '../types/question'
-
-export type QuestionSelectionRequest = {
+export type SelectableQuestion = {
+  id: string
+  selectionKeys?: readonly string[]
   unit: number
-  type: ExamQuestion['type']
+  lesson: string
+  type: string
+  difficulty: 'easy' | 'medium' | 'hard'
+}
+
+export function questionSelectionKeys(question: SelectableQuestion): string[] {
+  const keys = question.selectionKeys ?? []
+  if (keys.length > 20 || keys.some(key => typeof key !== 'string' || !key.trim() || key.length > 200)) {
+    throw new Error('Invalid question selection identity.')
+  }
+  return keys.map(key => `${question.unit}:${key}`)
+}
+
+export function conflictsWithSelection(question: SelectableQuestion, selected: readonly SelectableQuestion[]): boolean {
+  const used = new Set(selected.flatMap(questionSelectionKeys))
+  return questionSelectionKeys(question).some(key => used.has(key))
+}
+
+export type QuestionSelectionRequest<
+  QuestionType extends string = string,
+> = {
+  unit: number
+  type: QuestionType
   lesson?: string
-  difficulty?: ExamQuestion['difficulty']
+  difficulty?: SelectableQuestion['difficulty']
   count: number
   seed: number
 }
@@ -27,7 +49,7 @@ function createSeededRandom(seed: number): () => number {
 }
 
 function validateQuestionIds(
-  questions: readonly ExamQuestion[],
+  questions: readonly SelectableQuestion[],
 ): void {
   const seenIds = new Set<string>()
 
@@ -42,10 +64,10 @@ function validateQuestionIds(
   }
 }
 
-export function selectQuestions(
-  questions: readonly ExamQuestion[],
+export function selectQuestions<Question extends SelectableQuestion>(
+  questions: readonly Question[],
   request: QuestionSelectionRequest,
-): ExamQuestion[] {
+): Question[] {
   if (!Number.isInteger(request.count) || request.count < 1) {
     throw new RangeError(
       'Question quantity must be a positive whole number.',
@@ -112,5 +134,52 @@ export function selectQuestions(
     ]
   }
 
-  return shuffledQuestions.slice(0, request.count)
+  const selected: Question[] = []
+  for (const question of shuffledQuestions) {
+    if (!conflictsWithSelection(question, selected)) selected.push(question)
+    if (selected.length === request.count) return selected
+  }
+  // Conflicting family/wording keys can overlap without forming one equivalence
+  // class. Try bounded alternatives before reporting that the count cannot fit.
+  let visits = 0
+  const search = (start: number, picked: Question[]): Question[] | null => {
+    if (++visits > 100_000) throw new Error('Question variety search reached its limit. Reduce quantity or narrow the pool.')
+    if (picked.length === request.count) return picked
+    if (shuffledQuestions.length - start < request.count - picked.length) return null
+    for (let index = start; index < shuffledQuestions.length; index++) {
+      const question = shuffledQuestions[index]
+      if (conflictsWithSelection(question, picked)) continue
+      const result = search(index + 1, [...picked, question])
+      if (result) return result
+    }
+    return null
+  }
+  const alternative = search(0, [])
+  if (alternative) return alternative
+  throw new Error(`Only ${selected.length} different question ideas fit this selection, but ${request.count} were requested.`)
+}
+
+export function selectMixedQuestions<Question extends SelectableQuestion>(
+  questions: readonly Question[],
+  requests: readonly QuestionSelectionRequest[],
+): Question[] {
+  validateQuestionIds(questions)
+  const selected: Question[] = []
+  const selectedIds = new Set<string>()
+
+  requests.forEach((request, requestIndex) => {
+    if (request.count === 0) return
+    const available = questions.filter((question) => !selectedIds.has(question.id) && !conflictsWithSelection(question, selected))
+    const next = selectQuestions(available, {
+      ...request,
+      seed: (request.seed + requestIndex * 1_000_003) >>> 0,
+    })
+    next.forEach((question) => {
+      if (selectedIds.has(question.id)) throw new Error(`Question ${question.id} was selected more than once.`)
+      selectedIds.add(question.id)
+      selected.push(question)
+    })
+  })
+
+  return selected
 }

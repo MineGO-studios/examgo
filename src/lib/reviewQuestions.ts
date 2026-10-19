@@ -3,7 +3,7 @@ import type {
   ExamSettings,
 } from '../types/exam'
 import type { ExamQuestion } from '../types/question'
-import { selectQuestions } from './selectQuestions'
+import { conflictsWithSelection, selectQuestions } from './selectQuestions'
 
 export type ReviewedQuestion = {
   question: ExamQuestion
@@ -73,11 +73,11 @@ export function replaceQuestionInReview(
     review.map((item) => item.question.id),
   )
   const availableQuestions = questionPool.filter(
-    (question) => !selectedIds.has(question.id),
+    (question) => !selectedIds.has(question.id) && !conflictsWithSelection(question, review.map(item => item.question)),
   )
   const [replacement] = selectQuestions(availableQuestions, {
     unit: settings.unit,
-    type: filters.questionType,
+    type: review[targetIndex].question.type,
     lesson: filters.lesson || undefined,
     difficulty: filters.difficulty || undefined,
     count: 1,
@@ -86,7 +86,7 @@ export function replaceQuestionInReview(
 
   return review.map((item, index) =>
     index === targetIndex
-      ? { question: replacement, locked: false }
+      ? { question: { ...replacement, marks: item.question.marks }, locked: false }
       : item,
   )
 }

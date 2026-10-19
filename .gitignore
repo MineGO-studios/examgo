@@ -10,6 +10,29 @@ lerna-debug.log*
 node_modules
 dist
 dist-ssr
+
+# Source exam papers, generated evidence and local caches stay local (not for the public repository).
+/Papers/
+/output/
+/tmp/
+
+# Agent instructions, handoffs, task notes and memory/skill-use drafts stay local.
+/AGENTS.md
+/CLAUDE.md
+/.agents/
+/.codex/
+/.claude/
+/.cursor/
+/.github/copilot-instructions.md
+docs/**/brain-*proposal-*.md
+docs/**/skill-use-draft-*.json
+*handoff*.md
+TASKS.md
+
+# Environment files
+.env
+.env.*
+!.env.example
 *.local
 
 # Editor directories and files
@@ -22,3 +45,6 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+__pycache__/
+*.py[cod]

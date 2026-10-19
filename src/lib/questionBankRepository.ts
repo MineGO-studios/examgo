@@ -1,5 +1,7 @@
 import { supabase } from './supabase'
 import type { Tables, TablesInsert } from '../types/database'
+import { isValidUuid } from './questions'
+import { accountLimitError } from './accountLimits'
 
 export type QuestionBank = Tables<'question_banks'>
 
@@ -91,6 +93,9 @@ export async function createQuestionBank(
       code: error.code,
     })
 
+    const limit = accountLimitError(error)
+    if (limit) throw limit
+
     if (error.code === '23505') {
       throw new QuestionBankDataError(
         'duplicate',
@@ -119,4 +124,31 @@ export async function createQuestionBank(
   }
 
   return data
+}
+
+export async function createQuestionBankFromBanks(
+  name: string,
+  sourceBankIds: readonly string[],
+): Promise<QuestionBank> {
+  const normalizedName = validateBankName(name)
+  const ids = sourceBankIds.map((id) => id.trim().toLowerCase())
+  if (ids.length < 1 || ids.length > 20 || new Set(ids).size !== ids.length ||
+    ids.some((id) => !isValidUuid(id))) {
+    throw new QuestionBankDataError('validation', 'Choose one to 20 distinct source banks.')
+  }
+  const { data: id, error } = await supabase.rpc('create_bank_from_banks', {
+    p_name: normalizedName, p_source_bank_ids: ids,
+  })
+  if (error || !id) {
+    const limit = accountLimitError(error)
+    if (limit) throw limit
+    throw new QuestionBankDataError(error?.code === '42501' ? 'access-denied' : 'create-failed',
+      error?.code === '42501'
+        ? 'A source bank is missing or inaccessible.'
+        : 'Unable to create the combined bank. Check its name and retry.')
+  }
+  const banks = await getQuestionBanks()
+  const created = banks.find((bank) => bank.id === id)
+  if (!created) throw new QuestionBankDataError('read-failed', 'Combined bank was created but readback is unavailable.')
+  return created
 }
