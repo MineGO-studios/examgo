@@ -1,6 +1,6 @@
 import {useEffect,useState,type ChangeEvent} from 'react'
 import {listStagedImportsForBank,type StagedImportSummary} from '../lib/questionImportRepository'
-import {getPresetCuration} from '../lib/presetCurationRepository'
+import {readBackPresetProvenance} from '../lib/presetCurationRepository'
 import {supabase} from '../lib/supabase'
 import { teacherErrorMessage } from '../lib/safeErrorDetails'
 import {packPresetProvenanceBatches,prepareCataloguePresetProvenance,previewPresetProvenanceImport,stagePresetProvenanceBatch,
@@ -34,8 +34,8 @@ export default function PresetProvenanceImport({bankId,onStaged}:{bankId:string;
     try{const {data:auth,error:authError}=await supabase.auth.getUser()
       if(authError||!auth.user)throw new Error('Sign in again before governed intake.')
       for(const batch of batches)results.push(await stagePresetProvenanceBatch(batch.id,preview.document,batch.entries,reason))
-      const readback=await getPresetCuration(bankId)
-      verifyPresetProvenanceReadback(preview.document.entries,readback.records)
+      const readback=await readBackPresetProvenance(bankId,preview.document.entries.map(entry=>entry.id))
+      verifyPresetProvenanceReadback(preview.document.entries,readback)
       setReport({date:new Date().toISOString(),environment:import.meta.env.VITE_SUPABASE_URL,bankId,ownerId:auth.user.id,importId:preview.document.importId,
         sourceSha256:preview.document.sourceSha256,schemaVersion:1,mappingVersion:1,
         created:results.reduce((n,r)=>n+r.created,0),skipped:results.reduce((n,r)=>n+r.skipped,0),updated:0,rejected:0,

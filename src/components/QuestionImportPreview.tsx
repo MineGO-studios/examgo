@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState, type ChangeEvent } from 'react'
 import { prepareCataloguePromotion } from '../lib/cataloguePromotion'
 import { importOutcomeTotals, importReviewMessage, reviewImportQuestion } from '../lib/importInterpretation'
 import { describeImportedQuestion, readableImportIssue, readableImportSource } from '../lib/importReadable'
-import { getPresetCuration } from '../lib/presetCurationRepository'
+import { getPresetReviewer } from '../lib/presetCurationRepository'
 import { commitStagedCatalogue, previewStagedCatalogue, type CatalogueCommitResult } from '../lib/catalogueImportRepository'
 import {
   inspectCsvHeaders, parseExamgoInterchangeJson, parseLegacyQuestionCsv,
@@ -130,7 +130,7 @@ export default function QuestionImportPreview({ bankId, bankName, onCommitted }:
   const requestDiagnostics = (): void => {
     if (import.meta.env.DEV) { setDiagnostics('shown'); return }
     setDiagnostics('checking')
-    void getPresetCuration(bankId).then((details) => setDiagnostics(details.reviewer ? 'shown' : 'restricted'))
+    void getPresetReviewer(bankId).then((reviewer) => setDiagnostics(reviewer ? 'shown' : 'restricted'))
       .catch(() => setDiagnostics('restricted'))
   }
 
