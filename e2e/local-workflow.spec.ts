@@ -133,7 +133,7 @@ test('preset review loads a large bank one searched page at a time', async ({ pa
   state.curationReviewer = true
   await syntheticSignIn(page)
   await page.getByRole('button', { name: 'Account', exact: true }).click()
-  await page.getByText('MineGO reviewer tools', { exact: true }).click()
+  await page.getByRole('button', { name: 'Open reviewer tools', exact: true }).click()
   await page.getByRole('combobox', { name: 'Bank', exact: true }).selectOption({ label: 'Browser synthetic bank' })
   await page.getByText('Preset trust, provenance and review').click()
   await expect(page.getByText('Authorized reviewer: Synthetic reviewer')).toBeVisible()
