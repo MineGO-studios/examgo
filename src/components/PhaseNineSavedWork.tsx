@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react'
 import { getPhaseNineWorkflows, type SavedPhaseNineWorkflow } from '../lib/phaseNineRepository'
 import { teacherErrorMessage } from '../lib/safeErrorDetails'
+import { SavedWorkStatus } from './SavedWorkStatus'
 
 /** Lists either editable drafts or finalized papers; the two kinds are shown in separate My papers groups. */
-export default function PhaseNineSavedWork({ onOpen, finalized }: { onOpen: (saved: SavedPhaseNineWorkflow) => void; finalized: boolean }) {
+export default function PhaseNineSavedWork({ onOpen, finalized, onLoadFailure }: { onOpen: (saved: SavedPhaseNineWorkflow) => void; finalized: boolean; onLoadFailure?: (failed: boolean) => void }) {
   const [rows, setRows] = useState<SavedPhaseNineWorkflow[]>([])
   const noun = finalized ? 'finalized Iraqi exercises paper' : 'Iraqi exercises draft'
   const [message, setMessage] = useState(`Loading ${noun}s…`)
@@ -20,8 +21,8 @@ export default function PhaseNineSavedWork({ onOpen, finalized }: { onOpen: (sav
   }, [reload, finalized, noun])
   return <section className="card" aria-labelledby={`structured-saved-${finalized}`}>
     <h3 id={`structured-saved-${finalized}`}>{finalized ? 'Iraqi exercises and writing papers' : 'Iraqi exercises and writing drafts'}</h3>
-    <p role={failed ? 'alert' : 'status'}>{message}</p>
-    {failed && <button onClick={() => setReload((n) => n + 1)}>Retry loading structured work</button>}
+    <SavedWorkStatus message={message} failed={failed} onLoadFailure={onLoadFailure} />
+    {failed && !onLoadFailure && <button onClick={() => setReload((n) => n + 1)}>Retry loading structured work</button>}
     <ul>{rows.map((row) => <li key={`${row.finalized}:${row.id}`}>
       <strong>{row.intent.settings.examTitle}</strong> — {row.finalized ? 'Finalized; regenerate captured version' : `Draft, version ${row.version}`}<br />
       <button onClick={() => onOpen(row)}>Open {row.finalized ? 'finalized paper' : 'structured draft'}</button>

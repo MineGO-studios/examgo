@@ -3,8 +3,9 @@ import { getExamBlueprints, type SavedExamBlueprint } from '../lib/examBlueprint
 import { getBlueprintPapers, type SavedBlueprintPaper } from '../lib/blueprintPaperRepository'
 import BlueprintFinalPaper from './BlueprintFinalPaper'
 import { teacherErrorMessage } from '../lib/safeErrorDetails'
+import { SavedWorkStatus } from './SavedWorkStatus'
 
-export function EditableBlueprints({ ownerId, onOpen }: { ownerId: string; onOpen: (saved: SavedExamBlueprint) => void }) {
+export function EditableBlueprints({ ownerId, onOpen, onLoadFailure }: { ownerId: string; onOpen: (saved: SavedExamBlueprint) => void; onLoadFailure?: (failed: boolean) => void }) {
   const [rows, setRows] = useState<SavedExamBlueprint[]>([])
   const [message, setMessage] = useState('Loading editable blueprints…')
   const [failed, setFailed] = useState(false), [busy, setBusy] = useState(false), [reload, setReload] = useState(0)
@@ -18,7 +19,7 @@ export function EditableBlueprints({ ownerId, onOpen }: { ownerId: string; onOpe
   return <section className="card" aria-labelledby="saved-blueprints-title">
     <h3 id="saved-blueprints-title">Structured paper blueprints</h3>
     <p>Reusable question plans, with saved versions. Reopening reviews current bank content. A blueprint is separate from an immutable generated paper.</p>
-    <p role={failed ? 'alert' : 'status'}>{message}</p>
+    <SavedWorkStatus message={message} failed={failed} onLoadFailure={onLoadFailure} />
     <ul>{rows.map(row => <li key={row.id}><strong>{row.intent.settings.examTitle}</strong> · Editable version {row.version} · {row.intent.blueprint.totalMarks} marks
       <p><button type="button" disabled={busy} onClick={() => onOpen(row)}>Open blueprint {row.intent.settings.examTitle}</button></p></li>)}</ul>
     <button type="button" disabled={busy} onClick={() => setReload(n => n + 1)}>Reload blueprints</button>
@@ -31,7 +32,7 @@ export function EditableBlueprints({ ownerId, onOpen }: { ownerId: string; onOpe
   </section>
 }
 
-export function GeneratedBlueprintPapers({ ownerId }: { ownerId: string }) {
+export function GeneratedBlueprintPapers({ ownerId, onLoadFailure }: { ownerId: string; onLoadFailure?: (failed: boolean) => void }) {
   const [rows, setRows] = useState<SavedBlueprintPaper[]>([]), [selected, setSelected] = useState<SavedBlueprintPaper | null>(null)
   const [message, setMessage] = useState('Loading immutable generated papers…'), [failed, setFailed] = useState(false)
   const [cursor, setCursor] = useState<SavedBlueprintPaper | undefined>(), [reload, setReload] = useState(0), [busy, setBusy] = useState(true)
@@ -46,7 +47,7 @@ export function GeneratedBlueprintPapers({ ownerId }: { ownerId: string }) {
   return <section className="card" aria-labelledby="generated-blueprint-papers-title">
     <h3 id="generated-blueprint-papers-title">Structured papers</h3>
     <p>Captured source versions, order and exam marks. Reopening this paper does not select from current banks or replace an editable blueprint.</p>
-    <p role={failed ? 'alert' : 'status'}>{message}</p>
+    <SavedWorkStatus message={message} failed={failed} onLoadFailure={onLoadFailure} />
     <ul>{rows.map(row => <li key={row.id}><strong>{row.intent.intent.settings.examTitle}</strong> · Generated from blueprint version {row.intent.intent.blueprint.version} · {row.intent.snapshot.totalMarks} marks
       <p><button type="button" disabled={busy} onClick={() => setSelected(row)}>Open generated paper {row.intent.intent.settings.examTitle}</button></p></li>)}</ul>
     <button type="button" disabled={busy} onClick={() => { setBusy(true); setCursor(undefined); setReload(n => n + 1) }}>Reload generated papers</button>
