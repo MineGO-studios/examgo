@@ -1,4 +1,5 @@
 -- MIN-49: paged, on-demand preset curation reads (owner request, 19 October 2026).
+-- Installed in Development 19 October 2026 (remote version 20261019080023) after owner authorization.
 -- get_preset_curation builds every record, its full history and per-record eligibility in one
 -- response. For the 1,605-publication Mid-Year bank that is about 9 MB of record JSON and
 -- about 11 s of eligibility checks, which exceeds the statement timeout.

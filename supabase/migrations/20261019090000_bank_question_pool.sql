@@ -1,5 +1,5 @@
 -- Owner request 19 October 2026 (after Phase 15): load a bank's question pool in one call.
--- PENDING: install in Development only with separate owner authorization.
+-- Installed in Development 19 October 2026 (remote version 20261019075937) after owner authorization.
 --
 -- The builder loaded a 1,605-question bank with about 70 requests (membership pages,
 -- 33 question batches, 33 passage-membership lookups). With a ~470 ms round trip to the
