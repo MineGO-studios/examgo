@@ -737,6 +737,10 @@ export type Database = {
         Args: { p_id: string; p_expected_version: number; p_request_id: string; p_workflow: Json }
         Returns: Json
       }
+      get_bank_question_pool: {
+        Args: { p_bank_ids: string[]; p_active_only?: boolean; p_standalone_only?: boolean }
+        Returns: Json
+      }
       get_exam_blueprints: {
         Args: { p_before?: string | null; p_before_id?: string | null; p_limit?: number }
         Returns: Json

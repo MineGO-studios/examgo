@@ -55,6 +55,7 @@ jobs:
       - run: node scripts/verify-phase15-content-limits-local-db.mjs
       - run: node scripts/verify-phase15-owner-quotas-local-db.mjs
       - run: node scripts/verify-phase15-preset-list-local-db.mjs
+      - run: node scripts/verify-bank-question-pool-local-db.mjs
 
   deployed-preview:
     if: github.event_name == 'workflow_dispatch' && inputs.preview_url != ''

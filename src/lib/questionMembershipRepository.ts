@@ -15,13 +15,48 @@ async function forEachConcurrently<T>(items: readonly T[], run: (item: T) => Pro
   await Promise.all(Array.from({ length: Math.min(QUESTION_BATCH_CONCURRENCY, items.length) }, worker))
 }
 
-/** Read one current canonical row per question across owned, active banks. */
-export async function getQuestionsForBanks(bankIds: readonly string[]): Promise<Question[]> {
+function normalizeBankIds(bankIds: readonly string[]): string[] {
   const ids = [...new Set(bankIds.map((id) => id.trim().toLowerCase()))]
   if (ids.length === 0 || ids.length > 20 || ids.some((id) => !isValidUuid(id))) {
     throw new Error('Select between one and 20 valid question banks.')
   }
+  return ids
+}
 
+const byId = (left: Question, right: Question) => left.id.localeCompare(right.id)
+
+/**
+ * Load the whole pool in one database call, filtered there. Returns null when the
+ * function is not installed yet, so callers fall back to the batched reads below.
+ */
+async function loadQuestionPool(ids: string[], activeOnly: boolean, standaloneOnly: boolean): Promise<Question[] | null> {
+  const { data, error } = await supabase.rpc('get_bank_question_pool', {
+    p_bank_ids: ids, p_active_only: activeOnly, p_standalone_only: standaloneOnly,
+  }).abortSignal(AbortSignal.timeout(60_000))
+  if (error) {
+    if (error.code === 'PGRST202' || error.code === '42883') return null
+    throw new Error(error.code === '23514' ? 'Select between one and 20 valid question banks.'
+      : error.code === '42501' ? 'A selected question bank is missing, archived or inaccessible.'
+        : 'Unable to load the selected question banks. Retry; your work is unchanged.')
+  }
+  if (!Array.isArray(data)) throw new Error('Question pool response is invalid. Reopen the selected banks.')
+  const questions = data as unknown as Question[]
+  const ownerId = questions[0]?.owner_id
+  if (new Set(questions.map((question) => question.id)).size !== questions.length ||
+    questions.some((question) => !isValidUuid(question.id) || question.owner_id !== ownerId)) {
+    throw new Error('Question pool readback is inconsistent. Reopen the selected banks.')
+  }
+  return [...questions].sort(byId)
+}
+
+/** Read one current canonical row per question across owned, active banks. */
+export async function getQuestionsForBanks(bankIds: readonly string[]): Promise<Question[]> {
+  const ids = normalizeBankIds(bankIds)
+  return await loadQuestionPool(ids, false, false) ?? batchedQuestionsForBanks(ids)
+}
+
+/** Batched fallback used until get_bank_question_pool is installed. */
+async function batchedQuestionsForBanks(ids: string[]): Promise<Question[]> {
   const banksResult = await supabase.from('question_banks')
     .select('id,owner_id').in('id', ids).eq('is_archived', false)
   if (banksResult.error || !banksResult.data || banksResult.data.length !== ids.length ||
@@ -57,16 +92,23 @@ export async function getQuestionsForBanks(bankIds: readonly string[]): Promise<
   if (questions.length !== orderedIds.length || questions.some((question) => question.owner_id !== ownerId)) {
     throw new Error('Question membership readback is incomplete or disagrees with bank ownership.')
   }
-  return questions.sort((left, right) => left.id.localeCompare(right.id))
+  return questions.sort(byId)
 }
 
 export async function getActiveQuestionsForBanks(bankIds: readonly string[]): Promise<Question[]> {
-  return (await getQuestionsForBanks(bankIds)).filter((question) => question.is_active)
+  const ids = normalizeBankIds(bankIds)
+  return await loadQuestionPool(ids, true, false) ??
+    (await batchedQuestionsForBanks(ids)).filter((question) => question.is_active)
 }
 
 /** Simple-paper selection must never detach a child from its passage context. */
 export async function getStandaloneQuestionsForBanks(bankIds: readonly string[]): Promise<Question[]> {
-  const questions = await getQuestionsForBanks(bankIds)
+  const ids = normalizeBankIds(bankIds)
+  return await loadQuestionPool(ids, false, true) ?? batchedStandaloneQuestionsForBanks(ids)
+}
+
+async function batchedStandaloneQuestionsForBanks(ids: string[]): Promise<Question[]> {
+  const questions = await batchedQuestionsForBanks(ids)
   const passageChildren = new Set<string>()
   const batches: string[][] = []
   for (let first = 0; first < questions.length; first += QUESTION_BATCH_SIZE) {
@@ -88,7 +130,9 @@ export async function getStandaloneQuestionsForBanks(bankIds: readonly string[])
 }
 
 export async function getActiveStandaloneQuestionsForBanks(bankIds: readonly string[]): Promise<Question[]> {
-  return (await getStandaloneQuestionsForBanks(bankIds)).filter((question) => question.is_active)
+  const ids = normalizeBankIds(bankIds)
+  return await loadQuestionPool(ids, true, true) ??
+    (await batchedStandaloneQuestionsForBanks(ids)).filter((question) => question.is_active)
 }
 
 export async function removeDerivedQuestionMembership(bankId: string, question: Question): Promise<void> {

@@ -18,6 +18,22 @@ for (const width of [320, 1280]) {
   })
 }
 
+for (const installed of [true, false]) {
+  test(`builder loads the question pool ${installed ? 'in one database call' : 'through the batched fallback'}`, async ({ page }) => {
+    const state = await syntheticBackend(page)
+    state.poolMissing = !installed
+    const questionReads: string[] = []
+    page.on('request', request => { if (/\/rest\/v1\/(questions|question_group_questions)\?/.test(request.url())) questionReads.push(request.url()) })
+    await syntheticSignIn(page)
+    await expect(page.getByRole('spinbutton', { name: /Short open answer 2 available/ })).toBeVisible()
+    expect(state.poolRequests.length).toBeGreaterThan(0)
+    expect(state.poolRequests.every(payload => payload.p_active_only === true && payload.p_standalone_only === true)).toBe(true)
+    if (installed) expect(questionReads).toEqual([])
+    else expect(questionReads.length).toBeGreaterThan(0)
+    expect(state.unhandled).toEqual([])
+  })
+}
+
 test('interrupted intake preserves confirmed mapping and retries the same batch; reviewer diagnostics stay restricted', async ({ page }) => {
   const state = await syntheticBackend(page)
   await syntheticSignIn(page)
