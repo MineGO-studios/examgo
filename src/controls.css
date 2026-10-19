@@ -1,0 +1,398 @@
+/* ExamGO controls and calm surfaces on the MineGO ground. */
+
+/* ---- Calm surfaces: hairlines on the warm ground, white only where work happens ---- */
+.card {
+  border: 1px solid var(--eg-color-border);
+  box-shadow: none;
+}
+
+.card.exam-builder {
+  border: 0;
+  background: transparent;
+  padding: 0;
+}
+
+.exam-builder {
+  max-width: 44rem;
+}
+
+.form-group {
+  display: grid;
+  gap: var(--eg-space-4);
+  border-top: 1px solid var(--eg-color-border);
+  padding-top: var(--eg-space-5);
+}
+
+.form-group-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--eg-space-3);
+}
+
+.form-group-header h3 {
+  margin: 0;
+  font-size: var(--eg-font-size-lg);
+}
+
+.form-group-aside {
+  color: var(--eg-color-text-muted);
+  font-size: var(--eg-font-size-sm);
+  font-weight: 650;
+}
+
+.text-field small,
+.field-error {
+  font-size: var(--eg-font-size-sm);
+  font-weight: 500;
+}
+
+.field-error {
+  color: var(--eg-color-error-text);
+}
+
+input:hover:not(:disabled),
+textarea:hover:not(:disabled) {
+  border-color: var(--eg-color-text-muted);
+}
+
+/* ---- Chips: choices and toggles as pills ---- */
+.chip-group,
+.stepper-group {
+  display: grid;
+  gap: var(--eg-space-2);
+  min-width: 0;
+  margin: 0;
+  border: 0;
+  padding: 0;
+}
+
+.chip-group > legend,
+.stepper-group > legend {
+  margin-bottom: var(--eg-space-2);
+  padding: 0;
+  font-weight: var(--eg-weight-medium);
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--eg-space-2);
+}
+
+.chip {
+  position: relative;
+  display: inline-flex;
+  font-weight: 600;
+}
+
+.chip input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  min-block-size: 0;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.chip span {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--eg-space-2);
+  min-block-size: var(--eg-control-min-block-size);
+  border: 1px solid var(--eg-color-border-control);
+  border-radius: 999px;
+  background: var(--eg-color-surface);
+  color: var(--eg-color-text);
+  padding-inline: var(--eg-space-4);
+}
+
+.chip:hover span {
+  border-color: var(--eg-color-text-muted);
+}
+
+.chip input:checked + span {
+  border-color: var(--eg-color-primary);
+  background: var(--eg-color-primary-soft);
+  color: var(--eg-color-primary);
+}
+
+.chip-toggle input:checked + span::before {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background: currentColor;
+  content: "";
+}
+
+.chip input:focus-visible + span {
+  outline: 3px solid var(--eg-color-focus);
+  outline-offset: 2px;
+}
+
+.chip input:disabled + span {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* ---- Stepper ---- */
+.stepper {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--eg-space-3);
+  border-bottom: 1px solid var(--eg-color-border);
+  padding-block: var(--eg-space-2);
+}
+
+.stepper:last-of-type {
+  border-bottom: 0;
+}
+
+.stepper-label {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 4.5rem;
+  flex: 1;
+  align-items: center;
+  column-gap: var(--eg-space-3);
+}
+
+.stepper-label > span {
+  font-weight: 650;
+}
+
+.stepper-label > small {
+  grid-row: 2;
+  color: var(--eg-color-text-muted);
+  font-weight: 500;
+}
+
+.stepper-label > input {
+  grid-row: 1 / span 2;
+  grid-column: 2;
+  text-align: center;
+}
+
+.stepper-buttons {
+  display: flex;
+  gap: var(--eg-space-1);
+}
+
+.stepper-buttons button {
+  width: var(--eg-control-min-block-size);
+  padding: 0;
+  font-size: 1.25rem;
+}
+
+/* ---- Disclosures ---- */
+.more-options {
+  border-top: 1px solid var(--eg-color-border);
+  padding-top: var(--eg-space-4);
+}
+
+.more-options > summary,
+.reviewer-tools > summary {
+  display: flex;
+  align-items: center;
+  gap: var(--eg-space-3);
+  min-block-size: var(--eg-control-min-block-size);
+  cursor: pointer;
+  font-weight: 700;
+  list-style: none;
+}
+
+.more-options > summary::-webkit-details-marker,
+.reviewer-tools > summary::-webkit-details-marker {
+  display: none;
+}
+
+.more-options > summary::after,
+.reviewer-tools > summary::after {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-inline-end: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  content: "";
+  transform: rotate(45deg) translateY(-2px);
+  transition: transform 160ms ease-out;
+}
+
+.more-options[open] > summary::after,
+.reviewer-tools[open] > summary::after {
+  transform: rotate(-135deg) translateY(-2px);
+}
+
+.more-options > .text-field {
+  margin-top: var(--eg-space-3);
+}
+
+.setup-total {
+  display: flex;
+  justify-content: space-between;
+  margin: 0;
+  border-top: 1px solid var(--eg-color-border);
+  color: var(--eg-color-text);
+  font-weight: 650;
+  padding-top: var(--eg-space-4);
+}
+
+/* ---- Start cards with a miniature of the sheet they make ---- */
+.paper-starts {
+  display: grid;
+  gap: var(--eg-space-3);
+}
+
+.paper-starts h2 {
+  margin: 0;
+  font-size: var(--eg-font-size-lg);
+}
+
+.start-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+  gap: var(--eg-space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.start-card,
+.start-card[aria-pressed="false"]:not(:disabled) {
+  display: grid;
+  align-content: start;
+  justify-items: start;
+  gap: var(--eg-space-1);
+  width: 100%;
+  height: 100%;
+  border: 1px solid var(--eg-color-border);
+  border-radius: var(--eg-radius-lg);
+  background: var(--eg-color-surface);
+  color: var(--eg-color-text);
+  padding: var(--eg-space-3);
+  text-align: start;
+}
+
+.start-card:hover:not(:disabled),
+.start-card[aria-pressed="false"]:hover:not(:disabled) {
+  border-color: var(--eg-color-text-muted);
+  background: var(--eg-color-surface);
+}
+
+.start-card[aria-pressed="true"],
+.start-card[aria-pressed="true"]:hover:not(:disabled) {
+  border-color: var(--eg-color-primary);
+  background: var(--eg-color-primary-soft);
+  box-shadow: inset 0 0 0 1px var(--eg-color-primary);
+  color: var(--eg-color-text);
+}
+
+.start-card-title {
+  font-weight: 750;
+}
+
+.start-card-description {
+  color: var(--eg-color-text-muted);
+  font-size: var(--eg-font-size-sm);
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.mini-sheet {
+  position: relative;
+  display: grid;
+  gap: 5px;
+  width: 100%;
+  margin-bottom: var(--eg-space-2);
+  border-radius: 3px;
+  background: #ffffff;
+  box-shadow: 0 1px 2px rgb(17 12 8 / 10%), 0 6px 14px rgb(17 12 8 / 8%);
+  padding: 9px 11px 11px;
+}
+
+.mini-sheet-header {
+  display: grid;
+  grid-template-columns: 1fr 1.4fr 1fr;
+  height: 12px;
+  border: 1.5px solid #111111;
+}
+
+.mini-sheet-header i + i {
+  border-inline-start: 1.5px solid #111111;
+}
+
+.mini-sheet-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.mini-sheet-row i {
+  flex: 1;
+  height: 4px;
+  border-radius: 2px;
+  background: #b9aca3;
+}
+
+.mini-sheet-row b {
+  width: 9px;
+  height: 9px;
+  border: 1.5px solid var(--eg-paper-pen);
+  border-radius: 50%;
+}
+
+.mini-sheet-passage {
+  height: 18px;
+  border-radius: 2px;
+  background: repeating-linear-gradient(#d8ccc4 0 3px, transparent 3px 6px);
+}
+
+.mini-sheet-seal {
+  position: absolute;
+  inset-inline-end: 8px;
+  bottom: 8px;
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--eg-color-primary);
+  border-radius: 50%;
+  background: var(--eg-color-primary-soft);
+}
+
+.development-starts {
+  display: grid;
+  gap: var(--eg-space-2);
+}
+
+/* ---- Sign in on the MineGO ground ---- */
+.auth-brand {
+  background: var(--eg-color-surface-subtle);
+  color: var(--eg-color-text);
+}
+
+.auth-brand h1 {
+  color: var(--eg-color-text);
+}
+
+.auth-brand p {
+  color: var(--eg-color-text-muted);
+}
+
+.auth-brand .auth-tagline {
+  color: var(--eg-color-primary);
+}
+
+.auth-brand .shell-symbol img {
+  width: 3rem;
+}
+
+.auth-brand :focus-visible {
+  outline-color: var(--eg-color-focus);
+}
+
+@media (min-width: 64rem) {
+  .card.exam-builder.has-review {
+    max-width: none;
+  }
+}

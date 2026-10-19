@@ -6,6 +6,9 @@ import {
 } from 'react'
 import { reportSafeError } from '../lib/safeErrorDetails'
 import { supabase } from '../lib/supabase'
+import { useI18n } from '../lib/i18n'
+import { LanguageSwitch } from './LanguageProvider'
+import mineGoSymbol from '../assets/brand/MineGO_H2_Symbol_Color.svg'
 
 type AuthMode = 'sign-in' | 'sign-up'
 
@@ -16,25 +19,8 @@ type Feedback = {
 
 const MINIMUM_PASSWORD_LENGTH = 12
 
-const formStyle = {
-  display: 'grid',
-  gap: '1rem',
-  maxWidth: '28rem',
-  margin: '0 auto',
-} as const
-
-const fieldStyle = {
-  display: 'grid',
-  gap: '0.35rem',
-  textAlign: 'left',
-} as const
-
-const inputStyle = {
-  padding: '0.7rem',
-  font: 'inherit',
-} as const
-
 export default function AuthForm({ sessionNotice }: { sessionNotice?: string | null } = {}) {
+  const { t } = useI18n()
   const emailInput = useRef<HTMLInputElement>(null)
   useEffect(() => { if (sessionNotice) emailInput.current?.focus() }, [sessionNotice])
   const [mode, setMode] =
@@ -117,96 +103,78 @@ export default function AuthForm({ sessionNotice }: { sessionNotice?: string | n
   }
 
   return (
-    <main>
-      <h1>ExamGO</h1>
-      <p>Sign in to access your teacher workspace.</p>
-      {sessionNotice && <p role="alert">{sessionNotice}</p>}
+    <main className="auth-page">
+      <div className="auth-layout">
+        <section className="auth-brand" aria-labelledby="auth-title">
+          <span className="shell-symbol auth-symbol"><img src={mineGoSymbol} alt="" width="31" height="24" /></span>
+          <h1 id="auth-title">ExamGO</h1>
+          <p className="auth-family">{t('family')}</p>
+          <p className="auth-tagline">{t('productTagline')}</p>
+          <p>{t('authAside')}</p>
+          <LanguageSwitch />
+        </section>
 
-      <form
-        className="card"
-        onSubmit={handleSubmit}
-        style={formStyle}
-      >
-        <div
-          role="group"
-          aria-label="Authentication mode"
-        >
-          <button
-            type="button"
-            aria-pressed={mode === 'sign-in'}
-            disabled={loading}
-            onClick={() => { if (mode !== 'sign-in') changeMode('sign-in') }}
-          >
-            Sign in
-          </button>{' '}
-          <button
-            type="button"
-            aria-pressed={mode === 'sign-up'}
-            disabled={loading}
-            onClick={() => { if (mode !== 'sign-up') changeMode('sign-up') }}
-          >
-            Create account
+        <form className="card auth-form" onSubmit={handleSubmit}>
+          <p className="auth-intro">{t('signInIntro')}</p>
+          {sessionNotice && <p role="alert" className="session-notice">{sessionNotice}</p>}
+          <div className="segmented auth-mode" role="group" aria-label={t('authMode')}>
+            <button
+              type="button"
+              aria-pressed={mode === 'sign-in'}
+              disabled={loading}
+              onClick={() => { if (mode !== 'sign-in') changeMode('sign-in') }}
+            >
+              {t('signIn')}
+            </button>
+            <button
+              type="button"
+              aria-pressed={mode === 'sign-up'}
+              disabled={loading}
+              onClick={() => { if (mode !== 'sign-up') changeMode('sign-up') }}
+            >
+              {t('createAccount')}
+            </button>
+          </div>
+
+          <label>
+            {t('email')}
+            <input
+              ref={emailInput}
+              type="email"
+              dir="ltr"
+              required
+              autoComplete="email"
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+            />
+          </label>
+
+          <label>
+            {t('password')}
+            <input
+              type="password"
+              dir="ltr"
+              required
+              minLength={MINIMUM_PASSWORD_LENGTH}
+              autoComplete={mode === 'sign-in' ? 'current-password' : 'new-password'}
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+            />
+            <small>{t('passwordHint')}</small>
+          </label>
+
+          <button type="submit" disabled={loading}>
+            {loading ? t('pleaseWait') : mode === 'sign-in' ? t('signIn') : t('createAccount')}
           </button>
-        </div>
 
-        <label style={fieldStyle}>
-          Email
-          <input
-            ref={emailInput}
-            type="email"
-            required
-            autoComplete="email"
-            value={email}
-            onChange={(event) =>
-              setEmail(event.target.value)
-            }
-            style={inputStyle}
-          />
-        </label>
-
-        <label style={fieldStyle}>
-          Password
-          <input
-            type="password"
-            required
-            minLength={MINIMUM_PASSWORD_LENGTH}
-            autoComplete={
-              mode === 'sign-in'
-                ? 'current-password'
-                : 'new-password'
-            }
-            value={password}
-            onChange={(event) =>
-              setPassword(event.target.value)
-            }
-            style={inputStyle}
-          />
-          <small>
-            Minimum {MINIMUM_PASSWORD_LENGTH} characters.
-          </small>
-        </label>
-
-        <button type="submit" disabled={loading}>
-          {loading
-            ? 'Please wait…'
-            : mode === 'sign-in'
-              ? 'Sign in'
-              : 'Create account'}
-        </button>
-
-        {feedback && (
-          <p
-            role={
-              feedback.type === 'error'
-                ? 'alert'
-                : 'status'
-            }
-            aria-live="polite"
-          >
-            {feedback.message}
-          </p>
-        )}
-      </form>
+          {feedback && (
+            <p role={feedback.type === 'error' ? 'alert' : 'status'} aria-live="polite"
+              className={feedback.type === 'error' ? 'saved-work-failure' : undefined}>
+              {feedback.message}
+            </p>
+          )}
+        </form>
+      </div>
     </main>
   )
 }

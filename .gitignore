@@ -48,3 +48,8 @@ TASKS.md
 
 __pycache__/
 *.py[cod]
+
+# Local design-agent context (impeccable)
+/.impeccable/
+/PRODUCT.md
+/DESIGN.md

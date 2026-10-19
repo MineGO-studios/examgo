@@ -13,7 +13,7 @@ for (const width of [320, 1280]) {
     await checkAccessibility(page)
     await page.getByRole('button', { name: 'Preview questions', exact: true }).focus()
     await page.keyboard.press('Enter')
-    await expect(page.getByRole('region', { name: 'Selected questions' })).toBeVisible()
+    await expect(page.getByRole('region', { name: 'Review the paper' })).toBeVisible()
     await checkAccessibility(page)
   })
 }
@@ -92,11 +92,11 @@ test('failed save preserves reviewed intent; retry saves and paired export retri
   await page.getByRole('spinbutton', { name: /Short open answer 2 available/ }).fill('2')
   await page.getByRole('textbox', { name: 'Test title', exact: true }).fill('Recoverable synthetic paper')
   await page.getByRole('button', { name: 'Preview questions', exact: true }).click()
-  await expect(page.getByRole('region', { name: 'Selected questions' })).toContainText('Synthetic question')
+  await expect(page.getByRole('region', { name: 'Review the paper' })).toContainText('Synthetic question')
   state.failDraftSave = true
   await page.getByRole('button', { name: 'Save draft', exact: true }).click()
   await expect(page.getByRole('alert')).toContainText('Unable to save the exam draft')
-  await expect(page.getByRole('region', { name: 'Selected questions' })).toContainText('2 selected')
+  await expect(page.getByRole('region', { name: 'Review the paper' })).toContainText('2 selected')
   await expect(page.getByRole('textbox', { name: 'Test title', exact: true })).toHaveValue('Recoverable synthetic paper')
   await expect(page.locator('body')).not.toContainText('internal_relation_secret')
   expect(state.tables.exam_drafts).toHaveLength(0)
@@ -133,6 +133,7 @@ test('preset review loads a large bank one searched page at a time', async ({ pa
   state.curationReviewer = true
   await syntheticSignIn(page)
   await page.getByRole('button', { name: 'Account', exact: true }).click()
+  await page.getByText('MineGO reviewer tools', { exact: true }).click()
   await page.getByRole('combobox', { name: 'Bank', exact: true }).selectOption({ label: 'Browser synthetic bank' })
   await page.getByText('Preset trust, provenance and review').click()
   await expect(page.getByText('Authorized reviewer: Synthetic reviewer')).toBeVisible()
@@ -200,10 +201,10 @@ for (const sameAccount of [true, false]) {
     const title = page.getByRole('textbox', { name: 'Test title', exact: true })
     if (sameAccount) {
       await expect(title).toHaveValue('Private unsaved teacher intent')
-      await expect(page.getByRole('region', { name: 'Selected questions' })).toContainText('Synthetic question')
+      await expect(page.getByRole('region', { name: 'Review the paper' })).toContainText('Synthetic question')
     } else {
       await expect(title).not.toHaveValue('Private unsaved teacher intent')
-      await expect(page.getByRole('region', { name: 'Selected questions' })).toBeHidden()
+      await expect(page.getByRole('region', { name: 'Review the paper' })).toBeHidden()
     }
   })
 }

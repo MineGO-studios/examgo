@@ -1,0 +1,247 @@
+/* ExamGO list screens: My papers and Question banks, as quiet records. */
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* ---- Selects drawn in the family style ---- */
+select {
+  appearance: none;
+  background-image: linear-gradient(45deg, transparent 50%, var(--eg-color-text-muted) 50%),
+    linear-gradient(-45deg, transparent 50%, var(--eg-color-text-muted) 50%);
+  background-position: calc(100% - 1.15rem) 55%, calc(100% - 0.8rem) 55%;
+  background-repeat: no-repeat;
+  background-size: 0.35rem 0.35rem;
+  padding-inline-end: 2.25rem;
+  cursor: pointer;
+}
+
+:root[dir='rtl'] select {
+  background-position: 1.15rem 55%, 0.8rem 55%;
+}
+
+/* ---- My papers ---- */
+.my-papers {
+  max-width: 56rem;
+  margin-inline: auto;
+}
+
+.my-papers .section-heading p {
+  margin-bottom: 0;
+}
+
+.paper-group {
+  gap: var(--eg-space-4);
+}
+
+.paper-group > h2 {
+  margin: 0;
+}
+
+.paper-list {
+  display: grid;
+  gap: var(--eg-space-2);
+}
+
+.paper-list h3 {
+  margin: 0;
+  color: var(--eg-color-text-muted);
+  font-size: var(--eg-font-size-sm);
+  font-weight: 700;
+}
+
+.paper-list > p {
+  margin: 0;
+  font-size: var(--eg-font-size-sm);
+}
+
+.paper-rows {
+  display: grid;
+  margin: 0;
+  border: 1px solid var(--eg-color-border);
+  border-radius: var(--eg-radius-lg);
+  background: var(--eg-color-surface);
+  padding: 0;
+  list-style: none;
+}
+
+.paper-rows:empty {
+  display: none;
+}
+
+.paper-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--eg-space-1) var(--eg-space-3);
+  padding: var(--eg-space-3) var(--eg-space-4);
+}
+
+.paper-row + .paper-row {
+  border-top: 1px solid var(--eg-color-border);
+}
+
+.paper-row-meta {
+  color: var(--eg-color-text-muted);
+  font-size: var(--eg-font-size-sm);
+}
+
+.paper-row p {
+  margin: 0 0 0 auto;
+}
+
+.paper-row button {
+  margin-inline-start: auto;
+}
+
+.paper-list > button {
+  justify-self: start;
+}
+
+.drafts-view .section-heading {
+  display: block;
+}
+
+/* ---- Question banks ---- */
+.question-editor {
+  max-width: 64rem;
+  margin-inline: auto;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  padding: 0;
+}
+
+.view-tabs {
+  display: flex;
+  gap: var(--eg-space-1);
+  margin-block: var(--eg-space-4) var(--eg-space-2);
+  border-bottom: 1px solid var(--eg-color-border);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.view-tabs button,
+.view-tabs button[aria-pressed='false']:not(:disabled) {
+  border: 0;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  background: transparent;
+  color: var(--eg-color-text-muted);
+  padding-inline: var(--eg-space-3);
+  white-space: nowrap;
+}
+
+.view-tabs button:hover:not(:disabled) {
+  border: 0;
+  border-bottom: 2px solid var(--eg-color-border-control);
+  background: transparent;
+  color: var(--eg-color-text);
+}
+
+.view-tabs button[aria-pressed='true'],
+.view-tabs button[aria-pressed='true']:hover:not(:disabled) {
+  border: 0;
+  border-bottom: 2px solid var(--eg-color-primary);
+  background: transparent;
+  color: var(--eg-color-primary);
+}
+
+.question-browser {
+  display: grid;
+  gap: var(--eg-space-4);
+  margin-top: var(--eg-space-4);
+}
+
+.question-browser-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--eg-space-2);
+}
+
+.question-browser-header h3 {
+  margin: 0;
+  font-size: var(--eg-font-size-lg);
+}
+
+.question-browser-header p {
+  margin: 0;
+}
+
+.question-filters {
+  display: grid;
+  gap: var(--eg-space-3);
+}
+
+.search-field input {
+  border-radius: 999px;
+  padding-inline: var(--eg-space-5);
+}
+
+.question-rows {
+  display: grid;
+  margin: 0;
+  border: 1px solid var(--eg-color-border);
+  border-radius: var(--eg-radius-lg);
+  background: var(--eg-color-surface);
+  padding: 0;
+  list-style: none;
+}
+
+.question-row {
+  display: flex;
+  align-items: center;
+  gap: var(--eg-space-4);
+  padding: var(--eg-space-3) var(--eg-space-4);
+}
+
+.question-row + .question-row {
+  border-top: 1px solid var(--eg-color-border);
+}
+
+.question-row-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.question-row-prompt {
+  margin: 0;
+  color: var(--eg-color-text);
+  font-weight: 650;
+  overflow-wrap: anywhere;
+}
+
+.question-row-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--eg-space-2);
+  margin: var(--eg-space-1) 0 0;
+  font-size: var(--eg-font-size-sm);
+}
+
+.pager {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--eg-space-3);
+}
+
+.bank-picker select {
+  min-width: 14rem;
+}
+
+@media (max-width: 40rem) {
+  .question-row {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: var(--eg-space-2);
+  }
+}

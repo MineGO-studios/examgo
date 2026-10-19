@@ -1,5 +1,6 @@
 import {
   type FormEvent,
+  type ReactNode,
   useEffect,
   useRef,
   useState,
@@ -56,6 +57,10 @@ import {
 } from '../types/question'
 import type { QuestionBank } from '../lib/questionBankRepository'
 import { teacherErrorMessage } from '../lib/safeErrorDetails'
+import SimplePaperReview from './SimplePaperReview'
+import PaperProgress from './PaperProgress'
+import { ChoiceChips, FormGroup, Stepper, ToggleChip } from './controls'
+import CouponProgress from './CouponProgress'
 
 type GenerationStatus =
   | 'idle'
@@ -65,22 +70,6 @@ type GenerationStatus =
   | 'error'
 
 type QuestionLoadStatus = 'loading' | 'ready' | 'error'
-
-const fieldStyle = {
-  display: 'grid',
-  gap: '0.35rem',
-  textAlign: 'left',
-} as const
-
-const inputStyle = {
-  padding: '0.7rem',
-  font: 'inherit',
-} as const
-
-const errorStyle = {
-  color: '#e5484d',
-  margin: 0,
-} as const
 
 function getErrorMessage(error: unknown): string {
   return teacherErrorMessage(error, 'Unable to load approved questions. Please try again.')
@@ -111,11 +100,14 @@ const questionTypeLabels: Record<SimpleQuestionType, string> = {
 }
 
 interface ExamBuilderProps {
+  /** How the paper starts; shown at the top of setup. */
+  startOptions?: ReactNode
   reopenedDraft: ReopenedExamDraft | null
   onViewDrafts: () => void
 }
 
 export default function ExamBuilder({
+  startOptions,
   reopenedDraft,
   onViewDrafts,
 }: ExamBuilderProps) {
@@ -629,227 +621,127 @@ export default function ExamBuilder({
 
   return (
     <form
-      className="card exam-builder"
+      className={`card exam-builder${review ? ' has-review' : ''}`}
       onSubmit={handleSubmit}
       noValidate
     >
-      <div className="section-heading">
+      <div className="section-heading exam-builder-heading">
         <div>
-          <span className="eyebrow">Exam construction</span>
           <h2>Build exam</h2>
           <p>
-            Generate a student paper and matching answer key from
-            your selected question banks.
+            Set up the paper, then review it as the student will see it before you download the paper and its answer key.
           </p>
         </div>
+        <PaperProgress current={generatedDocuments ? 'download' : review ? 'review' : 'setup'} />
       </div>
 
-      {banks.length > 0 && (
-        <fieldset className="structured-fields bank-pool-selection" disabled={isLoadingQuestions || isBusy}>
-          <legend>Question banks</legend>
-          {banks.map((bank) => {
-            const checked = selectedBankIds.includes(bank.id)
-            return <label key={bank.id} className="checkbox-field">
-              <input type="checkbox" checked={checked}
-                disabled={checked && selectedBankIds.length === 1}
-                onChange={() => void changeBanks(checked
-                  ? selectedBankIds.filter((id) => id !== bank.id)
-                  : [...selectedBankIds, bank.id])} /> <span>{bank.name}</span>
-            </label>
-          })}
-          <small>{Object.values(eligibleQuestionCounts).reduce((sum, count) => sum + count, 0)} active Unit {settings.unit} questions, counted once across selected banks</small>
-        </fieldset>
-      )}
-
-      <label style={fieldStyle}>
-        School name
-        <input
-          type="text"
-          value={settings.schoolName}
-          maxLength={EXAM_LIMITS.schoolNameMaxLength}
-          onChange={(event) =>
-            updateSetting('schoolName', event.target.value)
-          }
-          aria-invalid={Boolean(errors.schoolName)}
-          style={inputStyle}
-        />
-        {errors.schoolName && (
-          <span role="alert" style={errorStyle}>
-            {errors.schoolName}
-          </span>
-        )}
-      </label>
-
-      <label style={fieldStyle}>
-        Test title
-        <input
-          type="text"
-          value={settings.examTitle}
-          maxLength={EXAM_LIMITS.examTitleMaxLength}
-          onChange={(event) =>
-            updateSetting('examTitle', event.target.value)
-          }
-          aria-invalid={Boolean(errors.examTitle)}
-          style={inputStyle}
-        />
-        {errors.examTitle && (
-          <span role="alert" style={errorStyle}>
-            {errors.examTitle}
-          </span>
-        )}
-      </label>
-
-      <label style={fieldStyle}>
-        Teacher name for footer
-        <input
-          type="text"
-          value={settings.teacherName ?? ''}
-          maxLength={EXAM_LIMITS.teacherNameMaxLength}
-          onChange={(event) =>
-            updateSetting('teacherName', event.target.value)
-          }
-          aria-invalid={Boolean(errors.teacherName)}
-          style={inputStyle}
-        />
-        <small>Leave blank to print a handwriting line.</small>
-        {errors.teacherName && (
-          <span role="alert" style={errorStyle}>
-            {errors.teacherName}
-          </span>
-        )}
-      </label>
-
-      <fieldset>
-        <legend>Supported content</legend>
-        <p>Grade 6 · Unit 1</p>
-      </fieldset>
-
-      <div className="exam-filter-grid">
-        <label style={fieldStyle}>
-          Lesson
-          <select
-            value={filters.lesson}
-            disabled={isLoadingQuestions || isBusy}
-            onChange={(event) =>
-              updateFilter('lesson', event.target.value)
-            }
-            style={inputStyle}
-          >
-            <option value="">All lessons</option>
-            {availableLessons.map((lesson) => (
-              <option key={lesson} value={lesson}>
-                Lesson {lesson}
-              </option>
-            ))}
-          </select>
+      <div className="exam-settings">
+      {!review && startOptions}
+      <FormGroup title="Paper details">
+        <label className="text-field">
+          School name
+          <input
+            type="text"
+            value={settings.schoolName}
+            maxLength={EXAM_LIMITS.schoolNameMaxLength}
+            onChange={(event) => updateSetting('schoolName', event.target.value)}
+            aria-invalid={Boolean(errors.schoolName)}
+          />
+          {errors.schoolName && <span role="alert" className="field-error">{errors.schoolName}</span>}
         </label>
 
-        <label style={fieldStyle}>
-          Difficulty
-          <select
-            value={filters.difficulty}
-            disabled={isLoadingQuestions || isBusy}
-            onChange={(event) =>
-              updateFilter(
-                'difficulty',
-                event.target.value as ExamQuestionFilters['difficulty'],
-              )
-            }
-            style={inputStyle}
-          >
-            <option value="">All difficulties</option>
-            <option value="easy">Easy</option>
-            <option value="medium">Medium</option>
-            <option value="hard">Hard</option>
-          </select>
+        <label className="text-field">
+          Test title
+          <input
+            type="text"
+            value={settings.examTitle}
+            maxLength={EXAM_LIMITS.examTitleMaxLength}
+            onChange={(event) => updateSetting('examTitle', event.target.value)}
+            aria-invalid={Boolean(errors.examTitle)}
+          />
+          {errors.examTitle && <span role="alert" className="field-error">{errors.examTitle}</span>}
         </label>
-      </div>
 
-      <fieldset>
-        <legend>Question quantities by type</legend>
-        <div className="exam-filter-grid">
+        <label className="text-field">
+          Teacher name for footer
+          <input
+            type="text"
+            value={settings.teacherName ?? ''}
+            maxLength={EXAM_LIMITS.teacherNameMaxLength}
+            onChange={(event) => updateSetting('teacherName', event.target.value)}
+            aria-invalid={Boolean(errors.teacherName)}
+          />
+          <small>Leave blank to print a line for handwriting.</small>
+          {errors.teacherName && <span role="alert" className="field-error">{errors.teacherName}</span>}
+        </label>
+      </FormGroup>
+
+      <FormGroup title="Questions" aside={`Grade 6 · Unit ${settings.unit}`}>
+        {banks.length > 0 && (
+          <fieldset className="chip-group" disabled={isLoadingQuestions || isBusy}>
+            <legend>Question banks</legend>
+            <div className="chips">
+              {banks.map((bank) => {
+                const checked = selectedBankIds.includes(bank.id)
+                return <ToggleChip key={bank.id} label={bank.name} checked={checked}
+                  disabled={checked && selectedBankIds.length === 1}
+                  onChange={() => void changeBanks(checked
+                    ? selectedBankIds.filter((id) => id !== bank.id)
+                    : [...selectedBankIds, bank.id])} />
+              })}
+            </div>
+            <p className="field-help">{Object.values(eligibleQuestionCounts).reduce((sum, count) => sum + count, 0)} questions available</p>
+          </fieldset>
+        )}
+
+        <ChoiceChips legend="Lesson" disabled={isLoadingQuestions || isBusy} value={filters.lesson}
+          onChange={(lesson) => updateFilter('lesson', lesson)}
+          options={[{ value: '', label: 'All lessons' }, ...availableLessons.map((lesson) => ({ value: lesson, label: `Lesson ${lesson}` }))]} />
+
+        <ChoiceChips legend="Difficulty" disabled={isLoadingQuestions || isBusy} value={filters.difficulty}
+          onChange={(difficulty) => updateFilter('difficulty', difficulty)}
+          options={[{ value: '', label: 'Any' }, { value: 'easy', label: 'Easy' }, { value: 'medium', label: 'Medium' }, { value: 'hard', label: 'Hard' }] as { value: ExamQuestionFilters['difficulty']; label: string }[]} />
+
+        <fieldset className="stepper-group">
+          <legend>How many of each type</legend>
           {SIMPLE_QUESTION_TYPES.map((type) => (
-            <label style={fieldStyle} key={type}>
-              {questionTypeLabels[type]}
-              <input
-                type="number"
-                min="0"
-                max={eligibleQuestionCounts[type]}
-                step="1"
-                value={getQuestionQuantities(settings)[type]}
-                onChange={(event) => updateQuestionQuantity(type, event.target.valueAsNumber || 0)}
-                disabled={isLoadingQuestions || isBusy}
-                style={inputStyle}
-              />
-              <small>{eligibleQuestionCounts[type]} available</small>
-            </label>
+            <Stepper key={type} label={questionTypeLabels[type]} hint={`${eligibleQuestionCounts[type]} available`}
+              value={getQuestionQuantities(settings)[type]} max={eligibleQuestionCounts[type]}
+              disabled={isLoadingQuestions || isBusy} onChange={(value) => updateQuestionQuantity(type, value)} />
           ))}
-        </div>
-        {errors.questionCount && <span role="alert" style={errorStyle}>{errors.questionCount}</span>}
-      </fieldset>
+          {errors.questionCount && <span role="alert" className="field-error">{errors.questionCount}</span>}
+        </fieldset>
+      </FormGroup>
 
-      <details open={Boolean(errors.selectionSeed)}>
-      <summary>Advanced generation setting</summary>
-      <label style={fieldStyle}>
-        Paper seed
-        <input
-          type="number"
-          min={EXAM_LIMITS.minimumSelectionSeed}
-          max={EXAM_LIMITS.maximumSelectionSeed}
-          step="1"
-          value={settings.selectionSeed}
-          onChange={(event) =>
-            updateSetting(
-              'selectionSeed',
-              event.target.valueAsNumber || 0,
-            )
-          }
-          aria-invalid={Boolean(errors.selectionSeed)}
-          style={inputStyle}
-        />
-        <small>
-          The same seed keeps the same selection when the banks and filters are unchanged. Preview again after changing it.
-        </small>
-        {errors.selectionSeed && (
-          <span role="alert" style={errorStyle}>
-            {errors.selectionSeed}
-          </span>
-        )}
-      </label>
+      <FormGroup title="Pages">
+        <ChoiceChips legend="Question pages" disabled={isBusy} value={pageTarget}
+          onChange={(target) => setPageTarget(target)}
+          options={([1, 2, 3, 4, 5] as PageTarget[]).map((target) => ({ value: target, label: String(target) }))}
+          hint={`About ${estimatedQuestionPages} page${estimatedQuestionPages === 1 ? '' : 's'} of questions. Word may break pages a little differently.`} />
+        {pageTargetWarning && <p className="page-target-warning" role="alert">{pageTargetWarning}</p>}
+      </FormGroup>
+
+      <details className="more-options" open={Boolean(errors.selectionSeed)}>
+        <summary>More options</summary>
+        <label className="text-field">
+          Selection number
+          <input
+            type="number"
+            min={EXAM_LIMITS.minimumSelectionSeed}
+            max={EXAM_LIMITS.maximumSelectionSeed}
+            step="1"
+            value={settings.selectionSeed}
+            onChange={(event) => updateSetting('selectionSeed', event.target.valueAsNumber || 0)}
+            aria-invalid={Boolean(errors.selectionSeed)}
+          />
+          <small>Keep the same number to get the same questions again. Change it for a different selection.</small>
+          {errors.selectionSeed && <span role="alert" className="field-error">{errors.selectionSeed}</span>}
+        </label>
       </details>
 
-      <output>
-        Total marks: <strong>{review ? totalMarks ?? 'Fix question marks' : 'Preview to calculate'}</strong>
-      </output>
-
-      <div className="page-target">
-        <label style={fieldStyle}>
-          Question-page target
-          <select
-            value={pageTarget}
-            disabled={isBusy}
-            onChange={(event) =>
-              setPageTarget(Number(event.target.value) as PageTarget)
-            }
-            style={inputStyle}
-          >
-            {[1, 2, 3, 4, 5].map((target) => (
-              <option key={target} value={target}>
-                {target} page{target === 1 ? '' : 's'}
-              </option>
-            ))}
-          </select>
-        </label>
-        <small>
-          Estimated question pages: {estimatedQuestionPages}. Final pagination
-          can vary by content and Word settings.
-        </small>
-        {pageTargetWarning && (
-          <p className="page-target-warning" role="alert">
-            {pageTargetWarning}
-          </p>
-        )}
-      </div>
+      <p className="setup-total">
+        Total marks <strong>{review ? totalMarks ?? 'Fix question marks' : 'after preview'}</strong>
+      </p>
 
       <button
         type="submit"
@@ -859,6 +751,7 @@ export default function ExamBuilder({
       >
         Preview questions
       </button>
+      </div>
 
       {review && (
         <section
@@ -867,39 +760,31 @@ export default function ExamBuilder({
         >
           <div className="section-heading">
             <div>
-              <span className="eyebrow">Teacher review</span>
-              <h3 id="exam-review-title">Selected questions</h3>
+              <h3 id="exam-review-title">Review the paper</h3>
             </div>
             <span className="status-chip active">
               {review.length} selected
             </span>
           </div>
 
-          <ol className="review-question-list">
-            {review.map(({ question, locked }, index) => (
-              <li
-                key={question.id}
-                className="review-question-card"
-              >
-                <div className="question-card-heading">
-                  <strong>
-                    {index + 1}. {questionTypeLabels[question.type]}
-                  </strong>
-                  {locked && (
-                    <span className="status-chip">Locked</span>
-                  )}
-                </div>
-                <p>{question.prompt}</p>
+          <SimplePaperReview
+            questions={review.map((item) => item.question)}
+            settings={settings}
+            totalMarks={totalMarks}
+            stamp={generatedDocuments && downloadResult && !downloadResult.hasFailures && !isBusy ? 'Ready' : undefined}
+            renderControls={(question, index) => {
+              const locked = review[index].locked
+              return <>
                 <small>
-                  Lesson {question.lesson} · {question.difficulty} ·{' '}
-                  marks assigned for this exam
+                  {questionTypeLabels[question.type]} · Lesson {question.lesson} · {question.difficulty}
+                  {locked && <> · <span className="status-chip">Locked</span></>}
                 </small>
-                <label style={fieldStyle}>
+                <label>
                   Total marks for question {index + 1}
                   <input type="number" min="1" max="1000" step="1"
                     value={Number.isNaN(question.marks) ? '' : question.marks}
                     onChange={(event) => updateQuestionMarks(question.id, event.target.valueAsNumber)}
-                    disabled={isBusy} style={inputStyle} />
+                    disabled={isBusy} />
                 </label>
                 <div className="review-question-actions">
                   <button
@@ -930,9 +815,11 @@ export default function ExamBuilder({
                     Remove
                   </button>
                 </div>
-              </li>
-            ))}
-          </ol>
+              </>
+            }}
+          />
+
+          <CouponProgress working={isGenerating} steps={['Paper setup', 'Paper reviewed']} />
 
           <div className="review-final-actions">
             <button

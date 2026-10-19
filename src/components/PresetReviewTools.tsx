@@ -20,7 +20,6 @@ export default function PresetReviewTools() {
     return () => { active = false }
   }, [])
   return <section className="card preset-review-tools" aria-labelledby="preset-review-title">
-    <span className="eyebrow">MineGO reviewers</span>
     <h2 id="preset-review-title">Preset review and publication</h2>
     <p>Recording source evidence, approving exact revisions and publishing presets for all teachers are reviewer decisions, separate from building exams and managing your own banks. Only the assigned MineGO reviewer can make them; other accounts can read the records but see no review controls.</p>
     <p>Teachers see published presets with their source and approval details in Create exam → Approved preset papers.</p>
