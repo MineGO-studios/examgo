@@ -96,7 +96,7 @@ test('failed save preserves reviewed intent; retry saves and paired export retri
   state.failDraftSave = true
   await page.getByRole('button', { name: 'Save draft', exact: true }).click()
   await expect(page.getByRole('alert')).toContainText('Unable to save the exam draft')
-  await expect(page.getByRole('region', { name: 'Review the paper' })).toContainText('2 selected')
+  await expect(page.getByRole('region', { name: 'Review the paper' })).toContainText('Paper plan · 2 questions')
   await expect(page.getByRole('textbox', { name: 'Test title', exact: true })).toHaveValue('Recoverable synthetic paper')
   await expect(page.locator('body')).not.toContainText('internal_relation_secret')
   expect(state.tables.exam_drafts).toHaveLength(0)
@@ -218,7 +218,7 @@ test('grouped preset finalization survives a lost response, keeps source order a
   await expect(page.getByRole('alert').filter({ hasText: 'Coverage overview unavailable' })).toBeVisible()
   await exercise.getByRole('textbox', { name: 'Exercise test title', exact: true }).fill('Synthetic grouped paper')
   await exercise.getByRole('spinbutton', { name: 'Marks per attempted point' }).fill('3')
-  await expect(exercise).toContainText('Displayed: 3. Answer: 2. Total: 6 marks.')
+  await expect(exercise).toContainText('Students answer 2 of 3 · 6 marks.')
   await checkAccessibility(page)
   state.dropGroupFinalizeResponse = true
   await exercise.getByRole('button', { name: 'Finalize complete preset exercise', exact: true }).click()
@@ -226,7 +226,7 @@ test('grouped preset finalization survives a lost response, keeps source order a
   await expect(exercise.getByRole('heading', { name: 'Synthetic grouped paper' })).toBeHidden()
   // The commit happened server-side; retrying the unchanged request must return that same paper.
   await exercise.getByRole('button', { name: 'Finalize complete preset exercise', exact: true }).click()
-  await expect(exercise.getByText('Sealed exercise: 3 displayed, answer 2, 6 marks.')).toBeVisible()
+  await expect(exercise.getByText('Students answer 2 of 3 · 6 marks.')).toBeVisible()
   expect(state.groupFinalizeRequests).toHaveLength(2)
   expect(state.groupFinalizeRequests[0]).toEqual(state.groupFinalizeRequests[1])
   expect(state.groupPapers.size).toBe(1)

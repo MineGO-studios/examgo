@@ -283,7 +283,11 @@
 }
 
 .paper-plan-block.is-light button {
-  color: var(--eg-unit-3-text);
+  color: var(--eg-unit-2-text);
+}
+
+.paper-plan-block.is-focused button {
+  box-shadow: 0 0 0 2px var(--eg-color-surface), 0 0 0 4px var(--eg-color-text);
 }
 
 .paper-plan-block button:hover:not(:disabled) {
@@ -404,7 +408,7 @@
 
 .ministry-question:hover,
 .ministry-question:focus-within {
-  background: #f7f9fd;
+  background: #faf7f4;
 }
 
 .ministry-question:focus {

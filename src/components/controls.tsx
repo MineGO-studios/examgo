@@ -55,9 +55,9 @@ export function Stepper({ label, hint, value, min = 0, max, disabled, onChange }
     </label>
     <div className="stepper-buttons">
       <button type="button" className="button-secondary" aria-label={`Fewer: ${label}`} disabled={disabled || value <= min}
-        onClick={() => onChange(clamp(value - 1))}>−</button>
+        onClick={() => onChange(clamp(value - 1))}><svg aria-hidden="true" width="16" height="16" viewBox="0 0 16 16"><path d="M3 8h10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg></button>
       <button type="button" className="button-secondary" aria-label={`More: ${label}`} disabled={disabled || value >= max}
-        onClick={() => onChange(clamp(value + 1))}>+</button>
+        onClick={() => onChange(clamp(value + 1))}><svg aria-hidden="true" width="16" height="16" viewBox="0 0 16 16"><path d="M3 8h10M8 3v10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg></button>
     </div>
   </div>
 }

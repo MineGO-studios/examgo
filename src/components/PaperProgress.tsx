@@ -17,7 +17,7 @@ export default function PaperProgress({ current }: { current: PaperStep }) {
     {STEPS.map((step, index) => <li key={step.id}
       className={index < currentIndex ? 'is-done' : index === currentIndex ? 'is-current' : undefined}
       aria-current={index === currentIndex ? 'step' : undefined}>
-      <span className="paper-progress-number">{index + 1}</span>{t(step.label)}
+      <span className="paper-progress-number">{index + 1}</span><span className="paper-progress-label">{t(step.label)}</span>
     </li>)}
   </ol>
 }
