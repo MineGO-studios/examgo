@@ -274,7 +274,7 @@
   justify-content: space-between;
   min-block-size: 3.25rem;
   border: 0;
-  border-radius: 6px;
+  border-radius: var(--eg-radius-sm);
   background: var(--plan-unit);
   color: #ffffff;
   font: 700 var(--eg-font-size-sm) / 1.15 var(--eg-font-display);
@@ -344,7 +344,7 @@
   width: 100%;
   max-width: 52rem;
   margin-inline: auto;
-  border-radius: 2px;
+  border-radius: var(--eg-radius-xs);
   background: #ffffff;
   box-shadow: var(--eg-shadow-paper);
   color: var(--eg-paper-ink);
@@ -379,7 +379,7 @@
   display: grid;
   place-items: center;
   border-inline: 2px solid var(--eg-paper-rule);
-  font-size: 1.125rem;
+  font-size: var(--eg-paper-title-size);
   letter-spacing: 0;
   text-align: center;
 }
@@ -403,12 +403,12 @@
 }
 
 .ministry-question + .ministry-question {
-  border-top: 1px dashed #9a9a9a;
+  border-top: 1px dashed var(--eg-paper-divider);
 }
 
 .ministry-question:hover,
 .ministry-question:focus-within {
-  background: #faf7f4;
+  background: var(--eg-paper-hover);
 }
 
 .ministry-question:focus {
@@ -439,7 +439,7 @@
 }
 
 .ministry-sheet .ministry-answer-space {
-  color: #6b6b6b;
+  color: var(--eg-paper-answer-line);
   overflow: hidden;
   overflow-wrap: normal;
   white-space: pre;
@@ -492,7 +492,7 @@
   width: 0.75rem;
   height: 0.75rem;
   flex: none;
-  border-radius: 2px;
+  border-radius: var(--eg-radius-xs);
   background: var(--plan-unit);
   content: '';
 }
@@ -583,7 +583,7 @@
   border-radius: 50%;
   background: var(--eg-color-primary);
   color: var(--eg-color-on-primary);
-  font-size: 0.75rem;
+  font-size: var(--eg-font-size-xs);
 }
 
 .coupon-pending {
@@ -753,4 +753,28 @@
   min-block-size: var(--eg-control-min-block-size);
   display: flex;
   align-items: center;
+}
+
+/* Gaps in the plan: hatched where the paper cannot yet be what was asked for. */
+.paper-plan-block.is-gap button,
+.paper-plan-gap {
+  border: 1.5px dashed var(--eg-color-error-text);
+  background: repeating-linear-gradient(135deg, var(--eg-color-error-bg) 0 6px, #ffffff 6px 12px);
+  color: var(--eg-color-error-text);
+}
+
+.paper-plan-block.is-gap button:hover:not(:disabled) {
+  border: 1.5px dashed var(--eg-color-error-text);
+  background: repeating-linear-gradient(135deg, var(--eg-color-error-bg) 0 6px, #ffffff 6px 12px);
+  filter: none;
+}
+
+.paper-plan-gap {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  min-block-size: 3.25rem;
+  border-radius: var(--eg-radius-sm);
+  font: 700 var(--eg-font-size-sm) / 1.15 var(--eg-font-display);
+  padding: 0.4rem 0.55rem;
 }

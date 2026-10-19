@@ -38,6 +38,10 @@
   --eg-paper-ink: #111111;
   --eg-paper-rule: #111111;
   --eg-paper-pen: #da2546;
+  --eg-paper-divider: #9a9a9a;
+  --eg-paper-answer-line: #6b6b6b;
+  --eg-paper-hover: #faf7f4;
+  --eg-paper-title-size: 1.125rem;
   --eg-font-sans: "Manrope Variable", "Noto Sans Arabic Variable", system-ui, "Segoe UI", sans-serif;
   --eg-font-display: "Manrope Variable", "Noto Sans Arabic Variable", system-ui, sans-serif;
   --eg-font-paper: "Times New Roman", Times, "Noto Sans Arabic Variable", serif;
@@ -61,6 +65,7 @@
   --eg-space-5: 1.5rem;
   --eg-space-6: 2rem;
   --eg-space-7: 3rem;
+  --eg-radius-xs: 0.125rem;
   --eg-radius-sm: 0.25rem;
   --eg-radius-md: 0.5rem;
   --eg-radius-lg: 0.75rem;

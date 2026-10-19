@@ -6,7 +6,7 @@ import {DEFAULT_EXAM_SETTINGS} from '../types/exam'
 import {downloadPreparedDocument,requestBrowserDownload,type PreparedExamDocumentPair} from '../lib/documentDelivery'
 import SourceReference from './SourceReference'
 import { PaperStamp } from './CouponProgress'
-import { Stepper } from './controls'
+import { ChoiceChips, Stepper } from './controls'
 import { teacherErrorMessage } from '../lib/safeErrorDetails'
 const errorText=(e:unknown)=>teacherErrorMessage(e, 'Group preset request failed. Reopen before retrying.')
 export default function GroupedPresetExams({ownerId}:{ownerId:string}){
@@ -35,9 +35,9 @@ export default function GroupedPresetExams({ownerId}:{ownerId:string}){
     {busy&&<p role="status">Loading or saving complete exercises…</p>}{error&&<p role="alert">{error}</p>}
     {!busy&&!error&&!groups.length&&<p>No complete approved published exercises are available for this format.</p>}
     <fieldset className="plain-fields" disabled={busy||!!saved}><legend className="visually-hidden">Complete exercise settings</legend>
-      <label>Published exercise<select name="preset-complete-exercise" value={selected} onChange={e=>{setSelected(e.target.value);reset()}}>
-        <option value="">Choose a complete exercise</option>{groups.map(g=><option key={g.id} value={g.id}>{g.instruction.slice(0,80)} — students answer {g.attemptCount} of {g.members.length}</option>)}
-      </select></label>
+      {groups.length>0&&<ChoiceChips legend="Published exercise" variant="list" value={selected}
+        onChange={value=>{setSelected(value);reset()}}
+        options={groups.map(g=>({value:g.id,label:g.instruction.slice(0,80),detail:`Students answer ${g.attemptCount} of ${g.members.length}`}))}/>}
       {(['schoolName','examTitle','teacherName'] as const).map(key=><label key={key}>{key==='schoolName'?'Exercise school name':key==='examTitle'?'Exercise test title':'Exercise teacher name'}
         <input name={`group-preset-${key}`} autoComplete="off" maxLength={80} value={settings[key]??''} onChange={e=>{setSettings({...settings,[key]:e.target.value});reset()}}/></label>)}
       <div className="stepper-group"><Stepper label="Marks per attempted point" value={settings.marksPerQuestion} min={1} max={20}
