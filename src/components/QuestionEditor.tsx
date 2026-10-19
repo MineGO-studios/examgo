@@ -1,3 +1,4 @@
+import { ChoiceChips } from './controls'
 import {
   type FormEvent,
   lazy,
@@ -391,12 +392,8 @@ export default function QuestionEditor({ ownerId }: { ownerId: string }) {
     >
       <div className="section-heading">
         <div>
-          <span className="eyebrow">Question content</span>
-          <h2 id="question-editor-title">Question bank</h2>
-          <p>
-            Create and maintain your questions used in
-            ExamGO papers.
-          </p>
+          <h2 id="question-editor-title">Question banks</h2>
+          <p>Your questions, ready to use in papers.</p>
         </div>
         {banks.length > 0 && (
           <label className="bank-picker">
@@ -418,12 +415,12 @@ export default function QuestionEditor({ ownerId }: { ownerId: string }) {
         )}
       </div>
 
-      {banks.length > 0 && selectedBankId && <div className="recovery-actions bank-actions" role="group" aria-label="Question bank actions">
+      {banks.length > 0 && selectedBankId && <div className="view-tabs" role="group" aria-label="Question bank actions">
         <button type="button" aria-pressed={view === 'list'} disabled={isBusy} onClick={showList}>Questions</button>
         <button type="button" aria-pressed={view === 'question' && !editingQuestionId} disabled={isBusy} onClick={() => { resetDraft(); setView('question') }}>Add question</button>
         <button type="button" aria-pressed={view === 'import'} disabled={isBusy} onClick={() => setView('import')}>Import file</button>
         <button type="button" aria-pressed={view === 'groups'} disabled={isBusy} onClick={() => setView('groups')}>Passages and linked exercises</button>
-        <button type="button" className="button-secondary" aria-pressed={view === 'manage'} disabled={isBusy} onClick={() => setView('manage')}>Manage banks</button>
+        <button type="button" aria-pressed={view === 'manage'} disabled={isBusy} onClick={() => setView('manage')}>Manage banks</button>
       </div>}
 
       <p
@@ -1227,76 +1224,62 @@ export default function QuestionEditor({ ownerId }: { ownerId: string }) {
         const result = browseBankQuestions(questions, filters, linkedIds, page)
         const types = [...new Set(questions.map((question) => question.question_type))].sort()
         const setFilter = (patch: Partial<BankQuestionFilters>) => { setFilters((current) => ({ ...current, ...patch })); setPage(1) }
-        return <section className="question-list" aria-labelledby="saved-questions-title">
-          <div className="form-title-row">
-            <h3 id="saved-questions-title">Questions in this bank</h3>
+        const typeOptions = [{ value: '', label: 'All types' }, ...types.map((type) => ({ value: type, label: questionTypeLabels[type as QuestionInput['questionType']] ?? type }))]
+        return <section className="question-browser" aria-labelledby="saved-questions-title">
+          <div className="question-browser-header">
+            <h3 id="saved-questions-title">Questions</h3>
+            <p className="field-help">
+              {counts.total} question{counts.total === 1 ? '' : 's'} · {counts.usable} ready for new papers
+              {counts.inactive > 0 && ` · ${counts.inactive} switched off`}
+            </p>
           </div>
-          <dl className="bank-counts" aria-label="Question counts">
-            <div><dt>Total</dt><dd>{counts.total}</dd></div>
-            <div><dt>Usable in new papers</dt><dd>{counts.usable}</dd></div>
-            <div><dt>Inactive (excluded from new papers)</dt><dd>{counts.inactive}</dd></div>
-            <div><dt>In linked passages or exercises</dt><dd>{counts.linked ?? 'Not available'}</dd></div>
-          </dl>
-          <p className="field-help">Linked questions are used only together with their complete passage or exercise. Imported files waiting for review are not counted here; open Import file to review them.</p>
-          <div className="bank-filters" role="search" aria-label="Find questions">
-            <label>Search<input type="search" value={filters.search} placeholder="Question text, identifier, unit or lesson"
-              onChange={(event) => setFilter({ search: event.target.value })} /></label>
-            <label>Question type<select value={filters.type} onChange={(event) => setFilter({ type: event.target.value })}>
-              <option value="">All types</option>
-              {types.map((type) => <option key={type} value={type}>{questionTypeLabels[type as QuestionInput['questionType']] ?? type}</option>)}
-            </select></label>
-            <label>Status<select value={filters.status} onChange={(event) => setFilter({ status: event.target.value as BankQuestionFilters['status'] })}>
-              <option value="all">All</option><option value="usable">Usable</option><option value="inactive">Inactive</option>
-            </select></label>
-            <label>Context<select value={filters.linked} disabled={!linkedIds} onChange={(event) => setFilter({ linked: event.target.value as BankQuestionFilters['linked'] })}>
-              <option value="all">All</option><option value="standalone">Standalone questions</option><option value="linked">In linked passages or exercises</option>
-            </select></label>
+          <div className="question-filters" role="search" aria-label="Find questions">
+            <label className="search-field">
+              <span className="visually-hidden">Search questions</span>
+              <input type="search" value={filters.search} placeholder="Search questions, units or lessons"
+                onChange={(event) => setFilter({ search: event.target.value })} />
+            </label>
+            {types.length > 1 && <ChoiceChips legend="Type" value={filters.type} options={typeOptions}
+              onChange={(type) => setFilter({ type })} />}
+            {counts.inactive > 0 && <ChoiceChips legend="Show" value={filters.status}
+              options={[{ value: 'all', label: 'All' }, { value: 'usable', label: 'Ready' }, { value: 'inactive', label: 'Switched off' }] as { value: BankQuestionFilters['status']; label: string }[]}
+              onChange={(status) => setFilter({ status })} />}
+            {linkedIds && (counts.linked ?? 0) > 0 && <ChoiceChips legend="Context" value={filters.linked}
+              options={[{ value: 'all', label: 'All' }, { value: 'standalone', label: 'On their own' }, { value: 'linked', label: 'In passages and exercises' }] as { value: BankQuestionFilters['linked']; label: string }[]}
+              onChange={(linked) => setFilter({ linked })} />}
           </div>
-          <p role="status">{result.matching === 0 ? (questions.length ? 'No questions match these filters.' : 'This bank has no questions yet.')
-            : `Showing ${result.first}–${result.last} of ${result.matching} matching question${result.matching === 1 ? '' : 's'}.`}</p>
           {questions.length === 0 ? (
             <div className="empty-state">
-              <p>Add the first approved question to this bank, or import a file.</p>
+              <p>This bank has no questions yet. Add the first one, or import a file.</p>
               <div className="recovery-actions">
                 <button type="button" onClick={() => { resetDraft(); setView('question') }}>Add question</button>
                 <button type="button" className="button-secondary" onClick={() => setView('import')}>Import file</button>
               </div>
             </div>
-          ) : (
-            <div className="question-cards">
+          ) : result.matching === 0 ? <p role="status" className="empty-state">No questions match. Try another search or filter.</p> : <>
+            <p role="status" className="visually-hidden">{`Showing ${result.first} to ${result.last} of ${result.matching} questions.`}</p>
+            <ul className="question-rows">
               {result.rows.map((question) => (
-                    <article className="question-card" key={question.id}>
-                      <div className="question-card-heading">
-                        <strong>
-                          {questionTypeLabels[question.question_type as QuestionInput['questionType']] ?? question.question_type} · Unit {question.unit} · Lesson{' '}
-                          {question.lesson}
-                        </strong>
-                        <span
-                          className={`status-chip ${question.is_active ? 'active' : ''}`}
-                        >
-                          {question.is_active ? 'Active' : 'Inactive'}
-                        </span>
-                      </div>
-                      <p>{question.prompt}</p>
-                      <small>{question.difficulty} difficulty · Marks set when composing an exam</small>
-                      {linkedIds?.has(question.id) && <small> · In a linked passage or exercise: usable only with its complete group</small>}
-                      {question.bank_id === selectedBankId ? <button
-                        type="button"
-                        className="button-secondary"
-                        disabled={isBusy}
-                        onClick={() => editQuestion(question)}
-                      >
-                        Edit
-                      </button> : <button type="button" className="button-secondary" disabled={isBusy}
-                        onClick={() => selectBank(question.bank_id)}>Open source bank to edit</button>}
-                    </article>
+                <li className="question-row" key={question.id}>
+                  <div className="question-row-text">
+                    <p className="question-row-prompt">{question.prompt}</p>
+                    <p className="question-row-meta">
+                      {questionTypeLabels[question.question_type as QuestionInput['questionType']] ?? question.question_type} · Unit {question.unit} · Lesson {question.lesson} · {question.difficulty}
+                      {!question.is_active && <span className="status-chip status-chip-warning">Switched off</span>}
+                      {linkedIds?.has(question.id) && <span className="status-chip">In a passage or exercise</span>}
+                    </p>
+                  </div>
+                  {question.bank_id === selectedBankId
+                    ? <button type="button" className="button-secondary" disabled={isBusy} onClick={() => editQuestion(question)}>Edit</button>
+                    : <button type="button" className="button-secondary" disabled={isBusy} onClick={() => selectBank(question.bank_id)}>Open its bank</button>}
+                </li>
               ))}
-            </div>
-          )}
-          {result.pages > 1 && <div className="recovery-actions" aria-label="Question pages">
-            <button type="button" className="button-secondary" disabled={result.page <= 1} onClick={() => setPage(result.page - 1)}>Previous 25</button>
+            </ul>
+          </>}
+          {result.pages > 1 && <div className="pager" aria-label="Question pages">
+            <button type="button" className="button-secondary" disabled={result.page <= 1} onClick={() => setPage(result.page - 1)}>Previous</button>
             <span>Page {result.page} of {result.pages}</span>
-            <button type="button" className="button-secondary" disabled={result.page >= result.pages} onClick={() => setPage(result.page + 1)}>Next 25</button>
+            <button type="button" className="button-secondary" disabled={result.page >= result.pages} onClick={() => setPage(result.page + 1)}>Next</button>
           </div>}
         </section>
       })()}

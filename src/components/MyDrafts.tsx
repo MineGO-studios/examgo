@@ -7,6 +7,8 @@ import {
   type ReopenedExamDraft,
 } from '../lib/examDraftRepository'
 import { teacherErrorMessage } from '../lib/safeErrorDetails'
+import { SavedWorkStatus } from './SavedWorkStatus'
+import { listLoadState, useReportListLoadState, type ReportListLoadState } from './savedWorkLoadState'
 
 type DraftListStatus = 'loading' | 'ready' | 'error'
 
@@ -20,6 +22,8 @@ interface MyDraftsProps {
   onCreateExam: () => void
   onManageQuestions: () => void
   onOpenDraft: (draft: ReopenedExamDraft) => void
+  /** When supplied, the My papers section announces load failures and empty state. */
+  onLoadState?: ReportListLoadState
 }
 
 function getErrorMessage(error: unknown): string {
@@ -43,6 +47,7 @@ export default function MyDrafts({
   onCreateExam,
   onManageQuestions,
   onOpenDraft,
+  onLoadState,
 }: MyDraftsProps) {
   const [drafts, setDrafts] = useState<ExamDraftSummary[]>([])
   const [status, setStatus] = useState<DraftListStatus>('loading')
@@ -52,6 +57,7 @@ export default function MyDrafts({
   )
   const [recovery, setRecovery] =
     useState<DraftRecoveryState | null>(null)
+  const [openFailed, setOpenFailed] = useState(false)
 
   const loadDrafts = useCallback(async (): Promise<void> => {
     setStatus('loading')
@@ -113,6 +119,7 @@ export default function MyDrafts({
   ): Promise<void> => {
     setOpeningDraftId(summary.draft.id)
     setRecovery(null)
+    setOpenFailed(false)
     setMessage(`Opening ${summary.draft.exam_title}…`)
 
     try {
@@ -132,30 +139,29 @@ export default function MyDrafts({
 
       onOpenDraft(result.value)
     } catch (error) {
-      setStatus('error')
-      setMessage(getErrorMessage(error))
+      // Opening one draft failed; the list itself is still loaded.
+      setOpenFailed(true)
+      setMessage(teacherErrorMessage(error, 'This draft could not be opened. Please try again.'))
     } finally {
       setOpeningDraftId(null)
     }
   }
 
+  const state = listLoadState(status !== 'loading', status === 'error', drafts.length)
+  useReportListLoadState(onLoadState, state)
+  if (onLoadState && state === 'empty') return null
+
   return (
-    <section className="card drafts-view" aria-labelledby="drafts-title">
+    <section className="paper-list drafts-view" aria-labelledby="drafts-title">
       <div className="section-heading">
         <div>
-          <h3 id="drafts-title">Simple question paper drafts</h3>
-          <p>
-            Reopen your saved exam settings, question order, and locks.
-          </p>
+          <h3 id="drafts-title">Papers from your question banks</h3>
         </div>
       </div>
 
-      <p
-        role={status === 'error' ? 'alert' : 'status'}
-        aria-live="polite"
-      >
-        {message}
-      </p>
+      {openFailed
+        ? <p role="alert" className="saved-work-failure">{message}</p>
+        : <SavedWorkStatus message={message} failed={status === 'error'} managed={Boolean(onLoadState)} />}
 
       {status === 'loading' && (
         <div className="empty-state" aria-busy="true">
@@ -163,7 +169,7 @@ export default function MyDrafts({
         </div>
       )}
 
-      {status === 'error' && (
+      {status === 'error' && !onLoadState && (
         <button type="button" onClick={() => void loadDrafts()}>
           Retry loading drafts
         </button>
@@ -225,7 +231,7 @@ export default function MyDrafts({
 
       {recovery && (
         <section className="draft-recovery" aria-labelledby="recovery-title">
-          <span className="eyebrow">Review required</span>
+          <span className="status-chip status-chip-warning">Review required</span>
           <h3 id="recovery-title">{recovery.title}</h3>
           <p>
             The saved draft from {recovery.bankName} was preserved. ExamGO

@@ -1,5 +1,5 @@
 import type { Session } from '@supabase/supabase-js'
-import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react'
+import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 import AuthForm from './components/AuthForm'
 import ExamBuilder from './components/ExamBuilder'
 import MyDrafts from './components/MyDrafts'
@@ -10,6 +10,14 @@ import { reportSafeError } from './lib/safeErrorDetails'
 import { signOutWithRetry, type SignOutScope } from './lib/signOut'
 import { supabase } from './lib/supabase'
 import './App.css'
+import './workspace.css'
+import './controls.css'
+import './pages.css'
+import { useSectionListLoads } from './components/savedWorkLoadState'
+import { LanguageSwitch } from './components/LanguageProvider'
+import PaperStarts from './components/PaperStarts'
+import { useI18n } from './lib/i18n'
+import mineGoSymbol from './assets/brand/MineGO_H2_Symbol_Color.svg'
 import type { SavedPhaseNineWorkflow } from './lib/phaseNineRepository'
 import type { SavedPhaseTenCandidate } from './lib/phaseTenCandidateRepository'
 import type { SavedExamBlueprint } from './lib/examBlueprintRepository'
@@ -33,29 +41,6 @@ const ExamBlueprintBuilder = import.meta.env.DEV ? lazy(() => import('./componen
   } }
 })) : null
 
-/** Collects load failures from one My papers section so it announces them once, with one retry. */
-function useSectionLoadFailures() {
-  const [failedLists, setFailedLists] = useState<ReadonlySet<string>>(new Set())
-  const [attempt, setAttempt] = useState(0)
-  const reporters = useRef(new Map<string, (failed: boolean) => void>())
-  const reporter = useCallback((list: string) => {
-    let report = reporters.current.get(list)
-    if (!report) {
-      report = (failed: boolean) => setFailedLists(previous => {
-        if (previous.has(list) === failed) return previous
-        const next = new Set(previous)
-        if (failed) next.add(list)
-        else next.delete(list)
-        return next
-      })
-      reporters.current.set(list, report)
-    }
-    return report
-  }, [])
-  const retry = (): void => { setFailedLists(new Set()); setAttempt(value => value + 1) }
-  return { failed: failedLists.size > 0, attempt, reporter, retry }
-}
-
 /** Retrying removes this alert, so focus moves to the section heading instead of being lost. */
 function SectionLoadFailure({ onRetry, headingId }: { onRetry: () => void; headingId: string }) {
   return <div className="section-load-failure" role="alert">
@@ -65,6 +50,7 @@ function SectionLoadFailure({ onRetry, headingId }: { onRetry: () => void; headi
 }
 
 function App() {
+  const { t } = useI18n()
   const [session, setSession] =
     useState<Session | null>(null)
   const [authReady, setAuthReady] = useState(false)
@@ -84,8 +70,9 @@ function App() {
   const activeOwner = useRef<string | null>(null)
   const explicitSignOut = useRef(false)
   const [workspaceUser, setWorkspaceUser] = useState<Pick<Session['user'], 'id' | 'email'> | null>(null)
-  const editableLoads = useSectionLoadFailures()
-  const finalizedLoads = useSectionLoadFailures()
+  // Lists rendered in each My papers section; development builds add the structured and candidate lists.
+  const editableLoads = useSectionListLoads(2 + (EditableBlueprints ? 1 : 0) + (PhaseTenCandidateSavedWork ? 1 : 0))
+  const finalizedLoads = useSectionListLoads(1 + (GeneratedBlueprintPapers ? 1 : 0) + (PhaseTenCandidateSavedWork ? 1 : 0))
 
   useEffect(() => {
     const {
@@ -160,11 +147,14 @@ function App() {
     }
   }
 
+  const paperStarts = <PaperStarts current={examMode} showDevelopment={{ candidate: Boolean(PhaseTenCandidateBuilder), structured: Boolean(ExamBlueprintBuilder) }}
+    onChoose={(start) => { if (start === 'blueprint') setBlueprintStarted(true); setExamMode(start) }} />
+
   if (!authReady) {
     return (
-      <main>
+      <main className="session-check">
         <h1>ExamGO</h1>
-        <p role="status">Checking your session…</p>
+        <p role="status">{t('checkingSession')}</p>
       </main>
     )
   }
@@ -176,55 +166,57 @@ function App() {
   return (
     <>
     {!session && <AuthForm sessionNotice={authError} />}
-    <main key={workspaceUser.id} hidden={!session} inert={!session}>
-      <header className="app-header">
-        <div>
-          <span className="eyebrow">MineGO Studio</span>
-          <h1>ExamGO</h1>
-          <p>Grade 6 Iraqi English monthly-test generator</p>
+    <div className="app-shell" key={workspaceUser.id} hidden={!session} inert={!session}>
+      <header className="shell-bar">
+        <div className="shell-brand">
+          <span className="shell-symbol"><img src={mineGoSymbol} alt="" width="31" height="24" /></span>
+          <div>
+            <h1 className="shell-wordmark">ExamGO</h1>
+            <p className="shell-family">{t('family')}</p>
+          </div>
         </div>
-        <p className="workspace-context">Private Preview workspace</p>
+        <nav className="workspace-nav" aria-label={t('workspaceNav')}>
+          <button
+            type="button"
+            aria-current={workspaceView === 'exam' ? 'page' : undefined}
+            onClick={() => {
+              setReopenedDraft(null)
+              setReopenedStructured(null)
+              setReopenedCandidate(null)
+              setWorkspaceView('exam')
+            }}
+          >
+            {t('createExam')}
+          </button>
+          <button
+            type="button"
+            aria-current={workspaceView === 'drafts' ? 'page' : undefined}
+            onClick={() => setWorkspaceView('drafts')}
+          >
+            {t('myPapers')}
+          </button>
+          <button
+            type="button"
+            aria-current={workspaceView === 'questions' ? 'page' : undefined}
+            onClick={() => setWorkspaceView('questions')}
+          >
+            {t('questionBanks')}
+          </button>
+          <button
+            type="button"
+            className="workspace-nav-secondary"
+            aria-current={workspaceView === 'account' ? 'page' : undefined}
+            onClick={() => setWorkspaceView('account')}
+          >
+            {t('account')}
+          </button>
+        </nav>
+        <div className="shell-actions">
+          <span className="shell-context">Private preview</span>
+          <LanguageSwitch />
+        </div>
       </header>
-
-      <nav className="workspace-nav" aria-label="Teacher workspace">
-        <button
-          type="button"
-          aria-current={workspaceView === 'exam' ? 'page' : undefined}
-          onClick={() => {
-            setReopenedDraft(null)
-            setReopenedStructured(null)
-            setReopenedCandidate(null)
-            setWorkspaceView('exam')
-          }}
-        >
-          Create exam
-        </button>
-        <button
-          type="button"
-          aria-current={workspaceView === 'drafts' ? 'page' : undefined}
-          onClick={() => setWorkspaceView('drafts')}
-        >
-          My papers
-        </button>
-        <button
-          type="button"
-          aria-current={
-            workspaceView === 'questions' ? 'page' : undefined
-          }
-          onClick={() => setWorkspaceView('questions')}
-        >
-          Question banks
-        </button>
-        <button
-          type="button"
-          className="workspace-nav-secondary"
-          aria-current={workspaceView === 'account' ? 'page' : undefined}
-          onClick={() => setWorkspaceView('account')}
-        >
-          Account
-        </button>
-      </nav>
-
+    <main className="workspace">
       {authError && (
         <p role="alert" className="session-notice">
           {authError}
@@ -237,22 +229,27 @@ function App() {
         <div className="my-papers">
           <header className="section-heading">
             <div>
-              <span className="eyebrow">Saved work</span>
               <h2 id="my-papers-title">My papers</h2>
-              <p>Editable configurations can be reopened, changed and saved as new versions. Finalized papers are immutable: they keep their captured questions, marks and documents and are not changed by bank edits.</p>
+              <p>Drafts stay editable. Finalized papers keep exactly what you downloaded.</p>
             </div>
           </header>
           <section className="paper-group" aria-labelledby="editable-papers-title">
-            <h2 id="editable-papers-title" tabIndex={-1}>Editable configurations</h2>
+            <h2 id="editable-papers-title" tabIndex={-1}>Drafts</h2>
             {editableLoads.failed && <SectionLoadFailure onRetry={editableLoads.retry} headingId="editable-papers-title" />}
+            {editableLoads.empty && <div className="empty-state">
+              <p>No drafts yet. Save a reviewed paper to come back to its settings and questions later.</p>
+              <button type="button" onClick={() => { setReopenedDraft(null); setReopenedStructured(null); setReopenedCandidate(null); setExamMode('simple'); setWorkspaceView('exam') }}>Create an exam</button>
+            </div>}
             {EditableBlueprints && <Suspense fallback={<p role="status">Loading structured paper blueprints…</p>}>
-              <EditableBlueprints key={`${workspaceUser.id}:${editableLoads.attempt}`} ownerId={workspaceUser.id} onLoadFailure={editableLoads.reporter('blueprints')} onOpen={row => {
+              <EditableBlueprints key={`${workspaceUser.id}:${editableLoads.attempt}`} ownerId={workspaceUser.id} onLoadState={editableLoads.reporter('blueprints')} onOpen={row => {
                 if (blueprintEditor.current) blueprintEditor.current.open(row)
                 else setInitialBlueprint(row)
                 setBlueprintStarted(true); setExamMode('blueprint'); setWorkspaceView('exam')
               }} />
             </Suspense>}
             <MyDrafts
+              key={`${workspaceUser.id}:drafts:${editableLoads.attempt}`}
+              onLoadState={editableLoads.reporter('simple')}
               onCreateExam={() => {
                 setReopenedDraft(null)
                 setReopenedStructured(null)
@@ -268,36 +265,31 @@ function App() {
               }}
             />
             <Suspense fallback={<p role="status">Loading Iraqi exercises drafts…</p>}>
-              <PhaseNineSavedWork key={`${workspaceUser.id}:editable:${editableLoads.attempt}`} finalized={false} onLoadFailure={editableLoads.reporter('iraqi')} onOpen={(saved) => { setReopenedStructured(saved); setExamMode('phase-nine'); setWorkspaceView('exam') }} />
+              <PhaseNineSavedWork key={`${workspaceUser.id}:editable:${editableLoads.attempt}`} finalized={false} onLoadState={editableLoads.reporter('iraqi')} onOpen={(saved) => { setReopenedStructured(saved); setExamMode('phase-nine'); setWorkspaceView('exam') }} />
             </Suspense>
             {PhaseTenCandidateSavedWork && <Suspense fallback={<p role="status">Loading candidate drafts…</p>}>
-              <PhaseTenCandidateSavedWork key={`${workspaceUser.id}:editable:${editableLoads.attempt}`} finalized={false} onLoadFailure={editableLoads.reporter('candidate')} onOpen={(saved) => { setReopenedCandidate(saved); setExamMode('phase-ten-candidate'); setWorkspaceView('exam') }} />
+              <PhaseTenCandidateSavedWork key={`${workspaceUser.id}:editable:${editableLoads.attempt}`} finalized={false} onLoadState={editableLoads.reporter('candidate')} onOpen={(saved) => { setReopenedCandidate(saved); setExamMode('phase-ten-candidate'); setWorkspaceView('exam') }} />
             </Suspense>}
           </section>
           <section className="paper-group" aria-labelledby="finalized-papers-title">
             <h2 id="finalized-papers-title" tabIndex={-1}>Finalized papers</h2>
-            <p>Reopening a finalized paper shows and downloads exactly what was captured. Simple question papers are downloaded directly and are not stored here.</p>
+            <p className="field-help">Simple question papers download straight away and are not kept here.</p>
             {finalizedLoads.failed && <SectionLoadFailure onRetry={finalizedLoads.retry} headingId="finalized-papers-title" />}
+            {finalizedLoads.empty && <p className="empty-state">No finalized papers yet.</p>}
             {GeneratedBlueprintPapers && <Suspense fallback={<p role="status">Loading structured papers…</p>}>
-              <GeneratedBlueprintPapers key={`papers-${workspaceUser.id}:${finalizedLoads.attempt}`} ownerId={workspaceUser.id} onLoadFailure={finalizedLoads.reporter('blueprints')} />
+              <GeneratedBlueprintPapers key={`papers-${workspaceUser.id}:${finalizedLoads.attempt}`} ownerId={workspaceUser.id} onLoadState={finalizedLoads.reporter('blueprints')} />
             </Suspense>}
             <Suspense fallback={<p role="status">Loading finalized Iraqi exercises papers…</p>}>
-              <PhaseNineSavedWork key={`${workspaceUser.id}:finalized:${finalizedLoads.attempt}`} finalized onLoadFailure={finalizedLoads.reporter('iraqi')} onOpen={(saved) => { setReopenedStructured(saved); setExamMode('phase-nine'); setWorkspaceView('exam') }} />
+              <PhaseNineSavedWork key={`${workspaceUser.id}:finalized:${finalizedLoads.attempt}`} finalized onLoadState={finalizedLoads.reporter('iraqi')} onOpen={(saved) => { setReopenedStructured(saved); setExamMode('phase-nine'); setWorkspaceView('exam') }} />
             </Suspense>
             {PhaseTenCandidateSavedWork && <Suspense fallback={<p role="status">Loading finalized complete papers…</p>}>
-              <PhaseTenCandidateSavedWork key={`${workspaceUser.id}:finalized:${finalizedLoads.attempt}`} finalized onLoadFailure={finalizedLoads.reporter('candidate')} onOpen={(saved) => { setReopenedCandidate(saved); setExamMode('phase-ten-candidate'); setWorkspaceView('exam') }} />
+              <PhaseTenCandidateSavedWork key={`${workspaceUser.id}:finalized:${finalizedLoads.attempt}`} finalized onLoadState={finalizedLoads.reporter('candidate')} onOpen={(saved) => { setReopenedCandidate(saved); setExamMode('phase-ten-candidate'); setWorkspaceView('exam') }} />
             </Suspense>}
           </section>
         </div>
       )}
       {workspaceView === 'exam' && (
-        <><div className="recovery-actions" role="group" aria-label="Exam format">
-          <button aria-pressed={examMode === 'simple'} onClick={() => setExamMode('simple')}>Simple question paper</button>
-          <button aria-pressed={examMode === 'presets'} onClick={() => setExamMode('presets')}>Approved preset papers</button>
-          <button aria-pressed={examMode === 'phase-nine'} onClick={() => setExamMode('phase-nine')}>Iraqi exercises and writing</button>
-          {PhaseTenCandidateBuilder && <button aria-pressed={examMode === 'phase-ten-candidate'} onClick={() => setExamMode('phase-ten-candidate')}>Complete paper candidate</button>}
-          {ExamBlueprintBuilder && <button aria-pressed={examMode === 'blueprint'} onClick={() => { setBlueprintStarted(true); setExamMode('blueprint') }}>Structured paper</button>}
-        </div>
+        <>{examMode !== 'simple' && paperStarts}
         {examMode === 'blueprint' && ExamBlueprintBuilder ? null : examMode === 'presets' ? <Suspense fallback={<p role="status">Loading approved presets…</p>}>
           <SimplePresetExams key={workspaceUser.id} ownerId={workspaceUser.id}/>
         </Suspense> : examMode === 'phase-nine' ? <Suspense fallback={<p role="status">Loading source-specific builder…</p>}>
@@ -307,6 +299,7 @@ function App() {
           <PhaseTenCandidateBuilder key={`${workspaceUser.id}:${reopenedCandidate?.id ?? 'new'}`} ownerId={workspaceUser.id} reopened={reopenedCandidate}
             onSavedWork={() => setWorkspaceView('drafts')} onAuthorQuestions={() => setWorkspaceView('questions')} />
         </Suspense> : <ExamBuilder
+          startOptions={paperStarts}
           reopenedDraft={reopenedDraft}
           onViewDrafts={() => setWorkspaceView('drafts')}
         />}</>
@@ -318,7 +311,6 @@ function App() {
       </div>}
       {workspaceView === 'account' && (
         <section className="card account-view" aria-labelledby="account-title">
-          <span className="eyebrow">Teacher account</span>
           <h2 id="account-title">Account</h2>
           <p>Signed in as {workspaceUser.email}</p>
           <button
@@ -342,11 +334,15 @@ function App() {
         </section>
       )}
       {workspaceView === 'account' && (
-        <Suspense fallback={<p role="status">Loading reviewer tools…</p>}>
-          <PresetReviewTools key={workspaceUser.id} />
-        </Suspense>
+        <details className="reviewer-tools">
+          <summary>MineGO reviewer tools</summary>
+          <Suspense fallback={<p role="status">Loading reviewer tools…</p>}>
+            <PresetReviewTools key={workspaceUser.id} />
+          </Suspense>
+        </details>
       )}
     </main>
+    </div>
     </>
   )
 }

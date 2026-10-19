@@ -39,3 +39,8 @@ TASKS.md
 
 __pycache__/
 *.py[cod]
+
+# Local design tool context
+/.impeccable/
+/PRODUCT.md
+/DESIGN.md
