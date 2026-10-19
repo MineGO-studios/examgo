@@ -1,3 +1,4 @@
+import { Stepper } from './controls'
 import { useEffect, useState } from 'react'
 import { questionRowToDomain, type DomainQuestion } from '../domain/questionDomain'
 import { validatePassageGroup, type PassageGroup } from '../domain/passageGroup'
@@ -128,46 +129,56 @@ export default function PassageGroupEditor({ ownerId, bankId, onOpenSourceBank }
     } finally { setBusy(false) }
   }
 
-  return <section className="card" aria-labelledby="passage-groups-title">
-    <h2 id="passage-groups-title">Passage groups</h2>
-    <p>Keep the passage and its answerable questions together. Select their order and how many must be answered. The teacher assigns marks when composing an exam.</p>
-    <p role={failed ? 'alert' : 'status'} aria-live="polite">{message}</p>
-    {viewingDerived && selectedGroup && <p>This group is shared from another bank.
+  return <section className="passage-editor" aria-labelledby="passage-groups-title">
+    <div className="preset-section-header">
+      <h3 id="passage-groups-title">Passages and linked exercises</h3>
+      <button type="button" className="button-quiet" disabled={busy} onClick={() => setDraft(emptyDraft())}>New passage</button>
+    </div>
+    <p className="field-help">Keep a passage and its questions together, in order.</p>
+    <p role={failed ? 'alert' : 'status'} aria-live="polite" className={failed ? 'saved-work-failure' : 'field-help'}>{message}</p>
+    {viewingDerived && selectedGroup && <div className="notice-row"><p>This passage is shared from another bank.</p>
       {onOpenSourceBank && <button type="button" className="button-secondary"
         onClick={() => onOpenSourceBank(selectedGroup.bankId)}>Open source bank to edit</button>}
       <button type="button" className="button-secondary" disabled={busy}
         onClick={() => void removeFromCollection()}>Remove group from this collection</button>
-    </p>}
-    <label>Saved passages<select value={groups.some((group) => group.id === draft.id) ? draft.id : ''} disabled={busy}
+    </div>}
+    {groups.length > 0 && <label className="text-field">Open a saved passage<select value={groups.some((group) => group.id === draft.id) ? draft.id : ''} disabled={busy}
       onChange={(event) => {
         const selected = groups.find((group) => group.id === event.target.value)
         setDraft(selected ? groupDraft(selected) : emptyDraft())
       }}>
       <option value="">New passage</option>{groups.map((group) => <option key={group.id} value={group.id}>{group.title || group.passage.slice(0, 60)}</option>)}
-    </select></label>
-    <button type="button" className="button-secondary" disabled={busy} onClick={() => setDraft(emptyDraft())}>New passage</button>
-    <fieldset disabled={busy || viewingDerived} className="structured-fields">
-      <legend>Passage and instruction</legend>
-      <label>Title (optional)<input maxLength={200} value={draft.title ?? ''} onChange={(e) => setDraft({ ...draft, title: e.target.value || null })} /></label>
-      <label>Printed instruction<textarea maxLength={1000} rows={2} value={draft.instruction} onChange={(e) => setDraft({ ...draft, instruction: e.target.value })} /></label>
-      <label>Arabic instruction (optional)<textarea maxLength={1000} rows={2} dir="rtl" value={draft.arabicInstruction ?? ''} onChange={(e) => setDraft({ ...draft, arabicInstruction: e.target.value || null })} /></label>
-      <label>Passage<textarea maxLength={5000} rows={8} value={draft.passage} onChange={(e) => setDraft({ ...draft, passage: e.target.value })} /></label>
-      <label>Questions to answer<input type="number" min={1} max={draft.childIds.length || 1} value={draft.attemptCount} onChange={(e) => setDraft({ ...draft, attemptCount: Number(e.target.value) })} /></label>
+    </select></label>}
+    <fieldset disabled={busy || viewingDerived} className="plain-fields form-group">
+      <legend className="visually-hidden">Passage and instruction</legend>
+      <div className="form-group-header"><h3>Passage</h3></div>
+      <label className="text-field">Title (optional)<input maxLength={200} value={draft.title ?? ''} onChange={(e) => setDraft({ ...draft, title: e.target.value || null })} /></label>
+      <label className="text-field">Printed instruction<textarea maxLength={1000} rows={2} value={draft.instruction} onChange={(e) => setDraft({ ...draft, instruction: e.target.value })} /></label>
+      <label className="text-field">Arabic instruction (optional)<textarea maxLength={1000} rows={2} dir="rtl" lang="ar" value={draft.arabicInstruction ?? ''} onChange={(e) => setDraft({ ...draft, arabicInstruction: e.target.value || null })} /></label>
+      <label className="text-field">Passage<textarea maxLength={5000} rows={8} value={draft.passage} onChange={(e) => setDraft({ ...draft, passage: e.target.value })} /></label>
     </fieldset>
-    <h3>Ordered questions</h3>
-    <p>{draft.childIds.length} displayed · marks assigned when composing an exam</p>
-    <ol>{draft.childIds.map((id, index) => {
-      const question = byId.get(id)
-      return <li key={id}><strong>{question?.prompt ?? 'Missing question'}</strong>
-        <div className="recovery-actions"><button disabled={busy || viewingDerived || index === 0} onClick={() => move(index, -1)}>Move up</button>
-          <button disabled={busy || viewingDerived || index === draft.childIds.length - 1} onClick={() => move(index, 1)}>Move down</button>
-          <button disabled={busy || viewingDerived} onClick={() => setDraft({ ...draft, childIds: draft.childIds.filter((childId) => childId !== id) })}>Remove</button></div>
-        {question && <details><summary>Review reference answer</summary><p>{referenceAnswer(question)}</p></details>}
-      </li>
-    })}</ol>
-    <label>Add question<select value="" disabled={busy || viewingDerived} onChange={(event) => setDraft({ ...draft, childIds: [...draft.childIds, event.target.value] })}>
-      <option value="">Choose a saved question…</option>{eligible.filter((question) => !draft.childIds.includes(question.id)).map((question) => <option key={question.id} value={question.id}>{question.prompt.slice(0, 90)}</option>)}
-    </select></label>
+    <div className="form-group">
+      <div className="form-group-header"><h3>Questions in this passage</h3><span className="form-group-aside">{draft.childIds.length} shown</span></div>
+      {draft.childIds.length > 0 && <ol className="passage-questions">{draft.childIds.map((id, index) => {
+        const question = byId.get(id)
+        return <li key={id} className="passage-question">
+          <div className="question-row-text">
+            <p className="question-row-prompt">{question?.prompt ?? 'Missing question'}</p>
+            {question && <details className="source-details"><summary>Answer</summary><p>{referenceAnswer(question)}</p></details>}
+          </div>
+          <div className="passage-question-actions">
+            <button type="button" className="button-secondary" disabled={busy || viewingDerived || index === 0} onClick={() => move(index, -1)}>Move up</button>
+            <button type="button" className="button-secondary" disabled={busy || viewingDerived || index === draft.childIds.length - 1} onClick={() => move(index, 1)}>Move down</button>
+            <button type="button" className="button-quiet" disabled={busy || viewingDerived} onClick={() => setDraft({ ...draft, childIds: draft.childIds.filter((childId) => childId !== id) })}>Remove</button>
+          </div>
+        </li>
+      })}</ol>}
+      <label className="text-field">Add a question<select value="" disabled={busy || viewingDerived} onChange={(event) => setDraft({ ...draft, childIds: [...draft.childIds, event.target.value] })}>
+        <option value="">Choose a saved question…</option>{eligible.filter((question) => !draft.childIds.includes(question.id)).map((question) => <option key={question.id} value={question.id}>{question.prompt.slice(0, 90)}</option>)}
+      </select></label>
+      <Stepper label="Questions to answer" hint={`of ${draft.childIds.length || 1} shown`} value={draft.attemptCount} min={1} max={Math.max(draft.childIds.length, 1)}
+        disabled={busy || viewingDerived} onChange={(attemptCount) => setDraft({ ...draft, attemptCount })} />
+    </div>
     <button type="button" disabled={busy || viewingDerived || !draft.childIds.length} onClick={() => void save()}>{busy ? 'Saving passage…' : 'Save passage group'}</button>
   </section>
 }

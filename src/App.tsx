@@ -58,7 +58,7 @@ function App() {
   const [authError, setAuthError] =
     useState<string | null>(null)
   const [workspaceView, setWorkspaceView] = useState<
-    'exam' | 'drafts' | 'questions' | 'account'
+    'exam' | 'drafts' | 'questions' | 'account' | 'review'
   >('exam')
   const [reopenedDraft, setReopenedDraft] =
     useState<ReopenedExamDraft | null>(null)
@@ -206,7 +206,7 @@ function App() {
           <button
             type="button"
             className="workspace-nav-secondary"
-            aria-current={workspaceView === 'account' ? 'page' : undefined}
+            aria-current={workspaceView === 'account' || workspaceView === 'review' ? 'page' : undefined}
             onClick={() => setWorkspaceView('account')}
           >
             {t('account')}
@@ -335,12 +335,19 @@ function App() {
         </section>
       )}
       {workspaceView === 'account' && (
-        <details className="reviewer-tools">
-          <summary>MineGO reviewer tools</summary>
+        <section className="reviewer-entry" aria-labelledby="reviewer-entry-title">
+          <h3 id="reviewer-entry-title">For MineGO reviewers</h3>
+          <p className="field-help">Source evidence, approvals and publishing for preset papers.</p>
+          <button type="button" className="button-secondary" onClick={() => setWorkspaceView('review')}>Open reviewer tools</button>
+        </section>
+      )}
+      {workspaceView === 'review' && (
+        <div className="reviewer-page">
+          <button type="button" className="button-quiet" onClick={() => setWorkspaceView('account')}>Back to account</button>
           <Suspense fallback={<p role="status">Loading reviewer tools…</p>}>
             <PresetReviewTools key={workspaceUser.id} />
           </Suspense>
-        </details>
+        </div>
       )}
     </main>
     </div>

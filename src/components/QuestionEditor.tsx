@@ -1,4 +1,4 @@
-import { ChoiceChips } from './controls'
+import { ChoiceChips, Stepper } from './controls'
 import {
   type FormEvent,
   lazy,
@@ -494,7 +494,7 @@ export default function QuestionEditor({ ownerId }: { ownerId: string }) {
               </h3>
               <button
                 type="button"
-                className="button-secondary"
+                className="button-quiet"
                 onClick={showList}
                 disabled={isBusy}
               >
@@ -502,99 +502,39 @@ export default function QuestionEditor({ ownerId }: { ownerId: string }) {
               </button>
             </div>
 
-            <div className="form-grid">
-              <label>
-                Question type
-                <select
-                  value={draft.questionType}
-                  aria-invalid={Boolean(validationErrors.questionType)}
-                  onChange={(event) =>
-                    updateDraft(
-                      'questionType',
-                      event.target.value as QuestionInput['questionType'],
-                    )
-                  }
-                >
-                  <option value="multiple-choice">Multiple choice</option>
-                  <option value="binary">True/False or Yes/No</option>
-                  <option value="short-answer">Short open answer</option>
-                  <option value="matching">Match List A and List B</option>
-                  <option value="completion">Word-bank completion</option>
-                  <option value="odd-word">Odd-word selection</option>
-                  <option value="word-relationship">
-                    Word relationship / transformation
-                  </option>
-                  <option value="rewrite">
-                    Punctuation / capitalization rewrite
-                  </option>
-                  <option value="extended-writing">
-                    Extended writing / composition
-                  </option>
-                </select>
-              </label>
+            <ChoiceChips legend="Question type" value={draft.questionType}
+              onChange={(questionType) => updateDraft('questionType', questionType)}
+              options={[
+                { value: 'multiple-choice', label: 'Multiple choice' },
+                { value: 'binary', label: 'True/False or Yes/No' },
+                { value: 'short-answer', label: 'Short answer' },
+                { value: 'matching', label: 'Matching' },
+                { value: 'completion', label: 'Word bank' },
+                { value: 'odd-word', label: 'Odd word' },
+                { value: 'word-relationship', label: 'Word relationship' },
+                { value: 'rewrite', label: 'Rewrite' },
+                { value: 'extended-writing', label: 'Writing' },
+              ] as { value: QuestionInput['questionType']; label: string }[]} />
 
-              <label>
-                Unit
-                <input
-                  type="number"
-                  min="1"
-                  max="20"
-                  step="1"
-                  value={draft.unit}
-                  aria-invalid={Boolean(validationErrors.unit)}
-                  onChange={(event) =>
-                    updateDraft(
-                      'unit',
-                      event.target.valueAsNumber || 0,
-                    )
-                  }
-                />
-                {validationErrors.unit && (
-                  <small className="field-error">
-                    {validationErrors.unit}
-                  </small>
-                )}
-              </label>
-
-              <label>
+            <div className="question-placement">
+              <Stepper label="Unit" value={draft.unit} min={1} max={20} onChange={(unit) => updateDraft('unit', unit)} />
+              {validationErrors.unit && <small className="field-error">{validationErrors.unit}</small>}
+              <label className="text-field">
                 Lesson
                 <input
                   type="text"
                   value={draft.lesson}
                   maxLength={40}
                   aria-invalid={Boolean(validationErrors.lesson)}
-                  onChange={(event) =>
-                    updateDraft('lesson', event.target.value)
-                  }
+                  onChange={(event) => updateDraft('lesson', event.target.value)}
                 />
-                {validationErrors.lesson && (
-                  <small className="field-error">
-                    {validationErrors.lesson}
-                  </small>
-                )}
+                {validationErrors.lesson && <small className="field-error">{validationErrors.lesson}</small>}
               </label>
-
-              <label>
-                Difficulty
-                <select
-                  value={draft.difficulty}
-                  aria-invalid={Boolean(
-                    validationErrors.difficulty,
-                  )}
-                  onChange={(event) =>
-                    updateDraft(
-                      'difficulty',
-                      event.target.value as QuestionInput['difficulty'],
-                    )
-                  }
-                >
-                  <option value="easy">Easy</option>
-                  <option value="medium">Medium</option>
-                  <option value="hard">Hard</option>
-                </select>
-              </label>
-
             </div>
+
+            <ChoiceChips legend="Difficulty" value={draft.difficulty}
+              onChange={(difficulty) => updateDraft('difficulty', difficulty)}
+              options={[{ value: 'easy', label: 'Easy' }, { value: 'medium', label: 'Medium' }, { value: 'hard', label: 'Hard' }] as { value: QuestionInput['difficulty']; label: string }[]} />
 
             <label>
               Question text
@@ -1195,15 +1135,15 @@ export default function QuestionEditor({ ownerId }: { ownerId: string }) {
               </fieldset>
             )}
 
-            <label className="checkbox-field">
+            <label className="switch-field">
               <input
                 type="checkbox"
+                role="switch"
                 checked={draft.isActive}
-                onChange={(event) =>
-                  updateDraft('isActive', event.target.checked)
-                }
+                onChange={(event) => updateDraft('isActive', event.target.checked)}
               />
-              Active in this question bank
+              <span className="switch-track" aria-hidden="true" />
+              <span>Use in new papers</span>
             </label>
 
             <button type="submit" disabled={isBusy}>
