@@ -10,6 +10,8 @@ import GroupedPresetExams from './GroupedPresetExams'
 import SourceReference from './SourceReference'
 import PresetCoverageSummary from './PresetCoverageSummary'
 import { teacherErrorMessage } from '../lib/safeErrorDetails'
+import { Stepper } from './controls'
+import { PaperStamp } from './CouponProgress'
 
 const typeNames={'multiple-choice':'Multiple choice',binary:'True/False or Yes/No','short-answer':'Short answer'}
 const errorText=(e:unknown)=>teacherErrorMessage(e, 'Preset request failed. Reload and review again.')
@@ -49,33 +51,37 @@ export default function SimplePresetExams({ownerId}:{ownerId:string}){
     catch(e){setError(errorText(e))}finally{setBusy(false)}
   }
   function openSaved(exam:SavedSimplePresetExam){setSaved(exam);setReview(null);setDocuments(null);setError('');setMessage('Historical paper opened. Later corrections or withdrawals do not alter this snapshot.')}
-  return <section className="card" aria-labelledby="simple-presets-title">
+  return <section className="preset-page" aria-labelledby="simple-presets-title">
     <h2 id="simple-presets-title">Approved preset papers</h2>
-    <p>Uses explicitly approved and published questions. Current document format supports standalone Grade 6 Unit 1 multiple-choice, binary and short-answer questions. Grouped exercises require their complete paper workflow.</p>
+    <p>Questions reviewed and approved by MineGO. Make one complete exercise, or a paper from approved questions.</p>
     <PresetCoverageSummary key={ownerId} ownerId={ownerId}/>
     <GroupedPresetExams key={ownerId} ownerId={ownerId}/>
     {busy&&<p role="status">Loading or saving presets…</p>}{error&&<p role="alert">{error}</p>}{message&&<p role="status">{message}</p>}
-    <button disabled={busy} type="button" onClick={()=>{setBusy(true);setPool([]);setError('');setReload(n=>n+1);setReview(null);resetCapture()}}>Reload available presets</button>
-    {!busy&&!error&&pool.length===0&&<p>No approved published questions are loaded for this format. Reload available presets or choose another format. Private bank activity and catalogue review flags do not publish content.</p>}
-    <fieldset disabled={busy}><legend>Paper settings</legend>
+    <section className="preset-section" aria-labelledby="preset-paper-title"><div className="preset-section-header"><h3 id="preset-paper-title">Paper from approved questions</h3>
+    <button disabled={busy} type="button" className="button-quiet" onClick={()=>{setBusy(true);setPool([]);setError('');setReload(n=>n+1);setReview(null);resetCapture()}}>Reload available presets</button></div>
+    {!busy&&!error&&pool.length===0&&<p className="field-help">No approved questions are available for this paper yet.</p>}
+    <fieldset className="plain-fields" disabled={busy}><legend className="visually-hidden">Paper settings</legend>
       {(['schoolName','examTitle','teacherName'] as const).map(key=><label key={key}>{key==='schoolName'?'School name':key==='examTitle'?'Test title':'Teacher name'}
         <input name={`preset-${key}`} autoComplete="off" maxLength={80} value={settings[key]??''} onChange={e=>changeSettings({...settings,[key]:e.target.value})}/></label>)}
-      <details><summary>Advanced generation setting</summary>
-        <label>Paper seed<input name="preset-seed" type="number" min={0} max={4294967295} value={settings.selectionSeed} onChange={e=>changeSettings({...settings,selectionSeed:Number(e.target.value)})}/></label>
-        <p>The same seed keeps the same selection when available approved questions and settings are unchanged. Preview again after changing it.</p>
+      <div className="stepper-group">
+        <Stepper label="Marks per question" value={settings.marksPerQuestion} min={1} max={20} onChange={value=>changeSettings({...settings,marksPerQuestion:value})}/>
+        {SIMPLE_QUESTION_TYPES.map(type=>{const available=pool.filter(p=>p.question.type===type).length
+          const current=settings.questionQuantities?.[type]??0
+          return <Stepper key={type} label={typeNames[type]} hint={`${available} available`} value={current} max={Math.max(available,current)}
+            onChange={value=>{const quantities={...settings.questionQuantities!,[type]:value}
+              changeSettings({...settings,questionQuantities:quantities,questionCount:Object.values(quantities).reduce((a,b)=>a+b,0)})}}/>})}
+      </div>
+      <details className="more-options"><summary>More options</summary>
+        <label className="text-field">Selection number<input name="preset-seed" type="number" min={0} max={4294967295} value={settings.selectionSeed} onChange={e=>changeSettings({...settings,selectionSeed:Number(e.target.value)})}/>
+        <small>Keep the same number to get the same questions again.</small></label>
       </details>
-      <label>Default marks per question<input name="preset-marks" type="number" min={1} max={20} value={settings.marksPerQuestion} onChange={e=>changeSettings({...settings,marksPerQuestion:Number(e.target.value)})}/></label>
-      {SIMPLE_QUESTION_TYPES.map(type=><label key={type}>{typeNames[type]} quantity ({pool.filter(p=>p.question.type===type).length} available)
-        <input name={`preset-count-${type}`} type="number" min={0} max={50} value={settings.questionQuantities?.[type]??0}
-          onChange={e=>{const quantities={...settings.questionQuantities!,[type]:Number(e.target.value)}
-            changeSettings({...settings,questionQuantities:quantities,questionCount:Object.values(quantities).reduce((a,b)=>a+b,0)})}}/></label>)}
       <button type="button" disabled={!pool.length} onClick={preview}>Preview preset paper</button>
     </fieldset>
     {review&&<><h3>Review selected questions</h3><ol>{review.map(({question,locked})=>{
       const source=pool.find(p=>p.question.id===question.id)!
       return <li key={question.id}><p>{question.prompt}</p>
         <p>{question.type==='multiple-choice'?question.options.map(o=>o.text).join(' / '):question.type==='binary'?question.labelMode:'Short answer'}</p>
-        <details><summary>Source trust and approval</summary><p>{describeSourceTrust(source.provenance)}</p>
+        <details className="source-details"><summary>Source and approval</summary><p>{describeSourceTrust(source.provenance)}</p>
           <p>Reviewer: {source.reviewer}.</p>
           <p>Reference: <SourceReference value={source.provenance.sourceReference}/>.</p>
           <p>Corpus: {source.provenance.corpusScope||'Not assessed'}. Ministerial occurrences: {source.provenance.ministerialOccurrences??'Not assessed'}.</p>
@@ -90,15 +96,16 @@ export default function SimplePresetExams({ownerId}:{ownerId:string}){
       </li>
     })}</ol><p>Total: {review.reduce((n,i)=>n+i.question.marks,0)} marks.</p>
       <button type="button" disabled={busy||!!saved} onClick={()=>void finalize()}>Finalize preset paper</button></>}
-    {saved&&<div><h3>{saved.settings.examTitle}</h3><p>Sealed paper: {saved.items.length} questions, {saved.totalMarks} marks.</p>
+    {saved&&<div className="finalized-record"><PaperStamp label="Finalized"/><h3>{saved.settings.examTitle}</h3><p>Sealed paper: {saved.items.length} questions, {saved.totalMarks} marks.</p>
       <ol>{saved.items.map(item=><li key={item.question.id}>{item.question.prompt} — {item.marks} marks{item.isLocked?' (locked)':''}</li>)}</ol>
       <button type="button" disabled={busy} onClick={()=>void prepare()}>Prepare saved documents</button>
       {documents&&(['exam','answerKey'] as const).map(kind=><button key={kind} type="button" onClick={()=>void downloadPreparedDocument(documents[kind],requestBrowserDownload).then(result=>{
         if(result.status==='failed')setError(result.error??'Download failed. Retry this document.')
       })}>Download {kind==='exam'?'student exam':'answer key'}</button>)}
     </div>}
-    <h3>Your finalized preset papers</h3>
-    {history.length===0?<p>No finalized preset papers saved in this account.</p>:<ul>{history.map(exam=><li key={exam.id}>
+    <h4>Your finalized preset papers</h4>
+    {history.length===0?<p className="field-help">None yet.</p>:<ul>{history.map(exam=><li key={exam.id}>
       {exam.settings.examTitle} — {exam.totalMarks} marks <button type="button" disabled={busy} onClick={()=>openSaved(exam)}>Open saved preset paper</button></li>)}</ul>}
+    </section>
   </section>
 }
