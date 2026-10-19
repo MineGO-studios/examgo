@@ -1,5 +1,5 @@
 -- MIN-49 follow-up: narrow reads for preset provenance intake preparation (owner request, 19 October 2026).
--- PENDING: install in Development only with separate owner authorization.
+-- Installed in Development 19 October 2026 (remote version 20261019084701) after owner authorization.
 --
 -- prepareCataloguePresetProvenance used get_preset_curation, which builds every record, its history
 -- and per-record eligibility (about 9 MB and 11 s for the 1,605-question Mid-Year bank). Preparation
