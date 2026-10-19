@@ -28,11 +28,11 @@
   --eg-color-disabled-bg: #eee4dd;
   --eg-color-disabled-text: #6e5a4c;
   /* Unit marker codes from the MineGO family palette. */
-  --eg-unit-1: #da2546;
-  --eg-unit-2: #0b6b40;
-  --eg-unit-3: #f1a210;
-  --eg-unit-3-text: #110c08;
-  --eg-unit-4: #694630;
+  --eg-unit-1: #0b6b40;
+  --eg-unit-2: #f1a210;
+  --eg-unit-2-text: #110c08;
+  --eg-unit-3: #694630;
+  --eg-unit-4: #2f4f7a;
   --eg-unit-none: #c9b8ac;
   /* Ministry sheet: black rules and the teacher's red pen. */
   --eg-paper-ink: #111111;
@@ -87,9 +87,15 @@
   --eg-font-display: "Noto Sans Arabic Variable", "Manrope Variable", system-ui, sans-serif;
 }
 
-:root:lang(ar) :where(p, small, label, legend, li, h2, h3, h4, summary, td, th, output, .status-chip) {
-  /* Until every string is translated, each English paragraph keeps its own direction. */
+:root:lang(ar) :where(p, small, label, legend, li, h2, h3, h4, summary, td, th, output, .status-chip, .start-card-title, .start-card-description) {
+  /* Until every string is translated, each English paragraph keeps its own word order,
+     while every line still aligns to the Arabic reading edge. */
   unicode-bidi: plaintext;
+  text-align: right;
+}
+
+:root:lang(ar) :where(.ministry-sheet, .ministry-sheet *, .paper-plan-strip *) {
+  text-align: revert-layer;
 }
 
 ::selection {

@@ -140,6 +140,7 @@ export default function ExamBuilder({
   const [downloadResult, setDownloadResult] =
     useState<PairedDownloadResult | null>(null)
   const [draftSaved, setDraftSaved] = useState(false)
+  const [focusedQuestion, setFocusedQuestion] = useState(0)
 
   useEffect(() => {
     let active = true
@@ -618,6 +619,16 @@ export default function ExamBuilder({
   const isSaving = status === 'saving'
   const isBusy = isGenerating || isSaving
   const isLoadingQuestions = questionLoadStatus === 'loading'
+  const documentsReady = Boolean(generatedDocuments && downloadResult && !downloadResult.hasFailures && !isBusy)
+  const statusMessage = (
+    <p
+      className="builder-status"
+      role={status === 'error' || questionLoadStatus === 'error' ? 'alert' : 'status'}
+      aria-live="polite"
+    >
+      {message}
+    </p>
+  )
 
   return (
     <form
@@ -644,6 +655,7 @@ export default function ExamBuilder({
             type="text"
             value={settings.schoolName}
             maxLength={EXAM_LIMITS.schoolNameMaxLength}
+            dir="ltr"
             onChange={(event) => updateSetting('schoolName', event.target.value)}
             aria-invalid={Boolean(errors.schoolName)}
           />
@@ -656,6 +668,7 @@ export default function ExamBuilder({
             type="text"
             value={settings.examTitle}
             maxLength={EXAM_LIMITS.examTitleMaxLength}
+            dir="ltr"
             onChange={(event) => updateSetting('examTitle', event.target.value)}
             aria-invalid={Boolean(errors.examTitle)}
           />
@@ -668,6 +681,7 @@ export default function ExamBuilder({
             type="text"
             value={settings.teacherName ?? ''}
             maxLength={EXAM_LIMITS.teacherNameMaxLength}
+            dir="ltr"
             onChange={(event) => updateSetting('teacherName', event.target.value)}
             aria-invalid={Boolean(errors.teacherName)}
           />
@@ -676,7 +690,7 @@ export default function ExamBuilder({
         </label>
       </FormGroup>
 
-      <FormGroup title="Questions" aside={`Grade 6 · Unit ${settings.unit}`}>
+      <FormGroup title="Questions" aside={<><span className="unit-swatch" style={{ ['--plan-unit' as string]: `var(--eg-unit-${settings.unit})` }} />Grade 6 · Unit {settings.unit}</>}>
         {banks.length > 0 && (
           <fieldset className="chip-group" disabled={isLoadingQuestions || isBusy}>
             <legend>Question banks</legend>
@@ -762,16 +776,15 @@ export default function ExamBuilder({
             <div>
               <h3 id="exam-review-title">Review the paper</h3>
             </div>
-            <span className="status-chip active">
-              {review.length} selected
-            </span>
           </div>
 
           <SimplePaperReview
             questions={review.map((item) => item.question)}
             settings={settings}
             totalMarks={totalMarks}
-            stamp={generatedDocuments && downloadResult && !downloadResult.hasFailures && !isBusy ? 'Ready' : undefined}
+            stamp={documentsReady ? 'Ready' : undefined}
+            focusedIndex={focusedQuestion}
+            onFocusQuestion={setFocusedQuestion}
             renderControls={(question, index) => {
               const locked = review[index].locked
               return <>
@@ -819,6 +832,7 @@ export default function ExamBuilder({
             }}
           />
 
+          <aside className="paper-actions" aria-label="Save and download">
           <CouponProgress working={isGenerating} steps={['Paper setup', 'Paper reviewed']} />
 
           <div className="review-final-actions">
@@ -841,6 +855,7 @@ export default function ExamBuilder({
             )}
             <button
               type="button"
+              className={documentsReady ? 'button-secondary' : undefined}
               onClick={() => void handleGenerate()}
               disabled={isBusy}
             >
@@ -877,7 +892,7 @@ export default function ExamBuilder({
                       </span>
                       <button
                         type="button"
-                        className="button-secondary"
+                        className={documentsReady ? undefined : 'button-secondary'}
                         onClick={() =>
                           void handleIndividualDownload(
                             preparedDocument.kind,
@@ -904,19 +919,12 @@ export default function ExamBuilder({
               )}
             </section>
           )}
+          {statusMessage}
+          </aside>
         </section>
       )}
 
-      <p
-        role={
-          status === 'error' || questionLoadStatus === 'error'
-            ? 'alert'
-            : 'status'
-        }
-        aria-live="polite"
-      >
-        {message}
-      </p>
+      {!review && statusMessage}
     </form>
   )
 }

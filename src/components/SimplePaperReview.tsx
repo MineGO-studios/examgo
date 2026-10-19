@@ -19,20 +19,24 @@ const unitMarker = (unit: number): string => unit >= 1 && unit <= 4 ? `var(--eg-
  * Shows the simple paper through the same template data the Word documents use.
  * It is a content preview: page breaks and Word layout are not shown.
  */
-export default function SimplePaperReview({ questions, settings, totalMarks, renderControls, stamp }: {
+export default function SimplePaperReview({ questions, settings, totalMarks, renderControls, stamp, focusedIndex, onFocusQuestion }: {
   questions: readonly ExamQuestion[]
   settings: ExamSettings
   totalMarks: number | null
   renderControls: (question: ExamQuestion, index: number) => ReactNode
   /** Shown on the sheet only once both documents are confirmed prepared. */
   stamp?: string
+  /** Only the focused question shows its tools; the rest stay print-quiet. */
+  focusedIndex: number
+  onFocusQuestion: (index: number) => void
 }) {
   const [mode, setMode] = useState<'student' | 'key'>('student')
   const exam = buildExamData(questions, settings)
   const answerKey = buildAnswerKeyData(questions, settings)
-  const planTotal = questions.reduce((sum, question) => sum + (Number.isSafeInteger(question.marks) ? question.marks : 0), 0)
+  const focused = Math.min(Math.max(focusedIndex, 0), questions.length - 1)
   const focusQuestion = (index: number): void => {
     setMode('student')
+    onFocusQuestion(index)
     // The student view renders synchronously after the mode change on the next frame.
     requestAnimationFrame(() => document.getElementById(`paper-question-${index + 1}`)?.focus())
   }
@@ -46,7 +50,7 @@ export default function SimplePaperReview({ questions, settings, totalMarks, ren
         {questions.map((question, index) => {
           const marks = Number.isSafeInteger(question.marks) ? question.marks : 0
           return <li key={question.id} style={{ flexGrow: Math.max(marks, 1), ['--plan-unit' as string]: unitMarker(question.unit) }}
-            className={question.unit === 3 ? 'paper-plan-block is-light' : 'paper-plan-block'}>
+            className={`paper-plan-block${question.unit === 2 ? ' is-light' : ''}${index === focused ? ' is-focused' : ''}`}>
             <button type="button" onClick={() => focusQuestion(index)}
               aria-label={`Go to question ${index + 1}, unit ${question.unit}, ${marks ? markLabel(marks) : 'marks needed'}`}>
               <span>Q{index + 1} {TYPE_SHORT[question.type]}</span>
@@ -55,7 +59,6 @@ export default function SimplePaperReview({ questions, settings, totalMarks, ren
           </li>
         })}
       </ol>
-      {planTotal > 0 && <p className="paper-plan-legend">Block width shows each question's share of the marks; colour shows its unit.</p>}
     </section>
 
     <div className="paper-toolbar">
@@ -76,7 +79,7 @@ export default function SimplePaperReview({ questions, settings, totalMarks, ren
       {mode === 'student' ? <>
         <p className="ministry-sheet-instructions">{exam.Instructions}</p>
         {exam.Questions.map((question, index) => <section key={questions[index].id} id={`paper-question-${question.Number}`}
-          className="ministry-question" tabIndex={-1} aria-label={`Question ${question.Number}`}
+          className={`ministry-question${index === focused ? ' is-focused' : ''}`} tabIndex={-1} aria-label={`Question ${question.Number}`}
           style={{ ['--plan-unit' as string]: unitMarker(questions[index].unit) }}>
           <div className="ministry-question-body">
             <p className="ministry-question-heading" dir="auto">{question.Heading}</p>
@@ -86,7 +89,12 @@ export default function SimplePaperReview({ questions, settings, totalMarks, ren
           <p className="ministry-mark" aria-label={Number.isSafeInteger(question.Marks) ? markLabel(question.Marks) : 'Marks needed'}>
             {Number.isSafeInteger(question.Marks) ? question.Marks : '?'}
           </p>
-          <div className="question-tools">{renderControls(questions[index], index)}</div>
+          {index === focused
+            ? <div className="question-tools">{renderControls(questions[index], index)}</div>
+            : <div className="question-summary">
+              <span className="unit-tag">Unit {questions[index].unit}</span>
+              <button type="button" className="button-quiet" aria-label={`Edit question ${question.Number}`} onClick={() => focusQuestion(index)}>Edit</button>
+            </div>}
         </section>)}
       </> : <div className="blueprint-answer-table" role="region" aria-label="Scrollable answers" tabIndex={0}><table>
         <caption>Answers and marks</caption>

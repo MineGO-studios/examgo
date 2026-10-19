@@ -75,7 +75,7 @@ export default function PresetCoverageSummary({ ownerId }: { ownerId: string }) 
     <div className="preset-coverage-heading"><h3 id={id}>Preset coverage</h3>
       <button className="button-secondary preset-coverage-reload" type="button" aria-label="Reload coverage" title="Reload coverage" disabled={loading} onClick={() => {
         setRetry(value => value + 1)
-      }}>&#8635;</button>
+      }}><svg aria-hidden="true" width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M14.5 9a5.5 5.5 0 1 1-1.6-3.9" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /><path d="M13.4 2.6v3h-3" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg></button>
     </div>
     {loading && <p role="status">Loading preset coverage...</p>}
     {error && <p role="alert">{error}</p>}

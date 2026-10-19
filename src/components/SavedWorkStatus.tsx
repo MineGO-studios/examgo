@@ -8,8 +8,11 @@ export function SavedWorkStatus({ message, failed, managed }: {
   managed: boolean
 }) {
   const [text, reference] = message.split(' Reference: ')
+  // A managed section already announces the failure; the list only notes it quietly.
+  const shown = failed && managed ? 'Not loaded.' : text
+  const shortReference = reference?.slice(0, 11)
   return <p className={failed ? 'saved-work-failure' : undefined} role={failed && !managed ? 'alert' : 'status'}>
-    {text}
-    {reference && <small className="error-reference">Support reference: {reference}</small>}
+    {shown}
+    {reference && <small className="error-reference" title={reference}>Ref {shortReference}</small>}
   </p>
 }

@@ -203,17 +203,17 @@ function App() {
           >
             {t('questionBanks')}
           </button>
+        </nav>
+        <div className="shell-actions">
+          <span className="shell-context">Private preview</span>
           <button
             type="button"
-            className="workspace-nav-secondary"
+            className="shell-account"
             aria-current={workspaceView === 'account' || workspaceView === 'review' ? 'page' : undefined}
             onClick={() => setWorkspaceView('account')}
           >
             {t('account')}
           </button>
-        </nav>
-        <div className="shell-actions">
-          <span className="shell-context">Private preview</span>
           <LanguageSwitch />
         </div>
       </header>

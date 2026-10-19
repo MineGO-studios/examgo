@@ -6,6 +6,7 @@ import {DEFAULT_EXAM_SETTINGS} from '../types/exam'
 import {downloadPreparedDocument,requestBrowserDownload,type PreparedExamDocumentPair} from '../lib/documentDelivery'
 import SourceReference from './SourceReference'
 import { PaperStamp } from './CouponProgress'
+import { Stepper } from './controls'
 import { teacherErrorMessage } from '../lib/safeErrorDetails'
 const errorText=(e:unknown)=>teacherErrorMessage(e, 'Group preset request failed. Reopen before retrying.')
 export default function GroupedPresetExams({ownerId}:{ownerId:string}){
@@ -35,13 +36,13 @@ export default function GroupedPresetExams({ownerId}:{ownerId:string}){
     {!busy&&!error&&!groups.length&&<p>No complete approved published exercises are available for this format.</p>}
     <fieldset className="plain-fields" disabled={busy||!!saved}><legend className="visually-hidden">Complete exercise settings</legend>
       <label>Published exercise<select name="preset-complete-exercise" value={selected} onChange={e=>{setSelected(e.target.value);reset()}}>
-        <option value="">Choose a complete exercise</option>{groups.map(g=><option key={g.id} value={g.id}>{g.instruction.slice(0,80)} — {g.members.length} displayed, answer {g.attemptCount}</option>)}
+        <option value="">Choose a complete exercise</option>{groups.map(g=><option key={g.id} value={g.id}>{g.instruction.slice(0,80)} — students answer {g.attemptCount} of {g.members.length}</option>)}
       </select></label>
       {(['schoolName','examTitle','teacherName'] as const).map(key=><label key={key}>{key==='schoolName'?'Exercise school name':key==='examTitle'?'Exercise test title':'Exercise teacher name'}
         <input name={`group-preset-${key}`} autoComplete="off" maxLength={80} value={settings[key]??''} onChange={e=>{setSettings({...settings,[key]:e.target.value});reset()}}/></label>)}
-      <label>Marks per attempted point<input name="group-preset-marks" type="number" min={1} max={20} value={settings.marksPerQuestion}
-        onChange={e=>{setSettings({...settings,marksPerQuestion:Number(e.target.value)});reset()}}/></label>
-      {group&&<><p>{group.instruction} Displayed: {group.members.length}. Answer: {group.attemptCount}. Total: {group.attemptCount*settings.marksPerQuestion} marks.</p>
+      <div className="stepper-group"><Stepper label="Marks per attempted point" value={settings.marksPerQuestion} min={1} max={20}
+        onChange={value=>{setSettings({...settings,marksPerQuestion:value});reset()}}/></div>
+      {group&&<><p>{group.instruction} Students answer {group.attemptCount} of {group.members.length} · {group.attemptCount*settings.marksPerQuestion} marks.</p>
         <ol className="preset-items">{group.members.map(m=><li key={m.revisionId}><p>{m.question.prompt}</p><details className="source-details"><summary>Source and approval</summary>
           <p>{describeSourceTrust(m.provenance)}. </p>
           <p>Approved and published for use in new papers. Reviewer: {m.reviewer}. Publisher: {m.publisher}.</p>
@@ -50,7 +51,7 @@ export default function GroupedPresetExams({ownerId}:{ownerId:string}){
         </details></li>)}</ol>
         <button type="button" onClick={()=>void finalize()}>Finalize complete preset exercise</button></>}
     </fieldset>
-    {saved&&<div className="finalized-record"><PaperStamp label="Finalized"/><h4>{saved.settings.examTitle}</h4><p>Sealed exercise: {saved.group.members.length} displayed, answer {saved.group.attemptCount}, {saved.totalMarks} marks.</p>
+    {saved&&<div className="finalized-record"><PaperStamp label="Finalized"/><h4>{saved.settings.examTitle}</h4><p>Students answer {saved.group.attemptCount} of {saved.group.members.length} · {saved.totalMarks} marks.</p>
       <ol>{saved.group.members.map(m=><li key={m.revisionId}>{m.question.prompt} — {m.question.marks} marks per attempted point</li>)}</ol>
       <button type="button" disabled={busy} onClick={()=>void prepare()}>Prepare captured exercise documents</button>
       {documents&&(['exam','answerKey'] as const).map(kind=><button key={kind} type="button" onClick={()=>void downloadPreparedDocument(documents[kind],requestBrowserDownload).then(result=>{

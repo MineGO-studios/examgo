@@ -159,11 +159,8 @@ export default function QuestionEditor({ ownerId }: { ownerId: string }) {
           if (active) setLinkedIds(new Set(loadedQuestions.filter((question) => !standalone.has(question.id)).map((question) => question.id)))
         }).catch(() => { if (active) setLinkedIds(null) })
         setStatus('idle')
-        setMessage(
-          loadedQuestions.length === 0
-            ? 'This bank has no questions yet.'
-            : `${loadedQuestions.length} question${loadedQuestions.length === 1 ? '' : 's'} loaded.`,
-        )
+        // The list header carries the counts; the message line stays for saves and errors.
+        setMessage('')
       } catch (error) {
         if (!active) {
           return
@@ -355,7 +352,7 @@ export default function QuestionEditor({ ownerId }: { ownerId: string }) {
     resetDraft()
     setView('list')
     setStatus('idle')
-    setMessage(`${questions.length} question${questions.length === 1 ? '' : 's'} in this bank.`)
+    setMessage('')
   }
 
   const addMatchingPair = () => {
