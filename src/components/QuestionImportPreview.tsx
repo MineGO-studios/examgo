@@ -112,7 +112,7 @@ export default function QuestionImportPreview({ bankId, bankName, onCommitted }:
   const [namespace, setNamespace] = useState('teacher-import')
   const [mappingConfirmed, setMappingConfirmed] = useState(false)
   const [document, setDocument] = useState<QuestionInterchangeV1 | null>(null)
-  const [status, setStatus] = useState('Choose a question file. ExamGO recognises its template before anything is saved.')
+  const [status, setStatus] = useState('Choose a question file to start.')
   const [busy, setBusy] = useState(false)
   const [savedImports, setSavedImports] = useState<StagedImportSummary[]>([])
   const [savedError, setSavedError] = useState('')
@@ -303,7 +303,7 @@ export default function QuestionImportPreview({ bankId, bankName, onCommitted }:
   return <section className="csv-import question-file-import" aria-labelledby="staged-import-title">
     <div>
       <h3 id="staged-import-title">Import file</h3>
-      <p>Supported: ExamGO multiple-choice CSV, the Papers master catalogue CSV, ExamGO versioned JSON, and other CSV files once you confirm which column holds each field. Nothing is added to the bank until you preview, save for review and confirm. Exam marks are assigned when composing a paper.</p>
+      <p className="field-help">CSV or ExamGO JSON files. You check every question before anything is added to the bank.</p>
     </div>
     <label>Question file
       <input type="file" accept=".csv,text/csv,.json,application/json"
@@ -391,14 +391,14 @@ export default function QuestionImportPreview({ bankId, bankName, onCommitted }:
     </div>}
     <p role="status" aria-live="polite">{status}</p>
     <div className="recovery-actions">
-      {diagnostics === 'hidden' && <button type="button" className="button-secondary" onClick={requestDiagnostics}>Show diagnostics (developers and authorized reviewers)</button>}
+      {diagnostics === 'hidden' && <button type="button" className="button-quiet diagnostics-link" onClick={requestDiagnostics}>Show diagnostics (developers and authorized reviewers)</button>}
       {diagnostics === 'checking' && <p role="status">Checking reviewer access…</p>}
       {diagnostics === 'restricted' && <p role="status">Diagnostics are restricted to developers and authorized MineGO reviewers. Original source values are preserved for their review.</p>}
       {showDiagnostics && <button type="button" className="button-secondary" onClick={() => setDiagnostics('hidden')}>Hide diagnostics</button>}
     </div>
-    <h4>Import history for this bank</h4>
+    <h4>Past imports</h4>
     {savedError && <p role="alert">{savedError}</p>}
-    {!savedError && savedImports.length === 0 && <p>No saved imports yet.</p>}
+    {!savedError && savedImports.length === 0 && <p className="field-help">None yet.</p>}
     {savedImports.length > 0 && <ul>{savedImports.map((item) => <li key={item.id}>
       <strong>{readableImportSource(item.sourceNamespace)}</strong> · imported {new Date(item.createdAt).toLocaleDateString()} · {item.stagedRows} of {item.expectedRows} rows saved for review
       {item.stagedRows === item.expectedRows ? '' : ' · Incomplete: choose the same file again to finish saving it'}

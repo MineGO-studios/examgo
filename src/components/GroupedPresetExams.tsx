@@ -5,6 +5,7 @@ import {describeSourceTrust} from '../domain/presetCuration'
 import {DEFAULT_EXAM_SETTINGS} from '../types/exam'
 import {downloadPreparedDocument,requestBrowserDownload,type PreparedExamDocumentPair} from '../lib/documentDelivery'
 import SourceReference from './SourceReference'
+import { PaperStamp } from './CouponProgress'
 import { teacherErrorMessage } from '../lib/safeErrorDetails'
 const errorText=(e:unknown)=>teacherErrorMessage(e, 'Group preset request failed. Reopen before retrying.')
 export default function GroupedPresetExams({ownerId}:{ownerId:string}){
@@ -27,12 +28,12 @@ export default function GroupedPresetExams({ownerId}:{ownerId:string}){
   async function prepare(){if(!saved)return;setBusy(true);setError('')
     try{setDocuments(await prepareGroupedPresetDocuments(saved))}catch(e){setError(errorText(e))}finally{setBusy(false)}
   }
-  return <section aria-labelledby="group-presets-title"><h3 id="group-presets-title">Complete preset exercise</h3>
-    <p>Captures one complete published Grade 6 Unit 1 exercise containing multiple-choice, binary or short-answer questions. Source order and attempt rule remain intact. Every member needs its own approval and publication.</p>
+  return <section className="preset-section" aria-labelledby="group-presets-title"><div className="preset-section-header"><h3 id="group-presets-title">Complete preset exercise</h3>
+    <button type="button" className="button-quiet" disabled={busy} onClick={()=>{reset();setGroups([]);setSelected('');setBusy(true);setReload(n=>n+1)}}>Reload complete presets</button></div>
+    <p className="field-help">One reviewed exercise, kept whole with its instruction and how many students answer.</p>
     {busy&&<p role="status">Loading or saving complete exercises…</p>}{error&&<p role="alert">{error}</p>}
-    <button type="button" disabled={busy} onClick={()=>{reset();setGroups([]);setSelected('');setBusy(true);setReload(n=>n+1)}}>Reload complete presets</button>
     {!busy&&!error&&!groups.length&&<p>No complete approved published exercises are available for this format.</p>}
-    <fieldset disabled={busy||!!saved}><legend>Complete exercise settings</legend>
+    <fieldset className="plain-fields" disabled={busy||!!saved}><legend className="visually-hidden">Complete exercise settings</legend>
       <label>Published exercise<select name="preset-complete-exercise" value={selected} onChange={e=>{setSelected(e.target.value);reset()}}>
         <option value="">Choose a complete exercise</option>{groups.map(g=><option key={g.id} value={g.id}>{g.instruction.slice(0,80)} — {g.members.length} displayed, answer {g.attemptCount}</option>)}
       </select></label>
@@ -41,7 +42,7 @@ export default function GroupedPresetExams({ownerId}:{ownerId:string}){
       <label>Marks per attempted point<input name="group-preset-marks" type="number" min={1} max={20} value={settings.marksPerQuestion}
         onChange={e=>{setSettings({...settings,marksPerQuestion:Number(e.target.value)});reset()}}/></label>
       {group&&<><p>{group.instruction} Displayed: {group.members.length}. Answer: {group.attemptCount}. Total: {group.attemptCount*settings.marksPerQuestion} marks.</p>
-        <ol>{group.members.map(m=><li key={m.revisionId}><p>{m.question.prompt}</p><details><summary>Source trust and approval</summary>
+        <ol className="preset-items">{group.members.map(m=><li key={m.revisionId}><p>{m.question.prompt}</p><details className="source-details"><summary>Source and approval</summary>
           <p>{describeSourceTrust(m.provenance)}. </p>
           <p>Approved and published for use in new papers. Reviewer: {m.reviewer}. Publisher: {m.publisher}.</p>
           <p>Reference: <SourceReference value={m.provenance.sourceReference}/>.</p>
@@ -49,14 +50,14 @@ export default function GroupedPresetExams({ownerId}:{ownerId:string}){
         </details></li>)}</ol>
         <button type="button" onClick={()=>void finalize()}>Finalize complete preset exercise</button></>}
     </fieldset>
-    {saved&&<div><h4>{saved.settings.examTitle}</h4><p>Sealed exercise: {saved.group.members.length} displayed, answer {saved.group.attemptCount}, {saved.totalMarks} marks.</p>
+    {saved&&<div className="finalized-record"><PaperStamp label="Finalized"/><h4>{saved.settings.examTitle}</h4><p>Sealed exercise: {saved.group.members.length} displayed, answer {saved.group.attemptCount}, {saved.totalMarks} marks.</p>
       <ol>{saved.group.members.map(m=><li key={m.revisionId}>{m.question.prompt} — {m.question.marks} marks per attempted point</li>)}</ol>
       <button type="button" disabled={busy} onClick={()=>void prepare()}>Prepare captured exercise documents</button>
       {documents&&(['exam','answerKey'] as const).map(kind=><button key={kind} type="button" onClick={()=>void downloadPreparedDocument(documents[kind],requestBrowserDownload).then(result=>{
         if(result.status==='failed')setError(result.error??'Download failed. Retry this captured document.')
       })}>Download exercise {kind==='exam'?'student paper':'answer key'}</button>)}
     </div>}
-    <h4>Saved complete preset exercises</h4>{!history.length&&<p>No captured exercises yet.</p>}
-    <ul>{history.map(paper=><li key={paper.id}><button type="button" disabled={busy} onClick={()=>{setSaved(paper);setDocuments(null);setError('')}}>{paper.settings.examTitle} — {paper.totalMarks} marks, {paper.savedAt}</button></li>)}</ul>
+    <h4>Saved exercises</h4>{!history.length&&<p className="field-help">None yet.</p>}
+    <ul className="saved-presets">{history.map(paper=><li key={paper.id}><button type="button" className="button-secondary" disabled={busy} onClick={()=>{setSaved(paper);setDocuments(null);setError('')}}>{paper.settings.examTitle} — {paper.totalMarks} marks, {paper.savedAt}</button></li>)}</ul>
   </section>
 }

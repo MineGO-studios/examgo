@@ -13,6 +13,7 @@ import './App.css'
 import './workspace.css'
 import './controls.css'
 import './pages.css'
+import './builders.css'
 import { useSectionListLoads } from './components/savedWorkLoadState'
 import { LanguageSwitch } from './components/LanguageProvider'
 import PaperStarts from './components/PaperStarts'
@@ -289,7 +290,7 @@ function App() {
         </div>
       )}
       {workspaceView === 'exam' && (
-        <>{examMode !== 'simple' && paperStarts}
+        <div className="create-exam">{examMode !== 'simple' && paperStarts}
         {examMode === 'blueprint' && ExamBlueprintBuilder ? null : examMode === 'presets' ? <Suspense fallback={<p role="status">Loading approved presets…</p>}>
           <SimplePresetExams key={workspaceUser.id} ownerId={workspaceUser.id}/>
         </Suspense> : examMode === 'phase-nine' ? <Suspense fallback={<p role="status">Loading source-specific builder…</p>}>
@@ -302,7 +303,7 @@ function App() {
           startOptions={paperStarts}
           reopenedDraft={reopenedDraft}
           onViewDrafts={() => setWorkspaceView('drafts')}
-        />}</>
+        />}</div>
       )}
       {ExamBlueprintBuilder && blueprintStarted && <div hidden={workspaceView !== 'exam' || examMode !== 'blueprint'}>
         <Suspense fallback={<p role="status">Loading structured paper…</p>}>

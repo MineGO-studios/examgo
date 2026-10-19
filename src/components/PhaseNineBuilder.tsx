@@ -1,3 +1,5 @@
+import { ChoiceChips, FormGroup, ToggleChip } from './controls'
+import { PaperStamp } from './CouponProgress'
 import { useEffect, useRef, useState } from 'react'
 import { questionRowToDomain, type DomainQuestion } from '../domain/questionDomain'
 import { DEFAULT_EXAM_SETTINGS, type ExamSettings } from '../types/exam'
@@ -37,7 +39,7 @@ export default function PhaseNineBuilder({ ownerId, reopened, onSavedWork, onAut
   const [loadedBankKey, setLoadedBankKey] = useState('')
   const [busy, setBusy] = useState(false)
   const busyRef = useRef(false)
-  const [message, setMessage] = useState('Choose your banks, preview the Q3–Q5 excerpt, and assign whole marks before saving.')
+  const [message, setMessage] = useState('Choose your banks, preview, then set the marks before saving.')
   const [failed, setFailed] = useState(false)
   const [documents, setDocuments] = useState<PreparedExamDocumentPair | null>(null)
   const [pendingSave, setPendingSave] = useState<{ intent: PhaseNineTeacherIntent; id: string; version: number; request: string } | null>(null)
@@ -107,42 +109,50 @@ export default function PhaseNineBuilder({ ownerId, reopened, onSavedWork, onAut
     setMessage('Finalized paper saved. Prepare the matching documents from this captured version.')
   })
 
-  return <section className="card" aria-labelledby="structured-builder-title">
+  return <section className="builder-page" aria-labelledby="structured-builder-title">
     <h2 id="structured-builder-title">Iraqi exercises and writing</h2>
-    <p>Approved Q3/A–Q5 excerpt: completion, five-of-six odd words, five-of-six relationships, one rewrite and one of two writing alternatives.
-      {examOwnedMarks ? ` Attempted total: ${review?.snapshot.totalMarks ?? 60} marks. Assign question totals below.` : ' Total: 60 marks.'} This is not a complete Q1–Q5 paper.</p>
-    <p role={failed ? 'alert' : 'status'} aria-live="polite">{message}</p>
-    <fieldset disabled={locked} className="structured-fields">
-      <legend>Paper settings</legend>
-      <label>Primary question bank<select value={bankId} onChange={(e) => { setBankIds([e.target.value, ...bankIds.slice(1).filter((id) => id !== e.target.value)]); changed(true) }}>
-        {banks.map((bank) => <option key={bank.id} value={bank.id}>{bank.name}</option>)}
-        {finalized && <option value={bankId}>Saved question bank</option>}
-      </select></label>
-      {examOwnedMarks && !finalized && <fieldset><legend>Additional banks</legend>
-        <p>Shared questions appear once. Passage children stay with their passage.</p>
-        {banks.filter((bank) => bank.id !== bankId).map((bank) => <label key={bank.id}>
-          <input type="checkbox" checked={bankIds.includes(bank.id)} disabled={bankIds.length >= 20 && !bankIds.includes(bank.id)}
-            onChange={(event) => { setBankIds(event.target.checked ? [...bankIds, bank.id] : bankIds.filter((id) => id !== bank.id)); changed(true) }} />{bank.name}
+    {finalized && <PaperStamp label="Finalized" />}
+    <p>Completion, odd words, word relationships, a rewrite and a writing task (Q3/A to Q5).
+      {examOwnedMarks ? ` ${review?.snapshot.totalMarks ?? 60} marks to share between the questions.` : ' 60 marks.'} This is part of a paper, not a full Q1 to Q5 paper.</p>
+    <p role={failed ? 'alert' : 'status'} aria-live="polite" className="field-help">{message}</p>
+    <fieldset disabled={locked} className="plain-fields">
+      <legend className="visually-hidden">Paper settings</legend>
+      <FormGroup title="Questions">
+        <label className="text-field">Primary question bank<select value={bankId} onChange={(e) => { setBankIds([e.target.value, ...bankIds.slice(1).filter((id) => id !== e.target.value)]); changed(true) }}>
+          {banks.map((bank) => <option key={bank.id} value={bank.id}>{bank.name}</option>)}
+          {finalized && <option value={bankId}>Saved question bank</option>}
+        </select></label>
+        {examOwnedMarks && !finalized && banks.length > 1 && <fieldset className="chip-group"><legend>Also use</legend>
+          <div className="chips">
+            {banks.filter((bank) => bank.id !== bankId).map((bank) => <ToggleChip key={bank.id} label={bank.name} checked={bankIds.includes(bank.id)}
+              disabled={bankIds.length >= 20 && !bankIds.includes(bank.id)}
+              onChange={() => { setBankIds(bankIds.includes(bank.id) ? bankIds.filter((id) => id !== bank.id) : [...bankIds, bank.id]); changed(true) }} />)}
+          </div>
+          <p className="field-help">A question shared by two banks appears once.</p>
+        </fieldset>}
+        <label className="text-field">Lesson<input maxLength={40} value={filters.lesson} placeholder="All lessons" onChange={(e) => { setFilters({ ...filters, lesson: e.target.value }); changed(true) }} /></label>
+        <ChoiceChips legend="Difficulty" value={filters.difficulty}
+          options={[{ value: '', label: 'Any' }, { value: 'easy', label: 'Easy' }, { value: 'medium', label: 'Medium' }, { value: 'hard', label: 'Hard' }] as { value: typeof filters.difficulty; label: string }[]}
+          onChange={(difficulty) => { setFilters({ ...filters, difficulty }); changed(true) }} />
+      </FormGroup>
+      <FormGroup title="Paper details">
+        {(['schoolName', 'examTitle', 'teacherName'] as const).map((key) => <label key={key} className="text-field">
+          {{ schoolName: 'School name', examTitle: 'Test title', teacherName: 'Teacher name' }[key]}
+          <input maxLength={80} value={settings[key] ?? ''} onChange={(e) => { setSettings({ ...settings, [key]: e.target.value }); changed() }} />
         </label>)}
-      </fieldset>}
-      {(['schoolName', 'examTitle', 'teacherName'] as const).map((key) => <label key={key}>
-        {{ schoolName: 'School name', examTitle: 'Test title', teacherName: 'Teacher name' }[key]}
-        <input maxLength={80} value={settings[key] ?? ''} onChange={(e) => { setSettings({ ...settings, [key]: e.target.value }); changed() }} />
-      </label>)}
-      <label>Lesson filter<input maxLength={40} value={filters.lesson} placeholder="All lessons" onChange={(e) => { setFilters({ ...filters, lesson: e.target.value }); changed(true) }} /></label>
-      <label>Difficulty<select value={filters.difficulty} onChange={(e) => { setFilters({ ...filters, difficulty: e.target.value as typeof filters.difficulty }); changed(true) }}>
-        <option value="">All difficulties</option><option>easy</option><option>medium</option><option>hard</option>
-      </select></label>
-      <details><summary>Advanced generation setting</summary>
-        <label>Paper seed<input type="number" min={0} max={4294967295} value={settings.selectionSeed} onChange={(e) => { setSettings({ ...settings, selectionSeed: Number(e.target.value) }); changed(true) }} /></label>
-        <p>The same seed keeps the same selection when the banks and filters are unchanged. Review again after changing it.</p>
+      </FormGroup>
+      <FormGroup title="Pages">
+        <ChoiceChips legend="Question pages" value={pageTarget}
+          options={([1, 2, 3, 4, 5] as PageTarget[]).map((n) => ({ value: n, label: String(n) }))}
+          onChange={(target) => { setPageTarget(target); changed() }}
+          hint="Your target, not a measured count. Check the documents in Word before printing." />
+      </FormGroup>
+      <details className="more-options"><summary>More options</summary>
+        <label className="text-field">Selection number<input type="number" min={0} max={4294967295} value={settings.selectionSeed} onChange={(e) => { setSettings({ ...settings, selectionSeed: Number(e.target.value) }); changed(true) }} />
+          <small>Keep the same number to get the same questions again.</small></label>
       </details>
-      <label>Page target<select value={pageTarget} onChange={(e) => { setPageTarget(Number(e.target.value) as PageTarget); changed() }}>
-        {[1, 2, 3, 4, 5].map((n) => <option key={n} value={n}>{n}</option>)}
-      </select></label>
     </fieldset>
-    <p>The page target is saved intent, not a verified page count. Inspect the documents in Word or LibreOffice before printing.</p>
-    <div className="recovery-actions">
+    <div className="recovery-actions builder-actions">
       {!finalized && <button disabled={locked || loading || !bankId} onClick={() => void run(async () => {
         setReview(examOwnedMarks ? selectPhaseNineMarkedPaper(pool, settings.selectionSeed) : selectPhaseNinePaper(pool, settings.selectionSeed)); changed(); setMessage('Review ready. Assign question marks, lock or replace questions, then save the draft.')
       })}>{loading ? 'Loading questions…' : 'Preview questions'}</button>}

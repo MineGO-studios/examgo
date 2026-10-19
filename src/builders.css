@@ -1,0 +1,200 @@
+/* Preset and Iraqi-exercise builders, bank editing and import, in the family style. */
+
+.preset-page,
+.builder-page {
+  position: relative;
+  display: grid;
+  gap: var(--eg-space-5);
+  max-width: 48rem;
+  margin-inline: auto;
+}
+
+.preset-page > h2,
+.builder-page > h2 {
+  margin: 0;
+}
+
+.preset-page > p,
+.builder-page > p {
+  margin: 0;
+}
+
+.preset-section {
+  display: grid;
+  gap: var(--eg-space-4);
+  border-top: 1px solid var(--eg-color-border);
+  padding-top: var(--eg-space-5);
+}
+
+.preset-section-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--eg-space-3);
+}
+
+.preset-section-header h3 {
+  margin: 0;
+  font-size: var(--eg-font-size-lg);
+}
+
+.preset-section > p,
+.preset-section h4 {
+  margin: 0;
+}
+
+.plain-fields {
+  display: grid;
+  gap: var(--eg-space-4);
+  min-width: 0;
+  margin: 0;
+  border: 0;
+  padding: 0;
+}
+
+.plain-fields > label,
+.text-field {
+  display: grid;
+  gap: var(--eg-space-2);
+}
+
+.preset-items {
+  display: grid;
+  gap: var(--eg-space-2);
+  margin: 0;
+  border: 1px solid var(--eg-color-border);
+  border-radius: var(--eg-radius-lg);
+  background: var(--eg-color-surface);
+  padding: var(--eg-space-3) var(--eg-space-5);
+}
+
+.preset-items p {
+  margin: 0;
+  color: var(--eg-color-text);
+}
+
+.source-details > summary {
+  min-block-size: 2rem;
+  color: var(--eg-color-text-muted);
+  cursor: pointer;
+  font-size: var(--eg-font-size-sm);
+}
+
+.source-details p {
+  color: var(--eg-color-text-muted);
+  font-size: var(--eg-font-size-sm);
+}
+
+.saved-presets {
+  display: grid;
+  gap: var(--eg-space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.saved-presets button {
+  justify-content: flex-start;
+  width: 100%;
+  text-align: start;
+}
+
+.finalized-record {
+  position: relative;
+  display: grid;
+  gap: var(--eg-space-3);
+  border: 1px solid var(--eg-color-border);
+  border-radius: var(--eg-radius-lg);
+  background: var(--eg-color-surface);
+  padding: var(--eg-space-5);
+}
+
+.finalized-record h3,
+.finalized-record h4,
+.finalized-record p {
+  margin: 0;
+}
+
+/* The finalized stamp outside the paper preview. */
+.finalized-record > .paper-stamp,
+.builder-page > .paper-stamp {
+  position: absolute;
+  top: var(--eg-space-4);
+  inset-inline-end: var(--eg-space-4);
+  margin: 0;
+  border: 3px solid var(--eg-paper-pen);
+  border-radius: var(--eg-radius-md);
+  color: var(--eg-paper-pen);
+  font: 800 1rem/1 var(--eg-font-display);
+  letter-spacing: 0.12em;
+  padding: var(--eg-space-2) var(--eg-space-3);
+  pointer-events: none;
+  text-transform: uppercase;
+  transform: rotate(-8deg);
+  animation: stamp-land 600ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.builder-actions {
+  border-top: 1px solid var(--eg-color-border);
+  padding-top: var(--eg-space-4);
+}
+
+/* ---- Bank editing and import ---- */
+.question-form {
+  border-radius: var(--eg-radius-lg);
+  background: var(--eg-color-surface);
+}
+
+.diagnostics-link {
+  justify-self: start;
+  min-block-size: 2rem;
+  color: var(--eg-color-text-muted);
+  font-size: var(--eg-font-size-sm);
+  font-weight: 500;
+  padding: 0;
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
+.diagnostics-link:hover:not(:disabled) {
+  background: transparent;
+  color: var(--eg-color-text);
+}
+
+input[type='file'] {
+  padding: var(--eg-space-2);
+}
+
+input[type='file']::file-selector-button {
+  margin-inline-end: var(--eg-space-3);
+  border: 1px solid var(--eg-color-border-control);
+  border-radius: var(--eg-radius-md);
+  background: var(--eg-color-surface-subtle);
+  color: var(--eg-color-text);
+  cursor: pointer;
+  font: 650 var(--eg-font-size-sm) var(--eg-font-sans);
+  padding: var(--eg-space-2) var(--eg-space-4);
+}
+
+.csv-import {
+  border-radius: var(--eg-radius-lg);
+  background: var(--eg-color-surface);
+}
+
+input[type='radio'],
+input[type='checkbox'] {
+  accent-color: var(--eg-color-primary);
+}
+
+/* Create exam keeps the start cards and every builder in one centred column. */
+.create-exam {
+  display: grid;
+  gap: var(--eg-space-6);
+}
+
+.create-exam > .paper-starts {
+  width: 100%;
+  max-width: 48rem;
+  margin-inline: auto;
+}
