@@ -1,5 +1,7 @@
 import { ChoiceChips, Stepper } from './controls'
+import { questionAnswerPreview, questionTypeMark, unitCounts } from '../lib/questionCards'
 import {
+  type CSSProperties,
   type FormEvent,
   lazy,
   Suspense,
@@ -387,24 +389,39 @@ export default function QuestionEditor({ ownerId }: { ownerId: string }) {
       className="question-editor"
       aria-labelledby="question-editor-title"
     >
-      <div className="section-heading">
+      <header className="qb-head">
         <div>
-          <h2 id="question-editor-title">Question banks</h2>
-          <p>Your questions, ready to use in papers.</p>
+          <h2 id="question-editor-title" className="qb-title">Question banks</h2>
+          <p className="qb-lede">{selectedBankId && banks.length > 0
+            ? `${questions.length} question${questions.length === 1 ? '' : 's'} in ${banks.find((bank) => bank.id === selectedBankId)?.name ?? 'this bank'}`
+            : 'Your questions, ready to use in papers.'}</p>
         </div>
-      </div>
+        {banks.length > 0 && selectedBankId && <button type="button" className="qb-add" disabled={isBusy} onClick={() => { resetDraft(); setView('question') }}>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" /></svg>Add question
+        </button>}
+      </header>
 
       {banks.length > 0 && <ChoiceChips legend="Active bank" value={selectedBankId} disabled={isBusy}
         onChange={(bankId) => selectBank(bankId)}
         options={banks.map((bank) => ({ value: bank.id, label: bank.name }))} />}
 
-      {banks.length > 0 && selectedBankId && <div className="view-tabs" role="group" aria-label="Question bank actions">
-        <button type="button" aria-pressed={view === 'list'} disabled={isBusy} onClick={showList}>Questions</button>
-        <button type="button" aria-pressed={view === 'question' && !editingQuestionId} disabled={isBusy} onClick={() => { resetDraft(); setView('question') }}>Add question</button>
-        <button type="button" aria-pressed={view === 'import'} disabled={isBusy} onClick={() => setView('import')}>Import file</button>
-        <button type="button" aria-pressed={view === 'groups'} disabled={isBusy} onClick={() => setView('groups')}>Passages and linked exercises</button>
-        <button type="button" aria-pressed={view === 'manage'} disabled={isBusy} onClick={() => setView('manage')}>Manage banks</button>
-      </div>}
+      {banks.length > 0 && selectedBankId && (() => {
+        const sections = [['list', 'Questions'], ['import', 'Import file'], ['groups', 'Passages'], ['manage', 'Manage banks']] as const
+        const open = (key: typeof sections[number][0]) => key === 'list' ? showList() : setView(key)
+        return <div className="qb-sections">
+          <div className="eg-seg qb-seg" role="group" aria-label="Question bank sections">
+            {sections.map(([key, label]) => <button key={key} type="button" aria-pressed={view === key} disabled={isBusy} onClick={() => open(key)}>{label}</button>)}
+          </div>
+          <label className="eg-select qb-section-select">
+            <span className="visually-hidden">Question bank section</span>
+            <select value={sections.some(([key]) => key === view) ? view : ''} disabled={isBusy}
+              onChange={(event) => open(event.target.value as typeof sections[number][0])}>
+              {!sections.some(([key]) => key === view) && <option value="" disabled>{editingQuestionId ? 'Editing a question' : 'Adding a question'}</option>}
+              {sections.map(([key, label]) => <option key={key} value={key}>{label}</option>)}
+            </select>
+          </label>
+        </div>
+      })()}
 
       <p
         className={`editor-message ${status === 'error' ? 'error' : ''}`}
@@ -1148,7 +1165,27 @@ export default function QuestionEditor({ ownerId }: { ownerId: string }) {
         const types = [...new Set(questions.map((question) => question.question_type))].sort()
         const setFilter = (patch: Partial<BankQuestionFilters>) => { setFilters((current) => ({ ...current, ...patch })); setPage(1) }
         const typeOptions = [{ value: '', label: 'All types' }, ...types.map((type) => ({ value: type, label: questionTypeLabels[type as QuestionInput['questionType']] ?? type }))]
+        const units = unitCounts(questions)
+        const largest = Math.max(1, ...units.map((entry) => entry.total))
         return <section className="question-browser" aria-labelledby="saved-questions-title">
+          {units.length > 0 && <section className="qb-units" aria-labelledby="qb-units-title">
+            <div className="qb-units-head">
+              <h3 id="qb-units-title">Questions by unit</h3>
+              {filters.unit !== undefined && filters.unit !== '' && <button type="button" className="button-quiet" onClick={() => setFilter({ unit: '' })}>Show every unit</button>}
+            </div>
+            <ul>
+              {units.map((entry, order) => <li key={entry.unit}>
+                <button type="button" aria-pressed={filters.unit === entry.unit}
+                  aria-label={`Unit ${entry.unit}, ${entry.total} question${entry.total === 1 ? '' : 's'}, ${entry.usable} ready`}
+                  style={{ '--unit': `var(--eg-unit-${entry.unit >= 1 && entry.unit <= 4 ? entry.unit : 'none'})`, '--share': entry.total / largest, '--ready': entry.total ? entry.usable / entry.total : 0, '--n': order } as CSSProperties}
+                  onClick={() => setFilter({ unit: filters.unit === entry.unit ? '' : entry.unit })}>
+                  <span className="qb-unit-name">Unit {entry.unit}</span>
+                  <span className="qb-unit-bar" aria-hidden="true"><i /></span>
+                  <span className="qb-unit-count">{entry.total}</span>
+                </button>
+              </li>)}
+            </ul>
+          </section>}
           <div className="question-browser-header">
             <h3 id="saved-questions-title">Questions</h3>
             <p className="field-help">
@@ -1184,6 +1221,12 @@ export default function QuestionEditor({ ownerId }: { ownerId: string }) {
             <ul className="question-rows">
               {result.rows.map((question) => (
                 <li className="question-row" key={question.id}>
+                  <span className="qcard" aria-hidden="true">
+                    <span className="qcard-in">
+                      <span className="qcard-front"><b>{questionTypeMark(question.question_type)}</b></span>
+                      <span className="qcard-back"><i>✓</i><small>{questionAnswerPreview(question)}</small></span>
+                    </span>
+                  </span>
                   <div className="question-row-text">
                     <p className="question-row-prompt">{question.prompt}</p>
                     <p className="question-row-meta">

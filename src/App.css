@@ -8,7 +8,7 @@ main {
 .card,
 .question-editor {
   border: 1px solid var(--eg-color-border);
-  border-radius: var(--eg-radius-lg);
+  border-radius: var(--eg-radius-card);
   background: var(--eg-color-surface);
   box-shadow: var(--eg-shadow-surface);
   padding: var(--eg-space-5);
@@ -22,8 +22,8 @@ main {
 }
 
 .button-secondary:hover:not(:disabled) {
-  border-color: var(--eg-color-primary);
-  background: var(--eg-color-surface-subtle);
+  border-color: var(--eg-color-text);
+  background: var(--eg-color-surface);
 }
 
 .button-quiet {
@@ -90,12 +90,6 @@ button[aria-pressed='false']:hover:not(:disabled) {
   gap: var(--eg-space-5);
 }
 
-.paper-group {
-  display: grid;
-  gap: var(--eg-space-3);
-  padding-top: var(--eg-space-3);
-  border-top: 1px solid var(--eg-color-border);
-}
 
 
 .exam-builder {
@@ -107,7 +101,6 @@ button[aria-pressed='false']:hover:not(:disabled) {
 }
 
 .question-editor,
-.drafts-view,
 .account-view {
   text-align: start;
 }
@@ -384,27 +377,9 @@ button[aria-pressed='false']:hover:not(:disabled) {
   text-align: center;
 }
 
-.draft-table-wrap {
-  overflow-x: auto;
-}
 
-.draft-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-top: var(--eg-space-4);
-}
 
-.draft-table th,
-.draft-table td {
-  border-bottom: 1px solid var(--eg-color-border);
-  padding: var(--eg-space-3);
-  text-align: start;
-  vertical-align: middle;
-}
 
-.draft-table th {
-  font-size: var(--eg-font-size-sm);
-}
 
 .draft-recovery {
   margin-top: var(--eg-space-4);
@@ -483,45 +458,11 @@ button[aria-pressed='false']:hover:not(:disabled) {
     min-width: 0;
   }
 
-  .draft-table-wrap {
-    overflow: visible;
-  }
 
-  .draft-table,
-  .draft-table tbody,
-  .draft-table tr,
-  .draft-table td {
-    display: block;
-  }
 
-  .draft-table thead {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-    clip: rect(0 0 0 0);
-    clip-path: inset(50%);
-    white-space: nowrap;
-  }
 
-  .draft-table tr {
-    border-bottom: 1px solid var(--eg-color-border);
-    padding-block: var(--eg-space-3);
-  }
 
-  .draft-table td {
-    border: 0;
-    padding: var(--eg-space-1) 0;
-  }
 
-  .draft-table td::before {
-    display: block;
-    color: var(--eg-color-text-muted);
-    content: attr(data-label);
-    font-size: var(--eg-font-size-xs);
-    font-weight: var(--eg-weight-bold);
-    text-transform: uppercase;
-  }
 }
 .structured-fields {
   display: grid;

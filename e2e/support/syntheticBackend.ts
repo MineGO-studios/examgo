@@ -104,6 +104,8 @@ export async function syntheticBackend(page: Page) {
       if (state.dropGroupFinalizeResponse) { state.dropGroupFinalizeResponse = false; return route.abort('connectionreset') }
       return respond(state.groupPapers.get(payload.p_request_id))
     }
+    // Saved-work lists for My papers; empty unless a test seeds them.
+    if (['/rest/v1/rpc/get_phase_nine_workflows', '/rest/v1/rpc/get_phase_ten_candidate_workflows', '/rest/v1/rpc/get_exam_blueprints', '/rest/v1/rpc/get_blueprint_papers'].includes(url.pathname)) return respond([])
     if (url.pathname === '/rest/v1/rpc/get_bank_question_pool') {
       const payload = request.postDataJSON()
       state.poolRequests.push(payload)

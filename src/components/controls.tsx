@@ -1,4 +1,7 @@
-import { useId, type ReactNode } from 'react'
+import { useEffect, useId, useRef, useState, type ReactNode } from 'react'
+
+/** More options than this become a dropdown instead of a row of pills, so screens stay calm. */
+export const MAX_INLINE_OPTIONS = 5
 
 /** One choice from a short list, as pills. Native radios underneath keep keyboard and screen-reader behaviour. */
 export function ChoiceChips<T extends string | number>({ legend, options, value, onChange, disabled, hint, variant = 'chips' }: {
@@ -12,6 +15,20 @@ export function ChoiceChips<T extends string | number>({ legend, options, value,
   variant?: 'chips' | 'list'
 }) {
   const name = useId()
+  if (options.length > MAX_INLINE_OPTIONS) {
+    const chosen = options.find((option) => option.value === value)
+    return <label className="text-field eg-select">
+      <span>{legend}</span>
+      <select value={String(value)} disabled={disabled}
+        onChange={(event) => { const next = options.find((option) => String(option.value) === event.target.value); if (next) onChange(next.value) }}>
+        {options.map((option) => <option key={String(option.value)} value={String(option.value)}>
+          {option.detail ? `${option.label} (${option.detail})` : option.label}
+        </option>)}
+      </select>
+      {chosen?.detail && variant === 'list' && <small className="field-help">{chosen.detail}</small>}
+      {hint && <small className="field-help">{hint}</small>}
+    </label>
+  }
   return <fieldset className="chip-group" disabled={disabled}>
     <legend>{legend}</legend>
     <div className={variant === 'list' ? 'chips chips-list' : 'chips'}>
@@ -69,5 +86,60 @@ export function FormGroup({ title, aside, children }: { title: string; aside?: R
   return <div className="form-group">
     <div className="form-group-header"><h3>{title}</h3>{aside && <span className="form-group-aside">{aside}</span>}</div>
     {children}
+  </div>
+}
+
+/**
+ * Several on/off choices, such as the question banks used in a paper. Up to five show as pills;
+ * more become one dropdown button that opens a checkbox list.
+ */
+export function ToggleChipGroup({ legend, items, disabled, hint }: {
+  legend: string
+  items: readonly { key: string; label: string; checked: boolean; disabled?: boolean; onToggle: () => void }[]
+  disabled?: boolean
+  hint?: ReactNode
+}) {
+  const [open, setOpen] = useState(false)
+  const root = useRef<HTMLDivElement>(null)
+  const panelId = useId()
+  useEffect(() => {
+    if (!open) return
+    const close = (event: Event) => {
+      if (event instanceof KeyboardEvent) {
+        if (event.key === 'Escape') { setOpen(false); root.current?.querySelector<HTMLElement>('.eg-multi-button')?.focus() }
+        return
+      }
+      if (!root.current?.contains(event.target as Node)) setOpen(false)
+    }
+    document.addEventListener('pointerdown', close)
+    document.addEventListener('keydown', close)
+    return () => { document.removeEventListener('pointerdown', close); document.removeEventListener('keydown', close) }
+  }, [open])
+  if (items.length <= MAX_INLINE_OPTIONS) {
+    return <fieldset className="chip-group" disabled={disabled}>
+      <legend>{legend}</legend>
+      <div className="chips">
+        {items.map((item) => <ToggleChip key={item.key} label={item.label} checked={item.checked} disabled={item.disabled} onChange={item.onToggle} />)}
+      </div>
+      {hint && <p className="field-help">{hint}</p>}
+    </fieldset>
+  }
+  const chosen = items.filter((item) => item.checked)
+  const summary = chosen.length === 0 ? 'None selected' : chosen.length <= 2 ? chosen.map((item) => item.label).join(', ') : `${chosen.length} selected`
+  return <div className="eg-multi" ref={root}>
+    <span className="eg-multi-legend" id={`${panelId}-legend`}>{legend}</span>
+    <button type="button" className="eg-multi-button" disabled={disabled} aria-expanded={open} aria-controls={panelId}
+      aria-labelledby={`${panelId}-legend ${panelId}-summary`} onClick={() => setOpen((current) => !current)}>
+      <span id={`${panelId}-summary`}>{summary}</span>
+      <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 6l4 4 4-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+    </button>
+    {open && <fieldset className="eg-multi-panel" id={panelId} disabled={disabled}>
+      <legend className="visually-hidden">{legend}</legend>
+      {items.map((item) => <label key={item.key} className="checkbox-field">
+        <input type="checkbox" checked={item.checked} disabled={item.disabled} onChange={item.onToggle} />
+        {item.label}
+      </label>)}
+    </fieldset>}
+    {hint && <p className="field-help">{hint}</p>}
   </div>
 }
