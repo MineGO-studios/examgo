@@ -61,7 +61,7 @@ import type { QuestionBank } from '../lib/questionBankRepository'
 import { teacherErrorMessage } from '../lib/safeErrorDetails'
 import SimplePaperReview from './SimplePaperReview'
 import PaperProgress from './PaperProgress'
-import { ChoiceChips, FormGroup, Stepper, ToggleChip } from './controls'
+import { ChoiceChips, FormGroup, Stepper, ToggleChipGroup } from './controls'
 import CouponProgress from './CouponProgress'
 
 type GenerationStatus =
@@ -712,20 +712,13 @@ export default function ExamBuilder({
 
       <FormGroup title="Questions" aside={<><span className="unit-swatch" style={{ ['--plan-unit' as string]: `var(--eg-unit-${settings.unit})` }} />Grade 6 · Unit {settings.unit}</>}>
         {banks.length > 0 && (
-          <fieldset className="chip-group" disabled={isLoadingQuestions || isBusy}>
-            <legend>Question banks</legend>
-            <div className="chips">
-              {banks.map((bank) => {
-                const checked = selectedBankIds.includes(bank.id)
-                return <ToggleChip key={bank.id} label={bank.name} checked={checked}
-                  disabled={checked && selectedBankIds.length === 1}
-                  onChange={() => void changeBanks(checked
-                    ? selectedBankIds.filter((id) => id !== bank.id)
-                    : [...selectedBankIds, bank.id])} />
-              })}
-            </div>
-            <p className="field-help">{Object.values(eligibleQuestionCounts).reduce((sum, count) => sum + count, 0)} questions available</p>
-          </fieldset>
+          <ToggleChipGroup legend="Question banks" disabled={isLoadingQuestions || isBusy}
+            hint={`${Object.values(eligibleQuestionCounts).reduce((sum, count) => sum + count, 0)} questions available`}
+            items={banks.map((bank) => {
+              const checked = selectedBankIds.includes(bank.id)
+              return { key: bank.id, label: bank.name, checked, disabled: checked && selectedBankIds.length === 1,
+                onToggle: () => void changeBanks(checked ? selectedBankIds.filter((id) => id !== bank.id) : [...selectedBankIds, bank.id]) }
+            })} />
         )}
 
         <ChoiceChips legend="Lesson" disabled={isLoadingQuestions || isBusy} value={filters.lesson}

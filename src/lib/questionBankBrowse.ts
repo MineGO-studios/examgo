@@ -7,6 +7,8 @@ export interface BankQuestionFilters {
   type: string
   status: 'all' | 'usable' | 'inactive'
   linked: 'all' | 'standalone' | 'linked'
+  /** Narrow to one unit, from the coverage strip; empty for every unit. */
+  unit?: number | ''
 }
 
 export const EMPTY_BANK_FILTERS: BankQuestionFilters = { search: '', type: '', status: 'all', linked: 'all' }
@@ -35,6 +37,7 @@ export function browseBankQuestions(questions: readonly Question[], filters: Ban
   const matches = questions.filter(question =>
     (!search || normalize(`${question.prompt} ${question.external_id ?? ''} ${question.lesson} unit ${question.unit}`).includes(search)) &&
     (!filters.type || question.question_type === filters.type) &&
+    (filters.unit === undefined || filters.unit === '' || question.unit === filters.unit) &&
     (filters.status === 'all' || (filters.status === 'usable') === question.is_active) &&
     (filters.linked === 'all' || !linkedIds || (filters.linked === 'linked') === linkedIds.has(question.id)))
   const pages = Math.max(1, Math.ceil(matches.length / BANK_PAGE_SIZE))

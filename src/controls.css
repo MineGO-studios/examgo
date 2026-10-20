@@ -306,7 +306,7 @@ textarea:hover:not(:disabled) {
   width: 100%;
   margin-bottom: var(--eg-space-2);
   border-radius: var(--eg-radius-xs);
-  background: #ffffff;
+  background: var(--eg-paper-bg);
   box-shadow: 0 1px 2px rgb(17 12 8 / 10%), 0 6px 14px rgb(17 12 8 / 8%);
   padding: 9px 11px 11px;
 }
@@ -396,3 +396,169 @@ textarea:hover:not(:disabled) {
     max-width: none;
   }
 }
+
+/* ---- examgo-design: pill search with a leading magnifier ---- */
+.eg-search {
+  position: relative;
+  display: block;
+  min-width: 0;
+}
+
+.eg-search svg {
+  position: absolute;
+  top: 50%;
+  inset-inline-start: 1rem;
+  width: 1.1rem;
+  height: 1.1rem;
+  color: var(--eg-color-text-muted);
+  pointer-events: none;
+  translate: 0 -50%;
+}
+
+.eg-search input {
+  border-color: var(--eg-color-border);
+  border-radius: var(--eg-radius-pill);
+  background: var(--eg-color-surface);
+  padding-inline: 2.7rem 1.1rem;
+}
+
+.eg-search input:hover:not(:disabled) {
+  border-color: var(--eg-color-border-control);
+}
+
+.eg-search input::placeholder {
+  color: var(--eg-color-text-muted);
+  opacity: 1;
+}
+
+/* ---- examgo-design: segmented control (a pill track; the chosen segment is raised) ---- */
+.eg-seg {
+  display: inline-flex;
+  border-radius: var(--eg-radius-pill);
+  background: var(--eg-color-fill);
+  padding: 0.2rem;
+}
+
+.eg-seg > button[aria-pressed]:not(:disabled) {
+  flex: 1 1 auto;
+  gap: 0.35rem;
+  min-block-size: 2.35rem;
+  border: 0;
+  border-radius: var(--eg-radius-pill);
+  background: transparent;
+  color: var(--eg-color-text-muted);
+  padding: 0 0.95rem;
+}
+
+.eg-seg > button[aria-pressed]:hover:not(:disabled) {
+  border: 0;
+  background: transparent;
+  color: var(--eg-color-text);
+}
+
+.eg-seg > button[aria-pressed='true']:not(:disabled),
+.eg-seg > button[aria-pressed='true']:hover:not(:disabled) {
+  background: var(--eg-color-surface);
+  box-shadow: 0 1px 3px rgb(var(--eg-shadow-rgb) / 14%);
+  color: var(--eg-color-text);
+}
+
+.eg-seg svg {
+  width: 1rem;
+  height: 1rem;
+}
+
+/* ---- examgo-design: more than five options become a dropdown ---- */
+.eg-select select {
+  appearance: none;
+  border-color: var(--eg-color-border-control);
+  background-color: var(--eg-color-surface);
+  background-image: linear-gradient(45deg, transparent 50%, var(--eg-color-text-muted) 50%), linear-gradient(-45deg, transparent 50%, var(--eg-color-text-muted) 50%);
+  background-position: calc(100% - 1.15rem) 55%, calc(100% - 0.8rem) 55%;
+  background-repeat: no-repeat;
+  background-size: 0.35rem 0.35rem;
+  cursor: pointer;
+  padding-inline-end: 2.4rem;
+}
+
+:root[dir='rtl'] .eg-select select {
+  background-position: 1.15rem 55%, 0.8rem 55%;
+}
+
+.eg-multi {
+  position: relative;
+  display: grid;
+  gap: var(--eg-space-2);
+}
+
+.eg-multi-legend {
+  color: var(--eg-color-text);
+  font-weight: var(--eg-weight-medium);
+}
+
+.eg-multi-button:not(:disabled),
+.eg-multi-button:hover:not(:disabled),
+.eg-multi-button:active:not(:disabled) {
+  justify-content: space-between;
+  width: 100%;
+  border-color: var(--eg-color-border-control);
+  background: var(--eg-color-surface);
+  color: var(--eg-color-text);
+  font-weight: 500;
+  transform: none;
+}
+
+.eg-multi-button:hover:not(:disabled) {
+  border-color: var(--eg-color-text);
+}
+
+.eg-multi-button span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.eg-multi-button svg {
+  flex: none;
+  width: 1rem;
+  height: 1rem;
+  transition: transform 160ms var(--eg-ease);
+}
+
+.eg-multi-button[aria-expanded='true'] svg {
+  transform: rotate(180deg);
+}
+
+.eg-multi-panel {
+  position: absolute;
+  top: calc(100% + 0.35rem);
+  inset-inline: 0;
+  z-index: 6;
+  display: grid;
+  max-height: 16rem;
+  overflow-y: auto;
+  border: 1px solid var(--eg-color-border);
+  border-radius: var(--eg-radius-control);
+  background: var(--eg-color-surface);
+  box-shadow: 0 2px 4px rgb(var(--eg-shadow-rgb) / 10%), 0 18px 40px -12px rgb(var(--eg-shadow-rgb) / 35%);
+  padding: 0.35rem 0.75rem;
+  animation: eg-drop 200ms var(--eg-ease);
+}
+
+.eg-multi-panel .checkbox-field {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  min-block-size: 2.75rem;
+  font-weight: 500;
+}
+
+.eg-multi-panel input[type='checkbox'] {
+  width: 1.125rem;
+  height: 1.125rem;
+  min-block-size: 0;
+  flex: none;
+  padding: 0;
+}
+
+@keyframes eg-drop { from { opacity: 0; transform: translateY(-0.35rem); } }

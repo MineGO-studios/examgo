@@ -2,7 +2,7 @@ import type { Session } from '@supabase/supabase-js'
 import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 import AuthForm from './components/AuthForm'
 import ExamBuilder from './components/ExamBuilder'
-import MyDrafts from './components/MyDrafts'
+import MyPapers from './components/MyPapers'
 import QuestionEditor from './components/QuestionEditor'
 import type { ReopenedExamDraft } from './lib/examDraftRepository'
 import { getQuestionBanks } from './lib/questionBankRepository'
@@ -14,7 +14,7 @@ import './workspace.css'
 import './controls.css'
 import './pages.css'
 import './builders.css'
-import { useSectionListLoads } from './components/savedWorkLoadState'
+import './questionBanks.css'
 import { LanguageSwitch } from './components/LanguageProvider'
 import PaperStarts from './components/PaperStarts'
 import { useI18n } from './lib/i18n'
@@ -27,11 +27,7 @@ import type { BlueprintEditorHandle } from './components/ExamBlueprintBuilder'
 const PhaseNineBuilder = lazy(() => import('./components/PhaseNineBuilder'))
 const SimplePresetExams = lazy(() => import('./components/SimplePresetExams'))
 const PresetReviewTools = lazy(() => import('./components/PresetReviewTools'))
-const PhaseNineSavedWork = lazy(() => import('./components/PhaseNineSavedWork'))
 const PhaseTenCandidateBuilder = import.meta.env.DEV ? lazy(() => import('./components/PhaseTenCandidateBuilder')) : null
-const PhaseTenCandidateSavedWork = import.meta.env.DEV ? lazy(() => import('./components/PhaseTenCandidateSavedWork')) : null
-const EditableBlueprints = import.meta.env.DEV ? lazy(() => import('./components/BlueprintSavedWork').then(m => ({ default: m.EditableBlueprints }))) : null
-const GeneratedBlueprintPapers = import.meta.env.DEV ? lazy(() => import('./components/BlueprintSavedWork').then(m => ({ default: m.GeneratedBlueprintPapers }))) : null
 const ExamBlueprintBuilder = import.meta.env.DEV ? lazy(() => import('./components/ExamBlueprintBuilder').catch((error: unknown) => {
   const message = reportSafeError(error, 'Check that ExamGO is running, then reload the workspace. Your saved papers remain available.')
   return { default: function BlueprintLoadFailure() {
@@ -41,14 +37,6 @@ const ExamBlueprintBuilder = import.meta.env.DEV ? lazy(() => import('./componen
     </section>
   } }
 })) : null
-
-/** Retrying removes this alert, so focus moves to the section heading instead of being lost. */
-function SectionLoadFailure({ onRetry, headingId }: { onRetry: () => void; headingId: string }) {
-  return <div className="section-load-failure" role="alert">
-    <p>Some saved work in this section could not be loaded. Nothing was changed.</p>
-    <button type="button" className="button-secondary" onClick={() => { document.getElementById(headingId)?.focus(); onRetry() }}>Retry loading</button>
-  </div>
-}
 
 function App() {
   const { t } = useI18n()
@@ -71,9 +59,6 @@ function App() {
   const activeOwner = useRef<string | null>(null)
   const explicitSignOut = useRef(false)
   const [workspaceUser, setWorkspaceUser] = useState<Pick<Session['user'], 'id' | 'email'> | null>(null)
-  // Lists rendered in each My papers section; development builds add the structured and candidate lists.
-  const editableLoads = useSectionListLoads(2 + (EditableBlueprints ? 1 : 0) + (PhaseTenCandidateSavedWork ? 1 : 0))
-  const finalizedLoads = useSectionListLoads(1 + (GeneratedBlueprintPapers ? 1 : 0) + (PhaseTenCandidateSavedWork ? 1 : 0))
 
   useEffect(() => {
     const {
@@ -227,67 +212,21 @@ function App() {
         <QuestionEditor ownerId={workspaceUser.id} />
       )}
       {workspaceView === 'drafts' && (
-        <div className="my-papers">
-          <header className="section-heading">
-            <div>
-              <h2 id="my-papers-title">My papers</h2>
-              <p>Drafts stay editable. Finalized papers keep exactly what you downloaded.</p>
-            </div>
-          </header>
-          <section className="paper-group" aria-labelledby="editable-papers-title">
-            <h2 id="editable-papers-title" tabIndex={-1}>Drafts</h2>
-            {editableLoads.failed && <SectionLoadFailure onRetry={editableLoads.retry} headingId="editable-papers-title" />}
-            {editableLoads.empty && <div className="empty-state">
-              <p>No drafts yet. Save a reviewed paper to come back to its settings and questions later.</p>
-              <button type="button" onClick={() => { setReopenedDraft(null); setReopenedStructured(null); setReopenedCandidate(null); setExamMode('simple'); setWorkspaceView('exam') }}>Create an exam</button>
-            </div>}
-            {EditableBlueprints && <Suspense fallback={<p role="status">Loading structured paper blueprints…</p>}>
-              <EditableBlueprints key={`${workspaceUser.id}:${editableLoads.attempt}`} ownerId={workspaceUser.id} onLoadState={editableLoads.reporter('blueprints')} onOpen={row => {
-                if (blueprintEditor.current) blueprintEditor.current.open(row)
-                else setInitialBlueprint(row)
-                setBlueprintStarted(true); setExamMode('blueprint'); setWorkspaceView('exam')
-              }} />
-            </Suspense>}
-            <MyDrafts
-              key={`${workspaceUser.id}:drafts:${editableLoads.attempt}`}
-              onLoadState={editableLoads.reporter('simple')}
-              onCreateExam={() => {
-                setReopenedDraft(null)
-                setReopenedStructured(null)
-                setReopenedCandidate(null)
-                setExamMode('simple')
-                setWorkspaceView('exam')
-              }}
-              onManageQuestions={() => setWorkspaceView('questions')}
-              onOpenDraft={(draft) => {
-                setReopenedDraft(draft)
-                setExamMode('simple')
-                setWorkspaceView('exam')
-              }}
-            />
-            <Suspense fallback={<p role="status">Loading Iraqi exercises drafts…</p>}>
-              <PhaseNineSavedWork key={`${workspaceUser.id}:editable:${editableLoads.attempt}`} finalized={false} onLoadState={editableLoads.reporter('iraqi')} onOpen={(saved) => { setReopenedStructured(saved); setExamMode('phase-nine'); setWorkspaceView('exam') }} />
-            </Suspense>
-            {PhaseTenCandidateSavedWork && <Suspense fallback={<p role="status">Loading candidate drafts…</p>}>
-              <PhaseTenCandidateSavedWork key={`${workspaceUser.id}:editable:${editableLoads.attempt}`} finalized={false} onLoadState={editableLoads.reporter('candidate')} onOpen={(saved) => { setReopenedCandidate(saved); setExamMode('phase-ten-candidate'); setWorkspaceView('exam') }} />
-            </Suspense>}
-          </section>
-          <section className="paper-group" aria-labelledby="finalized-papers-title">
-            <h2 id="finalized-papers-title" tabIndex={-1}>Finalized papers</h2>
-            <p className="field-help">Simple question papers download straight away and are not kept here.</p>
-            {finalizedLoads.failed && <SectionLoadFailure onRetry={finalizedLoads.retry} headingId="finalized-papers-title" />}
-            {finalizedLoads.empty && <p className="empty-state">No finalized papers yet.</p>}
-            {GeneratedBlueprintPapers && <Suspense fallback={<p role="status">Loading structured papers…</p>}>
-              <GeneratedBlueprintPapers key={`papers-${workspaceUser.id}:${finalizedLoads.attempt}`} ownerId={workspaceUser.id} onLoadState={finalizedLoads.reporter('blueprints')} />
-            </Suspense>}
-            <Suspense fallback={<p role="status">Loading finalized Iraqi exercises papers…</p>}>
-              <PhaseNineSavedWork key={`${workspaceUser.id}:finalized:${finalizedLoads.attempt}`} finalized onLoadState={finalizedLoads.reporter('iraqi')} onOpen={(saved) => { setReopenedStructured(saved); setExamMode('phase-nine'); setWorkspaceView('exam') }} />
-            </Suspense>
-            {PhaseTenCandidateSavedWork && <Suspense fallback={<p role="status">Loading finalized complete papers…</p>}>
-              <PhaseTenCandidateSavedWork key={`${workspaceUser.id}:finalized:${finalizedLoads.attempt}`} finalized onLoadState={finalizedLoads.reporter('candidate')} onOpen={(saved) => { setReopenedCandidate(saved); setExamMode('phase-ten-candidate'); setWorkspaceView('exam') }} />
-            </Suspense>}
-          </section>
-        </div>
+        <MyPapers
+          key={workspaceUser.id}
+          ownerId={workspaceUser.id}
+          development={import.meta.env.DEV}
+          onCreateExam={() => { setReopenedDraft(null); setReopenedStructured(null); setReopenedCandidate(null); setExamMode('simple'); setWorkspaceView('exam') }}
+          onManageQuestions={() => setWorkspaceView('questions')}
+          onOpenSimple={(draft) => { setReopenedDraft(draft); setExamMode('simple'); setWorkspaceView('exam') }}
+          onOpenIraqi={(saved) => { setReopenedStructured(saved); setExamMode('phase-nine'); setWorkspaceView('exam') }}
+          onOpenCandidate={(saved) => { setReopenedCandidate(saved); setExamMode('phase-ten-candidate'); setWorkspaceView('exam') }}
+          onOpenBlueprint={(row) => {
+            if (blueprintEditor.current) blueprintEditor.current.open(row)
+            else setInitialBlueprint(row)
+            setBlueprintStarted(true); setExamMode('blueprint'); setWorkspaceView('exam')
+          }}
+        />
       )}
       {workspaceView === 'exam' && (
         <div className="create-exam">{examMode !== 'simple' && paperStarts}

@@ -14,7 +14,7 @@
   align-items: center;
   gap: var(--eg-space-2) var(--eg-space-6);
   border-bottom: 1px solid var(--eg-color-border);
-  background: rgb(246 241 238 / 94%);
+  background: color-mix(in srgb, var(--eg-color-canvas) 94%, transparent);
   backdrop-filter: saturate(1.2) blur(8px);
   color: var(--eg-color-text);
   padding: var(--eg-space-3) max(1rem, calc((100% - var(--eg-content-width)) / 2));
@@ -219,7 +219,7 @@
 .paper-progress li.is-current .paper-progress-number {
   border-color: var(--eg-color-text);
   background: var(--eg-color-text);
-  color: #ffffff;
+  color: var(--eg-color-canvas);
 }
 
 /* ---- Builder layout: setup column, then the live paper ---- */
@@ -335,7 +335,7 @@
 .segmented button[aria-pressed='true'],
 .segmented button[aria-pressed='true']:hover:not(:disabled) {
   background: var(--eg-color-text);
-  color: #ffffff;
+  color: var(--eg-color-canvas);
 }
 
 /* ---- Ministry exam sheet (the paper preview) ---- */
@@ -345,7 +345,7 @@
   max-width: 52rem;
   margin-inline: auto;
   border-radius: var(--eg-radius-xs);
-  background: #ffffff;
+  background: var(--eg-paper-bg);
   box-shadow: var(--eg-shadow-paper);
   color: var(--eg-paper-ink);
   font-family: var(--eg-font-paper);
@@ -759,13 +759,13 @@
 .paper-plan-block.is-gap button,
 .paper-plan-gap {
   border: 1.5px dashed var(--eg-color-error-text);
-  background: repeating-linear-gradient(135deg, var(--eg-color-error-bg) 0 6px, #ffffff 6px 12px);
+  background: repeating-linear-gradient(135deg, var(--eg-color-error-bg) 0 6px, var(--eg-color-surface) 6px 12px);
   color: var(--eg-color-error-text);
 }
 
 .paper-plan-block.is-gap button:hover:not(:disabled) {
   border: 1.5px dashed var(--eg-color-error-text);
-  background: repeating-linear-gradient(135deg, var(--eg-color-error-bg) 0 6px, #ffffff 6px 12px);
+  background: repeating-linear-gradient(135deg, var(--eg-color-error-bg) 0 6px, var(--eg-color-surface) 6px 12px);
   filter: none;
 }
 

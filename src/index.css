@@ -24,6 +24,10 @@
   --eg-color-info-text: #110c08;
   --eg-color-border: #e2d5cc;
   --eg-color-border-control: #8f6f5a;
+  --eg-color-fill: #eee4dd;
+  --eg-color-pen-text: #a0172f;
+  --eg-color-toast-bg: #110c08;
+  --eg-color-toast-text: #f6f1ee;
   --eg-color-focus: #0b6b40;
   --eg-color-disabled-bg: #eee4dd;
   --eg-color-disabled-text: #6e5a4c;
@@ -42,10 +46,15 @@
   --eg-paper-answer-line: #6b6b6b;
   --eg-paper-hover: #faf7f4;
   --eg-paper-title-size: 1.125rem;
-  --eg-font-sans: "Manrope Variable", "Noto Sans Arabic Variable", system-ui, "Segoe UI", sans-serif;
-  --eg-font-display: "Manrope Variable", "Noto Sans Arabic Variable", system-ui, sans-serif;
-  --eg-font-paper: "Times New Roman", Times, "Noto Sans Arabic Variable", serif;
-  --eg-font-mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  /* The teacher's blue ink: signature and typing caret on desk sheets. */
+  --eg-paper-ink-blue: #1d3f8f;
+  /* Faint blue ruling on question-bank index cards. */
+  --eg-paper-card-line: #c9d6ea;
+  /* ExamGO design: IBM Plex Sans (Plex Sans Arabic covers Arabic) with JetBrains Mono for figures and metadata. */
+  --eg-font-sans: "IBM Plex Sans Variable", "IBM Plex Sans Arabic", system-ui, "Segoe UI", sans-serif;
+  --eg-font-display: var(--eg-font-sans);
+  --eg-font-paper: "Times New Roman", Times, "IBM Plex Sans Arabic", serif;
+  --eg-font-mono: "JetBrains Mono Variable", "IBM Plex Sans Arabic", ui-monospace, Consolas, monospace;
   /* Four-step scale; rank comes from weight, case and rule. */
   --eg-font-size-xs: 0.8125rem;
   --eg-font-size-sm: 0.8125rem;
@@ -53,11 +62,14 @@
   --eg-font-size-lg: 1.25rem;
   --eg-font-size-xl: 1.75rem;
   --eg-font-size-2xl: 1.75rem;
+  /* examgo-design: page titles, small labels and tooltips. */
+  --eg-font-size-display: clamp(2rem, 5vw, 2.75rem);
+  --eg-font-size-2xs: 0.75rem;
   --eg-line-tight: 1.2;
   --eg-line-body: 1.55;
   --eg-weight-regular: 400;
   --eg-weight-medium: 600;
-  --eg-weight-bold: 750;
+  --eg-weight-bold: 700;
   --eg-space-1: 0.25rem;
   --eg-space-2: 0.5rem;
   --eg-space-3: 0.75rem;
@@ -69,6 +81,13 @@
   --eg-radius-sm: 0.25rem;
   --eg-radius-md: 0.5rem;
   --eg-radius-lg: 0.75rem;
+  --eg-radius-control: 0.625rem;
+  --eg-radius-card: 1rem;
+  --eg-radius-group: 0.875rem;
+  --eg-radius-pill: 999px;
+  --eg-ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+  --eg-shadow-rgb: 29 23 18;
+  --eg-paper-bg: #ffffff;
   --eg-shadow-surface: 0 1px 2px rgb(17 12 8 / 5%), 0 8px 24px rgb(17 12 8 / 5%);
   --eg-shadow-paper: 0 2px 4px rgb(17 12 8 / 6%), 0 18px 40px rgb(17 12 8 / 9%);
   --eg-control-min-block-size: 2.75rem;
@@ -87,9 +106,62 @@
   scrollbar-color: #c9b8ac transparent;
 }
 
-:root:lang(ar) {
-  --eg-font-sans: "Noto Sans Arabic Variable", "Manrope Variable", system-ui, sans-serif;
-  --eg-font-display: "Noto Sans Arabic Variable", "Manrope Variable", system-ui, sans-serif;
+/* Dark appearance follows the device. Paper stays white, because paper is paper. */
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+    --eg-color-canvas: #17110d;
+    --eg-color-surface: #221a15;
+    --eg-color-surface-subtle: #2d241e;
+    --eg-color-fill: #2d241e;
+    --eg-color-text: #f6f1ee;
+    --eg-color-text-muted: #c9b3a3;
+    /* A lighter green with dark ink keeps the accent readable as text and as a fill on the dark ground. */
+    --eg-color-primary: #3fae7a;
+    --eg-color-primary-hover: #52bf8a;
+    --eg-color-primary-pressed: #2f9a68;
+    --eg-color-on-primary: #0b1a12;
+    --eg-color-primary-soft: #183526;
+    --eg-color-shell: #17110d;
+    --eg-color-on-shell: #f6f1ee;
+    --eg-color-on-shell-muted: #c9b3a3;
+    --eg-color-warning-bg: #3a2c10;
+    --eg-color-warning-text: #f5d58f;
+    --eg-color-success-bg: #183526;
+    --eg-color-success-text: #9fdcbc;
+    --eg-color-error-bg: #3d1820;
+    --eg-color-error-text: #ff9fae;
+    --eg-color-info-bg: #2d241e;
+    --eg-color-info-text: #f6f1ee;
+    --eg-color-border: #3a2f28;
+    --eg-color-border-control: #8a7464;
+    --eg-color-focus: #3fae7a;
+    --eg-color-disabled-bg: #2d241e;
+    --eg-color-disabled-text: #a08a7a;
+    --eg-color-pen-text: #ff8a9c;
+    --eg-color-toast-bg: #f6f1ee;
+    --eg-color-toast-text: #110c08;
+    --eg-unit-none: #6e5a4c;
+    --eg-shadow-rgb: 0 0 0;
+    --eg-shadow-surface: 0 1px 2px rgb(0 0 0 / 30%), 0 8px 24px rgb(0 0 0 / 25%);
+    --eg-shadow-paper: 0 2px 4px rgb(0 0 0 / 30%), 0 18px 40px rgb(0 0 0 / 35%);
+    scrollbar-color: #5a4a3e transparent;
+  }
+
+  /* Paper objects keep their light ink and rules. */
+  :where(.ministry-sheet, .mini-sheet, .paper-sheet, .paper-thumb) {
+    color-scheme: light;
+    --eg-color-surface: #ffffff;
+    --eg-color-surface-subtle: #eee4dd;
+    --eg-color-text: #110c08;
+    --eg-color-text-muted: #694630;
+    --eg-color-border: #e2d5cc;
+    --eg-color-border-control: #8f6f5a;
+    --eg-color-primary: #0b6b40;
+    --eg-color-primary-soft: #e3f0e8;
+    --eg-color-error-bg: #fbe6e9;
+    --eg-color-error-text: #83162a;
+  }
 }
 
 :root:lang(ar) :where(p, small, label, legend, li, h2, h3, h4, summary, td, th, output, .status-chip, .start-card-title, .start-card-description) {
@@ -146,8 +218,8 @@ h3,
 h4 {
   color: var(--eg-color-text);
   font-family: var(--eg-font-display);
-  font-weight: var(--eg-weight-bold);
-  letter-spacing: -0.02em;
+  font-weight: 600;
+  letter-spacing: -0.015em;
   line-height: var(--eg-line-tight);
   text-wrap: balance;
 }
@@ -155,6 +227,7 @@ h4 {
 h1 {
   margin-block-end: var(--eg-space-2);
   font-size: var(--eg-font-size-xl);
+  font-weight: 700;
 }
 
 h2 {
@@ -196,12 +269,13 @@ button {
   justify-content: center;
   gap: var(--eg-space-2);
   border: 1px solid var(--eg-color-primary);
-  border-radius: var(--eg-radius-md);
+  border-radius: var(--eg-radius-control);
   background: var(--eg-color-primary);
   color: var(--eg-color-on-primary);
   cursor: pointer;
   font-weight: var(--eg-weight-medium);
-  padding: 0.625rem 1rem;
+  padding: 0.625rem 1.1rem;
+  transition: transform 120ms;
 }
 
 button:hover:not(:disabled) {
@@ -212,6 +286,7 @@ button:hover:not(:disabled) {
 button:active:not(:disabled) {
   border-color: var(--eg-color-primary-pressed);
   background: var(--eg-color-primary-pressed);
+  transform: scale(0.98);
 }
 
 button:disabled {
@@ -226,10 +301,23 @@ select,
 textarea {
   width: 100%;
   border: 1px solid var(--eg-color-border-control);
-  border-radius: var(--eg-radius-md);
+  border-radius: var(--eg-radius-control);
   background: var(--eg-color-surface);
   color: var(--eg-color-text);
   padding: 0.625rem 0.75rem;
+}
+
+input[type='search'] {
+  border-color: var(--eg-color-border);
+  border-radius: var(--eg-radius-pill);
+  padding-inline: 1.1rem;
+}
+
+/* Figures and metadata read in JetBrains Mono. */
+.eg-mono,
+output,
+input[type='number'] {
+  font-family: var(--eg-font-mono);
 }
 
 textarea {

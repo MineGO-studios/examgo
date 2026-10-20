@@ -1,4 +1,4 @@
-import { ChoiceChips, FormGroup, ToggleChip } from './controls'
+import { ChoiceChips, FormGroup, ToggleChipGroup } from './controls'
 import { PaperStamp } from './CouponProgress'
 import PaperProgress from './PaperProgress'
 import { useEffect, useRef, useState } from 'react'
@@ -124,14 +124,10 @@ export default function PhaseNineBuilder({ ownerId, reopened, onSavedWork, onAut
           {banks.map((bank) => <option key={bank.id} value={bank.id}>{bank.name}</option>)}
           {finalized && <option value={bankId}>Saved question bank</option>}
         </select></label>
-        {examOwnedMarks && !finalized && banks.length > 1 && <fieldset className="chip-group"><legend>Also use</legend>
-          <div className="chips">
-            {banks.filter((bank) => bank.id !== bankId).map((bank) => <ToggleChip key={bank.id} label={bank.name} checked={bankIds.includes(bank.id)}
-              disabled={bankIds.length >= 20 && !bankIds.includes(bank.id)}
-              onChange={() => { setBankIds(bankIds.includes(bank.id) ? bankIds.filter((id) => id !== bank.id) : [...bankIds, bank.id]); changed(true) }} />)}
-          </div>
-          <p className="field-help">A question shared by two banks appears once.</p>
-        </fieldset>}
+        {examOwnedMarks && !finalized && banks.length > 1 && <ToggleChipGroup legend="Also use" hint="A question shared by two banks appears once."
+          items={banks.filter((bank) => bank.id !== bankId).map((bank) => ({ key: bank.id, label: bank.name, checked: bankIds.includes(bank.id),
+            disabled: bankIds.length >= 20 && !bankIds.includes(bank.id),
+            onToggle: () => { setBankIds(bankIds.includes(bank.id) ? bankIds.filter((id) => id !== bank.id) : [...bankIds, bank.id]); changed(true) } }))} />}
         <label className="text-field">Lesson<input maxLength={40} value={filters.lesson} placeholder="All lessons" onChange={(e) => { setFilters({ ...filters, lesson: e.target.value }); changed(true) }} /></label>
         <ChoiceChips legend="Difficulty" value={filters.difficulty}
           options={[{ value: '', label: 'Any' }, { value: 'easy', label: 'Easy' }, { value: 'medium', label: 'Medium' }, { value: 'hard', label: 'Hard' }] as { value: typeof filters.difficulty; label: string }[]}
