@@ -750,3 +750,42 @@ textarea:hover:not(:disabled) {
   font-size: var(--eg-font-size-sm);
   font-weight: 600;
 }
+
+/* ---- D9.6 error summary: one announced list linking to each field ---- */
+.error-summary {
+  display: grid;
+  gap: var(--eg-space-2);
+  border: 2px solid var(--eg-color-error-text);
+  border-radius: var(--eg-radius-group);
+  background: var(--eg-color-error-bg);
+  padding: var(--eg-space-3) var(--eg-space-4);
+}
+
+.error-summary:focus-visible {
+  outline: 3px solid var(--eg-color-focus);
+  outline-offset: 3px;
+}
+
+.error-summary h3 {
+  margin: 0;
+  color: var(--eg-color-error-text);
+  font-size: var(--eg-font-size-md);
+  font-weight: 700;
+}
+
+.error-summary ul {
+  display: grid;
+  gap: var(--eg-space-1);
+  margin: 0;
+  padding-inline-start: var(--eg-space-4);
+}
+
+.error-summary a {
+  color: var(--eg-color-error-text);
+  font-weight: 600;
+}
+
+.stepper-group:focus-visible {
+  outline: 3px solid var(--eg-color-focus);
+  outline-offset: 3px;
+}
