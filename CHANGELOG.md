@@ -13,6 +13,7 @@ Notable ExamGO changes are recorded here. Version labels identify development ch
 
 ### Added
 
+- Add the Arabic interface foundation: per-screen string files checked for completeness, Arabic plural forms (for example "سؤالان" and "11 سؤالًا" on My papers), Iraqi month names with Western digits, and display-time translation of application messages that keeps support references. The sign-in password hint now uses Western digits (MIN-268, part of MIN-56).
 - Show one error summary when the New paper setup has problems: it takes focus, links to each field and keeps the teacher's input. Field messages are linked to their fields instead of being separate announcements (D9.6, MIN-258).
 - Rename Account to **Settings**, with one section per scope: the account (sign out, sign out of all devices), interface language and appearance on this device, the My papers default view on this device, and the reviewer tools entry. Device choices apply at once and confirm "Saved on this device", or say when the browser cannot remember them. Saved paper defaults wait for account storage (D9.3, MIN-253).
 - Use one teacher name per question type on every screen (for example "Short answer" everywhere, "Fill in from a word bank", "Odd word out"), with Arabic names ready for review. The question form's type chooser is a grouped dropdown (Choose the answer / Write the answer) that says where the chosen type can be used in papers today; matching states that it is not in hosted papers yet. Stored types are unchanged (D9.1, MIN-249).

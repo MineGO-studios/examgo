@@ -10,14 +10,16 @@ import type { SavedPhaseNineWorkflow } from '../lib/phaseNineRepository'
 import type { SavedPhaseTenCandidate } from '../lib/phaseTenCandidateRepository'
 import type { SavedExamBlueprint } from '../lib/examBlueprintRepository'
 import type { SavedBlueprintPaper } from '../lib/blueprintPaperRepository'
-import { matchesPaper, sortPapers, type PaperItem, type PaperKind, type PaperScope } from '../lib/myPapers'
+import { matchesPaper, sortPapers, type PaperItem, type PaperScope } from '../lib/myPapers'
 import { teacherErrorMessage } from '../lib/safeErrorDetails'
-import { useI18n, type Language } from '../lib/i18n'
+import { useI18n } from '../lib/i18n'
 import { PaperSheet, PaperThumb } from './PaperSheet'
 import { PaperTimeline } from './PaperTimeline'
 import { Icon } from './icons'
 import { HelpTip } from './HelpTip'
 import { readPapersView, storePapersView, type PapersView } from '../lib/devicePreferences'
+import { MY_PAPERS_STRINGS } from './MyPapers.strings'
+import { localeFor } from '../lib/localize'
 import './myPapers.css'
 
 const BlueprintFinalPaper = lazy(() => import('./BlueprintFinalPaper'))
@@ -31,86 +33,6 @@ type Raw =
 
 type View = PapersView
 
-const STRINGS = {
-  en: {
-    title: 'My papers',
-    lede: (drafts: number, finals: number) => `${drafts} ${drafts === 1 ? 'draft' : 'drafts'} on the desk, ${finals} filed.`,
-    newPaper: 'New paper',
-    search: 'Search papers',
-    placeholder: 'Search by title, bank or type',
-    scopeLabel: 'Show',
-    scopes: { all: 'All', draft: 'Drafts', final: 'Finalized' } as Record<PaperScope, string>,
-    viewLabel: 'View',
-    views: { desk: 'Desk', list: 'List' } as Record<View, string>,
-    desk: 'On the desk',
-    filed: 'Filed',
-    filedNote: 'Simple question papers download straight away and are not kept here.',
-    cont: 'Continue',
-    open: 'Open',
-    opening: 'Opening…',
-    draft: (version?: number) => version ? `Draft v${version}` : 'Draft',
-    finalized: 'Finalized',
-    marks: (n: number) => `${n} ${n === 1 ? 'mark' : 'marks'}`,
-    questions: (n: number) => `${n} ${n === 1 ? 'question' : 'questions'}`,
-    unit: (n: number) => `Unit ${n}`,
-    none: (query: string) => `No papers match “${query}”.`,
-    noneInScope: 'No papers here yet.',
-    clear: 'Clear search',
-    loading: 'Loading your papers…',
-    emptyTitle: 'No papers yet',
-    empty: 'Save a reviewed paper to come back to its settings and questions later.',
-    create: 'Create an exam',
-    failed: 'Some saved work could not be loaded. Nothing was changed.',
-    retry: 'Retry loading',
-    openFailed: 'This paper could not be opened. Please try again.',
-    close: 'Close paper',
-    types: { simple: 'Question bank paper', iraqi: 'Iraqi exercises and writing', candidate: 'Complete paper', blueprint: 'Structured paper', generated: 'Structured paper' } as Record<PaperKind, string>,
-    timeline: { title: 'Your papers over time', drafts: 'Drafts', finalized: 'Finalized', today: 'Today', edited: 'Edited', finalizedOn: 'Finalized', papers: (n: number) => `${n} papers`, help: 'Drafts sit on the day you last edited them; finalized papers on the day you finalized them. A numbered dot holds several papers: open it to see them.' },
-    recoveryChip: 'Review required',
-    recovery: (bank: string) => `The saved draft from ${bank} was preserved. ExamGO will not silently replace, remove, or upgrade affected questions.`,
-    reviewBank: 'Review question bank',
-    back: 'Return to My papers',
-  },
-  ar: {
-    title: 'أوراقي',
-    lede: (drafts: number, finals: number) => `${drafts} مسودات على المكتب، و${finals} مؤرشفة.`,
-    newPaper: 'ورقة جديدة',
-    search: 'البحث في الأوراق',
-    placeholder: 'ابحث بالعنوان أو البنك أو النوع',
-    scopeLabel: 'عرض',
-    scopes: { all: 'الكل', draft: 'المسودات', final: 'النهائية' } as Record<PaperScope, string>,
-    viewLabel: 'طريقة العرض',
-    views: { desk: 'المكتب', list: 'القائمة' } as Record<View, string>,
-    desk: 'على المكتب',
-    filed: 'المؤرشفة',
-    filedNote: 'أوراق الأسئلة البسيطة تُنزَّل مباشرة ولا تُحفظ هنا.',
-    cont: 'متابعة',
-    open: 'فتح',
-    opening: 'جارٍ الفتح…',
-    draft: (version?: number) => version ? `مسودة ${version}` : 'مسودة',
-    finalized: 'نهائية',
-    marks: (n: number) => `${n} درجة`,
-    questions: (n: number) => `${n} سؤال`,
-    unit: (n: number) => `الوحدة ${n}`,
-    none: (query: string) => `لا توجد أوراق تطابق «${query}».`,
-    noneInScope: 'لا توجد أوراق هنا بعد.',
-    clear: 'مسح البحث',
-    loading: 'جارٍ تحميل أوراقك…',
-    emptyTitle: 'لا توجد أوراق بعد',
-    empty: 'احفظ ورقة بعد مراجعتها لتعود إلى إعداداتها وأسئلتها لاحقًا.',
-    create: 'إنشاء امتحان',
-    failed: 'تعذّر تحميل بعض الأعمال المحفوظة. لم يتغيّر شيء.',
-    retry: 'إعادة التحميل',
-    openFailed: 'تعذّر فتح هذه الورقة. حاول مرة أخرى.',
-    close: 'إغلاق الورقة',
-    types: { simple: 'ورقة من بنك الأسئلة', iraqi: 'تمارين عراقية وكتابة', candidate: 'ورقة كاملة', blueprint: 'ورقة منظّمة', generated: 'ورقة منظّمة' } as Record<PaperKind, string>,
-    timeline: { title: 'أوراقك عبر الزمن', drafts: 'المسودات', finalized: 'النهائية', today: 'اليوم', edited: 'عُدّلت', finalizedOn: 'نُهيت', papers: (n: number) => `${n} أوراق`, help: 'تظهر المسودات في يوم آخر تعديل، والأوراق النهائية في يوم إنهائها. النقطة المرقّمة تضم عدة أوراق: افتحها لرؤيتها.' },
-    recoveryChip: 'تحتاج مراجعة',
-    recovery: (bank: string) => `حُفظت المسودة من ${bank}. لن يستبدل ExamGO الأسئلة المتأثرة أو يحذفها أو يحدّثها دون علمك.`,
-    reviewBank: 'مراجعة بنك الأسئلة',
-    back: 'العودة إلى أوراقي',
-  },
-} satisfies Record<Language, unknown>
 
 function toItem(raw: Raw): PaperItem {
   switch (raw.kind) {
@@ -175,7 +97,7 @@ export interface MyPapersProps {
 export default function MyPapers(props: MyPapersProps) {
   const { ownerId, development } = props
   const { language } = useI18n()
-  const s = STRINGS[language]
+  const s = MY_PAPERS_STRINGS[language]
   const [attempt, setAttempt] = useState(0)
   const [loaded, setLoaded] = useState<{ raws: Raw[]; failed: boolean } | null>(null)
   const [scope, setScope] = useState<PaperScope>('all')
@@ -195,7 +117,7 @@ export default function MyPapers(props: MyPapersProps) {
 
   const raws = useMemo(() => new Map((loaded?.raws ?? []).map(raw => [toItem(raw).key, raw])), [loaded])
   const items = useMemo(() => sortPapers((loaded?.raws ?? []).map(toItem)), [loaded])
-  const matching = useMemo(() => new Set(items.filter(item => matchesPaper(item, scope, query, [s.types[item.kind], STRINGS.en.types[item.kind]])).map(item => item.key)), [items, scope, query, s])
+  const matching = useMemo(() => new Set(items.filter(item => matchesPaper(item, scope, query, [s.types[item.kind], MY_PAPERS_STRINGS.en.types[item.kind]])).map(item => item.key)), [items, scope, query, s])
   const shown = items.filter(item => matching.has(item.key))
   const drafts = shown.filter(item => item.state === 'draft'), finals = shown.filter(item => item.state === 'final')
 
@@ -234,7 +156,7 @@ export default function MyPapers(props: MyPapersProps) {
     item.unit ? s.unit(item.unit) : s.types[item.kind],
     item.marks !== undefined ? s.marks(item.marks) : item.questions !== undefined ? s.questions(item.questions) : null,
   ].filter(Boolean).join(' · ')
-  const dateFormat = new Intl.DateTimeFormat(language === 'ar' ? 'ar-IQ-u-nu-latn' : 'en-GB', { dateStyle: 'medium' })
+  const dateFormat = new Intl.DateTimeFormat(localeFor(language), { dateStyle: 'medium' })
   const when = (item: PaperItem) => `${item.state === 'final' ? s.timeline.finalizedOn : s.timeline.edited} ${dateFormat.format(new Date(item.date))}`
   const chip = (item: PaperItem) => item.state === 'draft'
     ? <span className="mp-chip">{s.draft(item.version)}</span>

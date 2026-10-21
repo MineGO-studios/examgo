@@ -2,51 +2,8 @@ import { useState } from 'react'
 import { useI18n, type Language } from '../lib/i18n'
 import { devicePreferencesAvailable, readPapersView, storePapersView, type PapersView } from '../lib/devicePreferences'
 import { ChoiceChips } from './controls'
+import { SETTINGS_STRINGS } from './SettingsPage.strings'
 
-const STRINGS = {
-  en: {
-    title: 'Settings',
-    lede: 'Each section says where its choices apply.',
-    account: 'Account',
-    signedIn: (email: string) => `Signed in as ${email}`,
-    signOut: 'Sign out',
-    signOutAll: 'Sign out of all devices',
-    signOutAllHint: 'Ends ExamGO on every phone, tablet and computer where this account is signed in.',
-    device: 'Language and appearance on this device',
-    deviceHint: 'Everyone who uses ExamGO on this device shares these choices.',
-    language: 'Interface language',
-    appearance: 'Appearance follows your device’s light or dark setting.',
-    papers: 'My papers on this device',
-    view: 'Default view',
-    views: { desk: 'Desk', list: 'List' } as Record<PapersView, string>,
-    saved: 'Saved on this device.',
-    notSaved: 'Applied for now; this browser won’t remember it.',
-    reviewers: 'For MineGO reviewers',
-    reviewersHint: 'Source evidence, approvals and publishing for preset papers.',
-    openReviewer: 'Open reviewer tools',
-  },
-  ar: {
-    title: 'الإعدادات',
-    lede: 'يوضّح كل قسم أين تنطبق اختياراته.',
-    account: 'الحساب',
-    signedIn: (email: string) => `تم تسجيل الدخول باسم ${email}`,
-    signOut: 'تسجيل الخروج',
-    signOutAll: 'تسجيل الخروج من كل الأجهزة',
-    signOutAllHint: 'يُنهي ExamGO على كل هاتف وجهاز لوحي وحاسوب سُجّل فيه الدخول بهذا الحساب.',
-    device: 'اللغة والمظهر على هذا الجهاز',
-    deviceHint: 'يشترك في هذه الاختيارات كل من يستخدم ExamGO على هذا الجهاز.',
-    language: 'لغة الواجهة',
-    appearance: 'يتبع المظهر إعداد الوضع الفاتح أو الداكن في جهازك.',
-    papers: 'أوراقي على هذا الجهاز',
-    view: 'طريقة العرض الافتراضية',
-    views: { desk: 'المكتب', list: 'القائمة' } as Record<PapersView, string>,
-    saved: 'حُفظ على هذا الجهاز.',
-    notSaved: 'طُبّق الآن؛ لن يتذكره هذا المتصفح.',
-    reviewers: 'لمراجعي MineGO',
-    reviewersHint: 'أدلة المصادر والموافقات ونشر الأوراق الجاهزة.',
-    openReviewer: 'فتح أدوات المراجعة',
-  },
-} satisfies Record<Language, unknown>
 
 /** One section per scope: the account, choices kept on this device, and reviewer tools. */
 export default function SettingsPage({ email, onSignOut, onOpenReviewer }: {
@@ -55,7 +12,7 @@ export default function SettingsPage({ email, onSignOut, onOpenReviewer }: {
   onOpenReviewer: () => void
 }) {
   const { language, setLanguage } = useI18n()
-  const s = STRINGS[language]
+  const s = SETTINGS_STRINGS[language]
   const [view, setView] = useState<PapersView>(readPapersView)
   const [status, setStatus] = useState<{ section: 'device' | 'papers'; saved: boolean } | null>(null)
 
