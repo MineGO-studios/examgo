@@ -17,6 +17,7 @@ import { PaperSheet, PaperThumb } from './PaperSheet'
 import { PaperTimeline } from './PaperTimeline'
 import { Icon } from './icons'
 import { HelpTip } from './HelpTip'
+import { readPapersView, storePapersView, type PapersView } from '../lib/devicePreferences'
 import './myPapers.css'
 
 const BlueprintFinalPaper = lazy(() => import('./BlueprintFinalPaper'))
@@ -28,7 +29,7 @@ type Raw =
   | { kind: 'blueprint'; row: SavedExamBlueprint }
   | { kind: 'generated'; row: SavedBlueprintPaper }
 
-type View = 'desk' | 'list'
+type View = PapersView
 
 const STRINGS = {
   en: {
@@ -111,18 +112,6 @@ const STRINGS = {
   },
 } satisfies Record<Language, unknown>
 
-const VIEW_KEY = 'examgo.papers.view'
-function readView(): View {
-  try {
-    const stored = window.localStorage.getItem(VIEW_KEY)
-    if (stored === 'desk' || stored === 'list') return stored
-  } catch { /* Storage can be blocked; fall back to the screen size. */ }
-  return window.matchMedia?.('(min-width: 40rem)').matches === false ? 'list' : 'desk'
-}
-function storeView(view: View): void {
-  try { window.localStorage.setItem(VIEW_KEY, view) } catch { /* The choice still applies to this page. */ }
-}
-
 function toItem(raw: Raw): PaperItem {
   switch (raw.kind) {
     case 'simple': {
@@ -191,7 +180,7 @@ export default function MyPapers(props: MyPapersProps) {
   const [loaded, setLoaded] = useState<{ raws: Raw[]; failed: boolean } | null>(null)
   const [scope, setScope] = useState<PaperScope>('all')
   const [query, setQuery] = useState('')
-  const [view, setView] = useState<View>(readView)
+  const [view, setView] = useState<View>(readPapersView)
   const [opening, setOpening] = useState<string | null>(null)
   const [openError, setOpenError] = useState<string | null>(null)
   const [recovery, setRecovery] = useState<{ title: string; bankName: string; issues: DraftRecoveryIssue[] } | null>(null)
@@ -328,7 +317,7 @@ export default function MyPapers(props: MyPapersProps) {
           {(['all', 'draft', 'final'] as const).map(key => <button key={key} type="button" aria-pressed={scope === key} onClick={() => setScope(key)}>{s.scopes[key]}</button>)}
         </div>
         <div className="eg-seg" role="group" aria-label={s.viewLabel}>
-          {(['desk', 'list'] as const).map(key => <button key={key} type="button" aria-pressed={view === key} onClick={() => { setView(key); storeView(key) }}>
+          {(['desk', 'list'] as const).map(key => <button key={key} type="button" aria-pressed={view === key} onClick={() => { setView(key); storePapersView(key) }}>
             <Icon name={key} />
             {s.views[key]}
           </button>)}

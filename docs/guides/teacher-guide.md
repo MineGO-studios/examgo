@@ -48,6 +48,10 @@ After a configuration or content change, review the updated selection. Do not us
 
 Page estimates are advisory. Do not assume browser pagination exactly matches Word.
 
+## Settings
+
+Open **Settings** to sign out, sign out of all devices, or change two choices kept on this device: the interface language, and whether My papers opens as Desk or List. Everyone using the same device shares those two choices. Light or dark appearance follows the device's own setting. Saved paper defaults, such as a school name, are not available yet.
+
 ## Save and download
 
 Save editable work when the selected workflow supports it. **My papers** distinguishes editable configurations from finalized papers. Finalized papers preserve captured content; later bank changes do not rewrite them. Simple-paper downloads do not create the same immutable finalized history as structured workflows.
