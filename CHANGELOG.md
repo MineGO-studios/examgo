@@ -8,6 +8,7 @@ Notable ExamGO changes are recorded here. Version labels identify development ch
 
 - Set teacher-trial feedback and received-paper-copy retention to the owner-selected 30 days after the trial ends, with manual removal and no application-retention change; preserve the original Alpha evidence gates.
 - Add a short private-text teacher trial pack, a blank feedback record and a dated protocol clarification for one-person coordination without direct observation; preserve the existing Alpha success gates.
+- Specify school and exam-name presets: a school and footer-name default plus saved exam names in Settings, and a searchable Test title in paper setup where typing filters, picking fills and only an explicit action saves a name. Specification and prototype only; saving needs account storage (D9.4, MIN-252).
 - Record the current shared-content/builders coverage audit and non-UI document/access/recovery verification; browsing four units does not imply four-unit generation support.
 
 ### Added
