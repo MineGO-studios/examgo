@@ -26,6 +26,17 @@ Database setup is a separate authorized operation. Do not apply every historical
 
 Use [the quality workflow](../../.github/workflows/quality.yml) for the current CI sequence. Consult each database verifier before running it; use disposable authorized targets. A script's name does not prove that it cannot affect persistent data.
 
+## Interface languages
+
+The interface is available in English and Arabic. Paper content stays in its source language.
+
+- **Screen strings:** each screen keeps its strings in a sibling `*.strings.ts` file built with `defineStrings` from `src/lib/localize.ts`. English sets the shape, and a missing Arabic entry fails the typecheck.
+- **Completeness:** `src/lib/strings.completeness.test.ts` finds every `*.strings.ts` file and fails on an empty, untranslated or Eastern-digit Arabic entry.
+- **Counts:** `plural(language, count, forms)` chooses the grammatical form. Arabic has six forms (zero, one, two, few for 3–10, many for 11–99, and other); give at least `other`.
+- **Numbers and dates:** use `formatNumber` and `formatDate`. Arabic uses Iraqi month names with Western digits (`ar-IQ-u-nu-latn`).
+- **Application messages:** repositories write their messages in English. `localizeAppMessage` in `src/lib/appMessages.ts` translates them where they are displayed, and keeps any support reference code unchanged. A message missing from its catalog is shown in English, never half-translated.
+- **Review:** a native-speaking Iraqi teacher reviews the Arabic before release ([MIN-274](https://linear.app/minego/issue/MIN-274)).
+
 ## Record verification
 
 State the revision or file hashes, environment, input, command, result and limits. Report failed, skipped and not-run checks separately. Local source, mocked browser checks, real database authorization, hosted behavior, document packages and human visual acceptance prove different boundaries.

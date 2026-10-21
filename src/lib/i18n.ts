@@ -50,7 +50,7 @@ const STRINGS = {
     createAccount: 'إنشاء حساب',
     email: 'البريد الإلكتروني',
     password: 'كلمة المرور',
-    passwordHint: '١٢ حرفًا على الأقل.',
+    passwordHint: '12 حرفًا على الأقل.',
     pleaseWait: 'يرجى الانتظار…',
     authAside: 'أنشئ ورقة من بنوك أسئلتك، وراجعها كما سيراها الطالب، ثم نزّل الورقة مع مفتاح الإجابة المطابق.',
     chooseFormat: 'اختر نوع الورقة',
@@ -62,6 +62,9 @@ const STRINGS = {
     progress: 'مراحل الورقة',
   },
 } as const satisfies Record<Language, Record<string, string>>
+
+/** The shell dictionary, exported for the completeness test. */
+export const SHELL_STRINGS = STRINGS
 
 export type MessageKey = keyof typeof STRINGS.en
 

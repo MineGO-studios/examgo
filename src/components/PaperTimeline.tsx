@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import { estimateLabelWidth, layoutDateLabels, localDay, timelineMarks, timelineScale, type PaperItem, type TimelineMark } from '../lib/myPapers'
 import type { Language } from '../lib/i18n'
+import { localeFor } from '../lib/localize'
 import { HelpTip } from './HelpTip'
 
 export interface TimelineStrings {
@@ -38,7 +39,7 @@ export function PaperTimeline({ items, matching, language, strings, onJump }: {
   const [lit, setLit] = useState<string | null>(null)
   const popover = useRef<HTMLDivElement>(null)
   const today = localDay(new Date())
-  const locale = language === 'ar' ? 'ar-IQ-u-nu-latn' : 'en-GB'
+  const locale = localeFor(language)
   const short = useMemo(() => new Intl.DateTimeFormat(locale, language === 'ar' ? { day: 'numeric', month: 'numeric' } : { day: 'numeric', month: 'short' }), [locale, language])
   const full = useMemo(() => new Intl.DateTimeFormat(locale, { dateStyle: 'medium' }), [locale])
 
