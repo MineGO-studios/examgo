@@ -1,5 +1,8 @@
 import type { Question } from './questions'
 
+/** Catalogue reads do not carry ownership or authoring fields. */
+export type BankBrowserQuestion = Pick<Question,'id'|'prompt'|'unit'|'lesson'|'question_type'|'difficulty'|'external_id'|'is_active'|'content'|'answer'|'options'|'correct_option_label'>
+
 export const BANK_PAGE_SIZE = 25
 
 export interface BankQuestionFilters {
@@ -25,14 +28,14 @@ export interface BankQuestionCounts {
 
 const normalize = (value: string) => value.toLocaleLowerCase().replace(/\s+/g, ' ').trim()
 
-export function bankQuestionCounts(questions: readonly Question[], linkedIds: ReadonlySet<string> | null): BankQuestionCounts {
+export function bankQuestionCounts(questions: readonly BankBrowserQuestion[], linkedIds: ReadonlySet<string> | null): BankQuestionCounts {
   const usable = questions.filter(question => question.is_active).length
   return { total: questions.length, usable, inactive: questions.length - usable,
     linked: linkedIds ? questions.filter(question => linkedIds.has(question.id)).length : null }
 }
 
 /** Search and filter in memory, then return one bounded page; never more than BANK_PAGE_SIZE rows. */
-export function browseBankQuestions(questions: readonly Question[], filters: BankQuestionFilters, linkedIds: ReadonlySet<string> | null, page: number) {
+export function browseBankQuestions<T extends BankBrowserQuestion>(questions: readonly T[], filters: BankQuestionFilters, linkedIds: ReadonlySet<string> | null, page: number) {
   const search = normalize(filters.search)
   const matches = questions.filter(question =>
     (!search || normalize(`${question.prompt} ${question.external_id ?? ''} ${question.lesson} unit ${question.unit}`).includes(search)) &&

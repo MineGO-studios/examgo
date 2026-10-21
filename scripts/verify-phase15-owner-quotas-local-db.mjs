@@ -89,7 +89,8 @@ try {
     grant execute on function auth.uid() to anon,authenticated,service_role;
     alter default privileges in schema public grant execute on functions to anon, authenticated, service_role;`)
   const files = (await readdir('supabase/migrations')).filter((name) => name.endsWith('.sql') && name < migrationName).sort()
-  for (const file of files) await admin.query(await readFile(path.join('supabase/migrations', file), 'utf8'))
+  // Match repository SQL bytes across Windows checkouts before historical function-body hash preflights.
+  for (const file of files) await admin.query((await readFile(path.join('supabase/migrations', file), 'utf8')).replaceAll('\r\n', '\n'))
   pass(`all ${files.length} earlier migrations compile in a fresh database`)
 
   const [owner, other] = [randomUUID(), randomUUID()]

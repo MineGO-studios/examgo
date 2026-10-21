@@ -4,7 +4,7 @@ import { useEffect, useId, useRef, useState, type ReactNode } from 'react'
 export const MAX_INLINE_OPTIONS = 5
 
 /** One choice from a short list, as pills. Native radios underneath keep keyboard and screen-reader behaviour. */
-export function ChoiceChips<T extends string | number>({ legend, options, value, onChange, disabled, hint, variant = 'chips' }: {
+export function ChoiceChips<T extends string | number>({ legend, options, value, onChange, disabled, hint, variant = 'chips', maxInlineOptions = MAX_INLINE_OPTIONS }: {
   legend: string
   options: readonly { value: T; label: string; detail?: string }[]
   value: T
@@ -13,9 +13,11 @@ export function ChoiceChips<T extends string | number>({ legend, options, value,
   hint?: ReactNode
   /** "list" stacks full-width choices for long labels such as exercises or bank names. */
   variant?: 'chips' | 'list'
+  /** A specific selector may keep a few more short choices visible. */
+  maxInlineOptions?: number
 }) {
   const name = useId()
-  if (options.length > MAX_INLINE_OPTIONS) {
+  if (options.length > maxInlineOptions) {
     const chosen = options.find((option) => option.value === value)
     return <label className="text-field eg-select">
       <span>{legend}</span>

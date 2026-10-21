@@ -1,6 +1,8 @@
 import { readFile } from 'node:fs/promises'
 import { performance } from 'node:perf_hooks'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi, afterEach } from 'vitest'
+import { DOMParser, XMLSerializer } from '@xmldom/xmldom'
+afterEach(() => vi.unstubAllGlobals())
 import type { ExamQuestion } from '../data/sampleQuestions'
 import type { ExamSettings } from '../types/exam'
 import { createExamDocumentBlobs } from './generateExam'
@@ -74,6 +76,8 @@ describe('50-question document generation', () => {
           ),
         ])
 
+      vi.stubGlobal('DOMParser', DOMParser)
+      vi.stubGlobal('XMLSerializer', XMLSerializer)
       const startedAt = performance.now()
 
       const selectedQuestions = selectQuestions(questions, {

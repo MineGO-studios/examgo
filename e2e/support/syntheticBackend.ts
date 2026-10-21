@@ -89,6 +89,7 @@ export async function syntheticBackend(page: Page) {
     if (['/rest/v1/rpc/get_grade_six_preset_coverage', '/rest/v1/rpc/get_reviewed_preset_exercises'].includes(url.pathname)) {
       return respond({ code: 'XX000', message: 'synthetic-private-coverage-detail' }, 503)
     }
+    if (['/rest/v1/rpc/get_preset_banks', '/rest/v1/rpc/get_preset_bank_questions'].includes(url.pathname)) return respond([])
     if (['/rest/v1/rpc/get_eligible_simple_presets', '/rest/v1/rpc/get_simple_preset_exams'].includes(url.pathname)) return respond([])
     if (url.pathname === '/rest/v1/rpc/get_eligible_simple_preset_groups') return respond(request.postDataJSON().p_after ? [] : [presetGroup])
     if (url.pathname === '/rest/v1/rpc/get_simple_preset_group_exams') return respond([...state.groupPapers.values()])
@@ -149,11 +150,12 @@ export async function syntheticBackend(page: Page) {
   return state
 }
 
-export async function syntheticSignIn(page: Page, navigate = true, email = user.email) {
+/** `expectBuilder` is false for a fresh account with no personal banks, whose builder has no question supply. */
+export async function syntheticSignIn(page: Page, navigate = true, email = user.email, expectBuilder = true) {
   if (navigate) await page.goto('/')
   await page.getByRole('textbox', { name: 'Email', exact: true }).fill(email)
   await page.getByLabel('Password', { exact: false }).fill('Synthetic-password-123')
   await page.getByRole('button', { name: 'Sign in', exact: true }).last().click()
   await expect(page.getByRole('heading', { name: 'Build exam', exact: true })).toBeVisible()
-  await expect(page.getByRole('spinbutton', { name: /Short open answer 2 available/ })).toBeEnabled()
+  if (expectBuilder) await expect(page.getByRole('spinbutton', { name: /Short open answer 2 available/ })).toBeEnabled()
 }

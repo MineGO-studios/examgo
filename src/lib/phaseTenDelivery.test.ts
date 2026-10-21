@@ -81,7 +81,8 @@ it('delivers captured teacher scoring with custom point marks using the existing
     const keyTable = key.tables.find((rows) => rows[0].map((cell) => cell.text).join('|') === 'Q|Part|Rule|Point|Answer|Mark|Total')!
     expect(keyTable.slice(1).map((row) => [row[3].text, row[4].text, row[5].text])).toEqual(
       projected.answerKey.Answers.map((row) => [row.Point, row.Answer, String(row.Mark)]))
-    expect(student.text).toContain('(20M)')
+    expect(student.text).not.toMatch(/\(\d+M\)/)
+    expect(student.text).toContain('(20 M.)')
     expect(keyTable.slice(1).reduce((total, row) => total + Number(row[6].text || 0), 0)).toBe(77)
     expect(fetchTemplate.mock.calls.map(([url]) => url)).toEqual([
       '/templates/iraqi-mainstream-phase-nine-exam-v1.docx', '/templates/iraqi-mainstream-phase-nine-answer-key-v1.docx',

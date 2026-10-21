@@ -671,6 +671,9 @@ export type Database = {
       }
     }
     Functions: {
+      get_preset_bank_browser: { Args: { p_bank_id:string; p_after?:string|null; p_limit?:number }; Returns:Json }
+      get_preset_banks: { Args: { p_after?: string | null; p_limit?: number }; Returns: Json }
+      get_preset_bank_questions: { Args: { p_bank_id: string; p_after?: string | null; p_limit?: number; p_search?: string }; Returns: Json }
       get_grade_six_preset_coverage: { Args: Record<PropertyKey, never>; Returns: Json }
       assign_preset_question_ideas: { Args: {p_entries:Json;p_reason:string}; Returns:number }
       get_eligible_simple_preset_groups: { Args: { p_after?: string | null; p_limit?: number }; Returns: Json }

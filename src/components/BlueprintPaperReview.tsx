@@ -23,8 +23,8 @@ export default function BlueprintPaperReview({ snapshot, settings, generalInstru
     </div>
     <p className="field-help">Content preview. Page breaks and Word layout are not shown.</p>
     <article className="blueprint-paper" aria-label={mode === 'student' ? 'Student paper content' : 'Answer key content'}>
-      <header><p dir="auto">{paper.exam.SchoolName}</p><h3 dir="auto">{paper.exam.ExamTitle}</h3>
-        <p>Grade {paper.exam.Grade} · {snapshot.totalMarks} marks</p></header>
+      <header><p>Grade {paper.exam.Grade}</p><h3 dir="auto">{paper.exam.ExamTitle}</h3>
+        <p dir="auto">{paper.exam.SchoolName} · {snapshot.totalMarks} marks</p></header>
       {mode === 'student' ? <>
         <p dir="auto">{paper.exam.GeneralInstruction}</p>
         {paper.exam.Branches.map((branch, index) => <section key={snapshot.branches[index].id} className="blueprint-paper-branch">
