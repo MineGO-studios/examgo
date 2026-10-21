@@ -1,5 +1,6 @@
 import { ChoiceChips, Stepper } from './controls'
 import { Icon } from './icons'
+import { QUESTION_TYPE_GROUPS, QUESTION_TYPE_LABELS_EN, questionTypeUse } from '../lib/questionTypeLabels'
 import QuestionBankBrowser from './QuestionBankBrowser'
 import { presetBankViews, presetUnitContent } from '../lib/presetBankViews'
 import PublishedPresetGroups from './PublishedPresetGroups'
@@ -524,19 +525,16 @@ export default function QuestionEditor({ ownerId, onUsePresets }: { ownerId: str
               </button>
             </div>
 
-            <ChoiceChips legend="Question type" value={draft.questionType}
-              onChange={(questionType) => updateDraft('questionType', questionType)}
-              options={[
-                { value: 'multiple-choice', label: 'Multiple choice' },
-                { value: 'binary', label: 'True/False or Yes/No' },
-                { value: 'short-answer', label: 'Short answer' },
-                { value: 'matching', label: 'Matching' },
-                { value: 'completion', label: 'Word bank' },
-                { value: 'odd-word', label: 'Odd word' },
-                { value: 'word-relationship', label: 'Word relationship' },
-                { value: 'rewrite', label: 'Rewrite' },
-                { value: 'extended-writing', label: 'Writing' },
-              ] as { value: QuestionInput['questionType']; label: string }[]} />
+            <label className="text-field eg-select question-type-chooser">
+              Question type
+              <select value={draft.questionType} aria-describedby="question-type-use"
+                onChange={(event) => updateDraft('questionType', event.target.value as QuestionInput['questionType'])}>
+                {QUESTION_TYPE_GROUPS.map((group) => <optgroup key={group.id} label={group.label.en}>
+                  {group.types.map((type) => <option key={type} value={type}>{QUESTION_TYPE_LABELS_EN[type]}</option>)}
+                </optgroup>)}
+              </select>
+              <small id="question-type-use" className="field-help">{questionTypeUse(draft.questionType)}</small>
+            </label>
 
             <div className="question-placement">
               <Stepper label="Unit" value={draft.unit} min={1} max={20} onChange={(unit) => updateDraft('unit', unit)} />
@@ -747,7 +745,7 @@ export default function QuestionEditor({ ownerId, onUsePresets }: { ownerId: str
 
             {draft.questionType === 'completion' && (
               <fieldset className="options-fieldset">
-                <legend>Word-bank completion</legend>
+                <legend>{QUESTION_TYPE_LABELS_EN['completion']}</legend>
                 <label>
                   Ordered completion items
                   <textarea
@@ -904,7 +902,7 @@ export default function QuestionEditor({ ownerId, onUsePresets }: { ownerId: str
 
             {draft.questionType === 'odd-word' && (
               <fieldset className="options-fieldset">
-                <legend>Odd-word selection</legend>
+                <legend>{QUESTION_TYPE_LABELS_EN['odd-word']}</legend>
                 <label>
                   Ordered word set (one supplied word per line)
                   <textarea
@@ -945,7 +943,7 @@ export default function QuestionEditor({ ownerId, onUsePresets }: { ownerId: str
 
             {draft.questionType === 'word-relationship' && (
               <fieldset className="options-fieldset">
-                <legend>Word relationship / transformation</legend>
+                <legend>{QUESTION_TYPE_LABELS_EN['word-relationship']}</legend>
                 <p className="field-hint">
                   Keep the exact incomplete target pair and punctuation in the
                   question text above.
@@ -1045,7 +1043,7 @@ export default function QuestionEditor({ ownerId, onUsePresets }: { ownerId: str
 
             {draft.questionType === 'extended-writing' && (
               <fieldset className="options-fieldset">
-                <legend>Extended writing / composition</legend>
+                <legend>{QUESTION_TYPE_LABELS_EN['extended-writing']}</legend>
                 <p className="field-hint">
                   The question text above is one supplied writing prompt. A-or-B
                   choice is represented by the paper structure, not inside this

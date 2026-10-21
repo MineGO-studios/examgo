@@ -13,8 +13,9 @@ import { teacherErrorMessage } from '../lib/safeErrorDetails'
 import { Stepper } from './controls'
 import { PaperStamp } from './CouponProgress'
 import PaperProgress from './PaperProgress'
+import { QUESTION_TYPE_LABELS_EN } from '../lib/questionTypeLabels'
 
-const typeNames={'multiple-choice':'Multiple choice',binary:'True/False or Yes/No','short-answer':'Short answer'}
+const typeNames=QUESTION_TYPE_LABELS_EN
 const errorText=(e:unknown)=>teacherErrorMessage(e, 'Preset request failed. Reload and review again.')
 /** `exercise` is the "Use an approved exercise" shape; `standalone` is the shared-questions source under "Pick questions by type". */
 export default function SimplePresetExams({ownerId,section}:{ownerId:string;section:'exercise'|'standalone'}){

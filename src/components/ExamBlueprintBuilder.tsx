@@ -22,13 +22,10 @@ import BlueprintFinalPaper from './BlueprintFinalPaper'
 import BlueprintLayoutReview from './BlueprintLayoutReview'
 import { assessBlueprintFit } from '../lib/examBlueprintFit'
 import { teacherErrorMessage } from '../lib/safeErrorDetails'
+import { QUESTION_TYPE_LABELS_EN } from '../lib/questionTypeLabels'
 
 const questionTypes: QuestionType[] = ['multiple-choice', 'binary', 'short-answer', 'completion', 'odd-word', 'matching', 'word-relationship', 'rewrite', 'extended-writing']
-const questionTypeLabels: Record<QuestionType, string> = {
-  'multiple-choice': 'Multiple choice', binary: 'True/False or Yes/No', 'short-answer': 'Short answer',
-  completion: 'Word-bank completion', 'odd-word': 'Odd word', matching: 'Match List A and List B',
-  'word-relationship': 'Word relationship', rewrite: 'Punctuation / capitalization rewrite', 'extended-writing': 'Writing',
-}
+const questionTypeLabels: Record<QuestionType, string> = QUESTION_TYPE_LABELS_EN
 function newBranch(number: number): BlueprintBranch {
   return { id: crypto.randomUUID(), mainQuestionNumber: number, branchLabel: null, kind: 'questions',
     instruction: 'Answer the following questions.', arabicInstruction: null, questionTypes: ['short-answer'],

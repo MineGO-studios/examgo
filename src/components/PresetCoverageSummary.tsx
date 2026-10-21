@@ -1,10 +1,9 @@
 import { useEffect, useId, useState } from 'react'
 import type { PresetCoverageReport } from '../lib/presetCoverageRepository'
 import { getReviewedCoverageOverview, type ReviewedCoverageOverview } from '../lib/reviewedCoverage'
+import { QUESTION_TYPE_LABELS_EN } from '../lib/questionTypeLabels'
 
-const typeNames: Record<string, string> = { 'multiple-choice': 'Multiple choice', binary: 'True/False or Yes/No',
-  'short-answer': 'Short answer', completion: 'Completion', 'odd-word': 'Odd word', matching: 'List A/List B matching',
-  'word-relationship': 'Word relationship', rewrite: 'Sentence rewrite', 'extended-writing': 'Writing' }
+const typeNames: Record<string, string> = QUESTION_TYPE_LABELS_EN
 
 export function PresetCoverageTable({ report }: { report: PresetCoverageReport }) {
   const numbers = new Intl.NumberFormat('en')
