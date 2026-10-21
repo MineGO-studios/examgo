@@ -132,7 +132,7 @@ test('preset review loads a large bank one searched page at a time', async ({ pa
   const state = await syntheticBackend(page)
   state.curationReviewer = true
   await syntheticSignIn(page)
-  await page.getByRole('button', { name: 'Account', exact: true }).click()
+  await page.getByRole('button', { name: 'Settings', exact: true }).click()
   await page.getByRole('button', { name: 'Open reviewer tools', exact: true }).click()
   await page.getByRole('combobox', { name: 'Bank', exact: true }).selectOption({ label: 'Browser synthetic bank' })
   await page.getByText('Preset trust, provenance and review').click()
@@ -160,7 +160,7 @@ test('a failed server sign-out remains visible after the local session is cleare
   const state = await syntheticBackend(page)
   await syntheticSignIn(page)
   state.failSignOut = true
-  await page.getByRole('button', { name: 'Account', exact: true }).click()
+  await page.getByRole('button', { name: 'Settings', exact: true }).click()
   await page.getByRole('button', { name: 'Sign out', exact: true }).click()
   await expect(page.getByRole('textbox', { name: 'Email', exact: true })).toBeVisible()
   await expect(page.getByRole('alert')).toContainText('the server could not be reached to end the session')
@@ -173,7 +173,7 @@ test('a failed server sign-out remains visible after the local session is cleare
 test('sign out of all devices ends every session on the server first', async ({ page }) => {
   const state = await syntheticBackend(page)
   await syntheticSignIn(page)
-  await page.getByRole('button', { name: 'Account', exact: true }).click()
+  await page.getByRole('button', { name: 'Settings', exact: true }).click()
   await page.getByRole('button', { name: 'Sign out of all devices', exact: true }).click()
   await expect(page.getByRole('textbox', { name: 'Email', exact: true })).toBeVisible()
   await expect(page.getByRole('alert')).toHaveCount(0)

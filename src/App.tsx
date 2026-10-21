@@ -3,6 +3,7 @@ import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 import AuthForm from './components/AuthForm'
 import ExamBuilder from './components/ExamBuilder'
 import MyPapers from './components/MyPapers'
+import SettingsPage from './components/SettingsPage'
 import QuestionEditor from './components/QuestionEditor'
 import type { ReopenedExamDraft } from './lib/examDraftRepository'
 import { getQuestionBanks } from './lib/questionBankRepository'
@@ -256,39 +257,11 @@ function App() {
         </Suspense>
       </div>}
       {workspaceView === 'account' && (
-        <section className="card account-view" aria-labelledby="account-title">
-          <h2 id="account-title">Account</h2>
-          <p>Signed in as {workspaceUser.email}</p>
-          <button
-            type="button"
-            className="button-secondary"
-            onClick={() => void handleSignOut('local')}
-          >
-            Sign out
-          </button>{' '}
-          <button
-            type="button"
-            className="button-secondary"
-            aria-describedby="sign-out-all-hint"
-            onClick={() => void handleSignOut('global')}
-          >
-            Sign out of all devices
-          </button>
-          <p id="sign-out-all-hint" className="field-hint">
-            Ends ExamGO on every phone, tablet and computer where this account is signed in.
-          </p>
-        </section>
-      )}
-      {workspaceView === 'account' && (
-        <section className="reviewer-entry" aria-labelledby="reviewer-entry-title">
-          <h3 id="reviewer-entry-title">For MineGO reviewers</h3>
-          <p className="field-help">Source evidence, approvals and publishing for preset papers.</p>
-          <button type="button" className="button-secondary" onClick={() => setWorkspaceView('review')}>Open reviewer tools</button>
-        </section>
+        <SettingsPage email={workspaceUser.email} onSignOut={(scope) => void handleSignOut(scope)} onOpenReviewer={() => setWorkspaceView('review')} />
       )}
       {workspaceView === 'review' && (
         <div className="reviewer-page">
-          <button type="button" className="button-quiet" onClick={() => setWorkspaceView('account')}>Back to account</button>
+          <button type="button" className="button-quiet" onClick={() => setWorkspaceView('account')}>Back to settings</button>
           <Suspense fallback={<p role="status">Loading reviewer tools…</p>}>
             <PresetReviewTools key={workspaceUser.id} />
           </Suspense>

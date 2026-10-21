@@ -698,3 +698,55 @@ textarea:hover:not(:disabled) {
     animation: none;
   }
 }
+
+/* ---- D9.3 Settings: one section per scope ---- */
+.settings-page {
+  display: grid;
+  gap: var(--eg-space-5);
+  max-width: 44rem;
+  margin-inline: auto;
+}
+
+.settings-head h2 {
+  margin: 0;
+  font-size: var(--eg-font-size-display);
+  font-weight: 700;
+  letter-spacing: -0.035em;
+  line-height: 1.05;
+}
+
+.settings-head p {
+  margin: 0.4rem 0 0;
+}
+
+.settings-section {
+  display: grid;
+  gap: var(--eg-space-3);
+  border: 1px solid var(--eg-color-border);
+  border-radius: var(--eg-radius-card);
+  background: var(--eg-color-surface);
+  padding: var(--eg-space-4) var(--eg-space-5);
+}
+
+.settings-section h3 {
+  margin: 0;
+  font-size: var(--eg-font-size-lg);
+  font-weight: 600;
+}
+
+.settings-section p {
+  margin: 0;
+}
+
+.settings-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--eg-space-2);
+}
+
+.settings-status {
+  min-block-size: 1.2em;
+  color: var(--eg-color-primary);
+  font-size: var(--eg-font-size-sm);
+  font-weight: 600;
+}
