@@ -9,11 +9,14 @@ import '@fontsource-variable/jetbrains-mono'
 import './index.css'
 import App from './App.tsx'
 import { LanguageProvider } from './components/LanguageProvider'
+import { HelpTipProvider } from './components/HelpTip'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <LanguageProvider>
-      <App />
+      <HelpTipProvider>
+        <App />
+      </HelpTipProvider>
     </LanguageProvider>
   </StrictMode>,
 )

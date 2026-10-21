@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import { estimateLabelWidth, layoutDateLabels, localDay, timelineMarks, timelineScale, type PaperItem, type TimelineMark } from '../lib/myPapers'
 import type { Language } from '../lib/i18n'
+import { HelpTip } from './HelpTip'
 
 export interface TimelineStrings {
   title: string
@@ -10,6 +11,7 @@ export interface TimelineStrings {
   edited: string
   finalizedOn: string
   papers: (count: number) => string
+  help: string
 }
 
 /** Marks keep this many px between centres: a 14px dot plus comfortable padding, and the tap width. */
@@ -91,7 +93,7 @@ export function PaperTimeline({ items, matching, language, strings, onJump }: {
 
   return <section className="tl" aria-labelledby="tl-title">
     <div className="tl-head">
-      <h2 id="tl-title">{strings.title}</h2>
+      <h2 id="tl-title">{strings.title} <HelpTip topic={strings.title}>{strings.help}</HelpTip></h2>
       <ul className="tl-legend">
         <li><i className="tl-key" />{strings.drafts}</li>
         <li><i className="tl-key is-final" />{strings.finalized}</li>

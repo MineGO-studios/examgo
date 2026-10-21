@@ -634,3 +634,67 @@ textarea:hover:not(:disabled) {
 .start-card-reason {
   overflow-wrap: anywhere;
 }
+
+/* ---- D6.3 icons and contextual help ---- */
+.eg-icon {
+  flex: none;
+  width: 1rem;
+  height: 1rem;
+}
+
+/* The 15px glyph sits inside a 44px target. */
+.help-tip,
+.help-tip:hover:not(:disabled),
+.help-tip:active:not(:disabled) {
+  display: inline-grid;
+  place-items: center;
+  width: var(--eg-control-min-block-size);
+  min-block-size: var(--eg-control-min-block-size);
+  height: var(--eg-control-min-block-size);
+  margin-block: calc((var(--eg-control-min-block-size) - 1.2em) / -2);
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--eg-color-text-muted);
+  padding: 0;
+  transform: none;
+  vertical-align: middle;
+}
+
+.help-tip:hover:not(:disabled),
+.help-tip[data-state='delayed-open'],
+.help-tip[data-state='instant-open'] {
+  color: var(--eg-color-primary);
+}
+
+.help-tip .eg-icon {
+  width: 15px;
+  height: 15px;
+}
+
+.help-tip-content {
+  z-index: 20;
+  max-width: min(18rem, calc(100vw - 2rem));
+  border-radius: var(--eg-radius-md);
+  background: var(--eg-color-text);
+  box-shadow: 0 10px 28px -10px rgb(var(--eg-shadow-rgb) / 45%);
+  color: var(--eg-color-canvas);
+  font-family: var(--eg-font-sans);
+  font-size: var(--eg-font-size-sm);
+  font-weight: 500;
+  line-height: 1.45;
+  padding: 0.5rem 0.7rem;
+  animation: help-tip-in 160ms var(--eg-ease);
+}
+
+.help-tip-arrow {
+  fill: var(--eg-color-text);
+}
+
+@keyframes help-tip-in { from { opacity: 0; transform: translateY(0.2rem); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .help-tip-content {
+    animation: none;
+  }
+}

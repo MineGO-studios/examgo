@@ -12,6 +12,7 @@ Notable ExamGO changes are recorded here. Version labels identify development ch
 
 ### Added
 
+- Adopt a Radix icon vocabulary for repeated actions and an accessible help tip for secondary explanations (hover, keyboard focus, Escape, tap on touch screens; 44px target). Help tips explain the My papers timeline dates and the Filed note; essential instructions stay visible (D6.3, MIN-254).
 - Rename Create exam to **New paper** and present the starts as three kinds of paper (Pick questions by type, Use an approved exercise, Iraqi exercises and writing) with honest Unit 1 coverage tags. A kind the teacher cannot make yet stays visible with its reason. The standalone approved pool becomes the **Shared MineGO questions** source under Pick questions by type, shown unavailable while supply is zero; the approved-exercise page shows complete exercises only. Paper generation contracts are unchanged (D6.2, MIN-248).
 - Add Unit 1–4 preset bank choices beside the combined published bank, sharing canonical content and read-only access.
 
