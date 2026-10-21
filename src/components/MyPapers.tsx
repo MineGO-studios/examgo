@@ -15,6 +15,8 @@ import { teacherErrorMessage } from '../lib/safeErrorDetails'
 import { useI18n, type Language } from '../lib/i18n'
 import { PaperSheet, PaperThumb } from './PaperSheet'
 import { PaperTimeline } from './PaperTimeline'
+import { Icon } from './icons'
+import { HelpTip } from './HelpTip'
 import './myPapers.css'
 
 const BlueprintFinalPaper = lazy(() => import('./BlueprintFinalPaper'))
@@ -62,7 +64,7 @@ const STRINGS = {
     openFailed: 'This paper could not be opened. Please try again.',
     close: 'Close paper',
     types: { simple: 'Question bank paper', iraqi: 'Iraqi exercises and writing', candidate: 'Complete paper', blueprint: 'Structured paper', generated: 'Structured paper' } as Record<PaperKind, string>,
-    timeline: { title: 'Your papers over time', drafts: 'Drafts', finalized: 'Finalized', today: 'Today', edited: 'Edited', finalizedOn: 'Finalized', papers: (n: number) => `${n} papers` },
+    timeline: { title: 'Your papers over time', drafts: 'Drafts', finalized: 'Finalized', today: 'Today', edited: 'Edited', finalizedOn: 'Finalized', papers: (n: number) => `${n} papers`, help: 'Drafts sit on the day you last edited them; finalized papers on the day you finalized them. A numbered dot holds several papers: open it to see them.' },
     recoveryChip: 'Review required',
     recovery: (bank: string) => `The saved draft from ${bank} was preserved. ExamGO will not silently replace, remove, or upgrade affected questions.`,
     reviewBank: 'Review question bank',
@@ -101,7 +103,7 @@ const STRINGS = {
     openFailed: 'تعذّر فتح هذه الورقة. حاول مرة أخرى.',
     close: 'إغلاق الورقة',
     types: { simple: 'ورقة من بنك الأسئلة', iraqi: 'تمارين عراقية وكتابة', candidate: 'ورقة كاملة', blueprint: 'ورقة منظّمة', generated: 'ورقة منظّمة' } as Record<PaperKind, string>,
-    timeline: { title: 'أوراقك عبر الزمن', drafts: 'المسودات', finalized: 'النهائية', today: 'اليوم', edited: 'عُدّلت', finalizedOn: 'نُهيت', papers: (n: number) => `${n} أوراق` },
+    timeline: { title: 'أوراقك عبر الزمن', drafts: 'المسودات', finalized: 'النهائية', today: 'اليوم', edited: 'عُدّلت', finalizedOn: 'نُهيت', papers: (n: number) => `${n} أوراق`, help: 'تظهر المسودات في يوم آخر تعديل، والأوراق النهائية في يوم إنهائها. النقطة المرقّمة تضم عدة أوراق: افتحها لرؤيتها.' },
     recoveryChip: 'تحتاج مراجعة',
     recovery: (bank: string) => `حُفظت المسودة من ${bank}. لن يستبدل ExamGO الأسئلة المتأثرة أو يحذفها أو يحدّثها دون علمك.`,
     reviewBank: 'مراجعة بنك الأسئلة',
@@ -271,8 +273,8 @@ export default function MyPapers(props: MyPapersProps) {
     <div className="mp-row-actions">{chip(item)}{action(item)}</div>
   </li>
   const group = (id: string, title: string, list: PaperItem[], note?: string) => list.length > 0 && <section className="mp-group" aria-labelledby={id}>
-    <h2 id={id} tabIndex={-1}>{title} <span className="mp-count">{list.length}</span></h2>
-    {note && <p className="field-help">{note}</p>}
+    <h2 id={id} tabIndex={-1}>{title} <span className="mp-count">{list.length}</span>
+      {note && <HelpTip topic={title}>{note}</HelpTip>}</h2>
     <ul className={view === 'desk' ? 'mp-desk' : 'mp-list'}>{list.map(view === 'desk' ? deskPaper : listRow)}</ul>
   </section>
 
@@ -296,7 +298,7 @@ export default function MyPapers(props: MyPapersProps) {
         {loaded && items.length > 0 && <p className="mp-lede">{s.lede(items.filter(i => i.state === 'draft').length, items.filter(i => i.state === 'final').length)}</p>}
       </div>
       <button type="button" className="mp-new" onClick={props.onCreateExam}>
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" /></svg>{s.newPaper}
+        <Icon name="add" />{s.newPaper}
       </button>
     </header>
 
@@ -319,7 +321,7 @@ export default function MyPapers(props: MyPapersProps) {
       <div className="mp-tools">
         <label className="eg-search">
           <span className="visually-hidden">{s.search}</span>
-          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5" fill="none" stroke="currentColor" strokeWidth="2" /><path d="M16 16l4.5 4.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
+          <Icon name="search" />
           <input type="search" value={query} placeholder={s.placeholder} autoComplete="off" onChange={event => setQuery(event.target.value)} />
         </label>
         <div className="eg-seg" role="group" aria-label={s.scopeLabel}>
@@ -327,9 +329,7 @@ export default function MyPapers(props: MyPapersProps) {
         </div>
         <div className="eg-seg" role="group" aria-label={s.viewLabel}>
           {(['desk', 'list'] as const).map(key => <button key={key} type="button" aria-pressed={view === key} onClick={() => { setView(key); storeView(key) }}>
-            {key === 'desk'
-              ? <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="7" height="9" rx="1" fill="none" stroke="currentColor" strokeWidth="2" /><rect x="13" y="4" width="7" height="9" rx="1" fill="none" stroke="currentColor" strokeWidth="2" /><path d="M4 17h16M4 20h10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
-              : <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6h11M9 12h11M9 18h11" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /><rect x="3.5" y="4.5" width="3" height="3" rx="0.6" fill="currentColor" /><rect x="3.5" y="10.5" width="3" height="3" rx="0.6" fill="currentColor" /><rect x="3.5" y="16.5" width="3" height="3" rx="0.6" fill="currentColor" /></svg>}
+            <Icon name={key} />
             {s.views[key]}
           </button>)}
         </div>

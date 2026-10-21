@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef, useState, type ReactNode } from 'react'
+import { Icon } from './icons'
 
 /** More options than this become a dropdown instead of a row of pills, so screens stay calm. */
 export const MAX_INLINE_OPTIONS = 5
@@ -76,9 +77,9 @@ export function Stepper({ label, hint, value, min = 0, max, disabled, onChange }
     </label>
     <div className="stepper-buttons">
       <button type="button" className="button-secondary" aria-label={`Fewer: ${label}`} disabled={disabled || value <= min}
-        onClick={() => onChange(clamp(value - 1))}><svg aria-hidden="true" width="16" height="16" viewBox="0 0 16 16"><path d="M3 8h10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg></button>
+        onClick={() => onChange(clamp(value - 1))}><Icon name="remove" /></button>
       <button type="button" className="button-secondary" aria-label={`More: ${label}`} disabled={disabled || value >= max}
-        onClick={() => onChange(clamp(value + 1))}><svg aria-hidden="true" width="16" height="16" viewBox="0 0 16 16"><path d="M3 8h10M8 3v10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg></button>
+        onClick={() => onChange(clamp(value + 1))}><Icon name="add" /></button>
     </div>
   </div>
 }
@@ -133,7 +134,7 @@ export function ToggleChipGroup({ legend, items, disabled, hint }: {
     <button type="button" className="eg-multi-button" disabled={disabled} aria-expanded={open} aria-controls={panelId}
       aria-labelledby={`${panelId}-legend ${panelId}-summary`} onClick={() => setOpen((current) => !current)}>
       <span id={`${panelId}-summary`}>{summary}</span>
-      <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 6l4 4 4-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+      <Icon name="expand" />
     </button>
     {open && <fieldset className="eg-multi-panel" id={panelId} disabled={disabled}>
       <legend className="visually-hidden">{legend}</legend>

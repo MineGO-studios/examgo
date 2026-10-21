@@ -1,4 +1,5 @@
 import { ChoiceChips, Stepper } from './controls'
+import { Icon } from './icons'
 import QuestionBankBrowser from './QuestionBankBrowser'
 import { presetBankViews, presetUnitContent } from '../lib/presetBankViews'
 import PublishedPresetGroups from './PublishedPresetGroups'
@@ -413,7 +414,7 @@ export default function QuestionEditor({ ownerId, onUsePresets }: { ownerId: str
             : 'Your questions, ready to use in papers.'}</p>
         </div>
         {!isPresetBank && banks.length > 0 && selectedBankId && <button type="button" className="qb-add" disabled={isBusy} onClick={() => { resetDraft(); setView('question') }}>
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" /></svg>Add question
+          <Icon name="add" />Add question
         </button>}
       </header>
 
