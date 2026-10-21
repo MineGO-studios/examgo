@@ -28,11 +28,13 @@ The current hosted paper workflows support Unit 1. Unit 2–4 bank browsing does
 
 ## Configure the paper
 
-Open **Create exam** and choose an available format:
+Open **New paper** and choose what kind of paper to make:
 
-- **Simple question paper** supports its bounded standalone multiple-choice, binary and short-answer workflow.
-- **Approved preset papers** uses content eligible for the selected preset workflow.
-- **Iraqi exercises and writing** uses a source-specific exercise/writing profile.
+- **Pick questions by type** builds a paper from your banks with chosen counts of multiple-choice, true/false or yes/no, and short-answer questions. **Shared MineGO questions** appears here as a source. It shows as unavailable, with its reason, until approved standalone questions are published.
+- **Use an approved exercise** makes one complete MineGO exercise, kept in source order with its answer rule.
+- **Iraqi exercises and writing** makes the fixed source-style excerpt (Q3/A to Q5). It is an excerpt, not a full paper.
+
+A kind of paper you cannot make yet stays visible with a short reason, for example a teacher without any bank sees "Add or import questions to a bank in Question banks first".
 
 Some structured tools are development-only. Do not assume a local development option is available in a hosted Alpha build.
 

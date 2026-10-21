@@ -156,6 +156,6 @@ export async function syntheticSignIn(page: Page, navigate = true, email = user.
   await page.getByRole('textbox', { name: 'Email', exact: true }).fill(email)
   await page.getByLabel('Password', { exact: false }).fill('Synthetic-password-123')
   await page.getByRole('button', { name: 'Sign in', exact: true }).last().click()
-  await expect(page.getByRole('heading', { name: 'Build exam', exact: true })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'New paper', exact: true })).toBeVisible()
   if (expectBuilder) await expect(page.getByRole('spinbutton', { name: /Short open answer 2 available/ })).toBeEnabled()
 }

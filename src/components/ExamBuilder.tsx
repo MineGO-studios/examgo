@@ -1,3 +1,4 @@
+import { getEligibleSimplePresets } from '../lib/simplePresetRepository'
 import {
   type FormEvent,
   type ReactNode,
@@ -106,13 +107,24 @@ interface ExamBuilderProps {
   startOptions?: ReactNode
   reopenedDraft: ReopenedExamDraft | null
   onViewDrafts: () => void
+  /** Opens the shared MineGO questions source when approved standalone questions exist. */
+  onUseSharedQuestions?: () => void
 }
 
 export default function ExamBuilder({
   startOptions,
   reopenedDraft,
   onViewDrafts,
+  onUseSharedQuestions,
 }: ExamBuilderProps) {
+  // Approved standalone supply: null while checking, -1 when it could not be checked.
+  const [sharedCount, setSharedCount] = useState<number | null>(null)
+  useEffect(() => {
+    let active = true
+    void getEligibleSimplePresets().then((pool) => { if (active) setSharedCount(pool.length) })
+      .catch(() => { if (active) setSharedCount(-1) })
+    return () => { active = false }
+  }, [])
   const [settings, setSettings] = useState<ExamSettings>({
     ...DEFAULT_EXAM_SETTINGS,
   })
@@ -656,7 +668,7 @@ export default function ExamBuilder({
     >
       <div className="section-heading exam-builder-heading">
         <div>
-          <h2>Build exam</h2>
+          <h2>New paper</h2>
           <p>
             Set up the paper, then review it as the student will see it before you download the paper and its answer key.
           </p>
@@ -720,6 +732,19 @@ export default function ExamBuilder({
                 onToggle: () => void changeBanks(checked ? selectedBankIds.filter((id) => id !== bank.id) : [...selectedBankIds, bank.id]) }
             })} />
         )}
+
+        <div className="shared-source">
+          {sharedCount === null
+            ? <p role="status" className="field-help">Checking shared MineGO questions…</p>
+            : sharedCount > 0 && onUseSharedQuestions
+              ? <button type="button" className="button-secondary" onClick={onUseSharedQuestions}>Use shared MineGO questions ({sharedCount})</button>
+              : <div className="source-unavailable" role="group" aria-label="Shared MineGO questions">
+                  <span className="source-unavailable-title">Shared MineGO questions</span>
+                  <span>{sharedCount === -1
+                    ? 'Shared questions could not be checked right now. Your own banks still work.'
+                    : 'No approved standalone questions are available yet. They will appear here once MineGO publishes them.'}</span>
+                </div>}
+        </div>
 
         <ChoiceChips legend="Lesson" disabled={isLoadingQuestions || isBusy} value={filters.lesson}
           onChange={(lesson) => updateFilter('lesson', lesson)}

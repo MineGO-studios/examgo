@@ -562,3 +562,75 @@ textarea:hover:not(:disabled) {
 }
 
 @keyframes eg-drop { from { opacity: 0; transform: translateY(-0.35rem); } }
+
+/* ---- D6.2 New paper: honest coverage tags, unavailable shapes and sources ---- */
+.start-card-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--eg-space-1);
+  margin-top: var(--eg-space-1);
+}
+
+.start-card-tag {
+  border-radius: var(--eg-radius-pill);
+  background: var(--eg-color-fill);
+  color: var(--eg-color-text-muted);
+  font: 500 var(--eg-font-size-2xs)/1.6 var(--eg-font-mono);
+  padding: 0 0.5rem;
+}
+
+.start-card.is-unavailable,
+.start-card.is-unavailable:hover:not(:disabled) {
+  border-style: dashed;
+  background: var(--eg-color-fill);
+  cursor: not-allowed;
+}
+
+.start-card.is-unavailable .mini-sheet {
+  filter: grayscale(1);
+  opacity: 0.6;
+}
+
+.start-card-reason {
+  margin-top: var(--eg-space-1);
+  border-radius: var(--eg-radius-md);
+  background: var(--eg-color-warning-bg);
+  color: var(--eg-color-warning-text);
+  font-size: var(--eg-font-size-sm);
+  font-weight: 500;
+  line-height: 1.4;
+  padding: var(--eg-space-2) var(--eg-space-3);
+}
+
+.source-unavailable {
+  display: grid;
+  gap: var(--eg-space-1);
+  border: 1px dashed var(--eg-color-border-control);
+  border-radius: var(--eg-radius-group);
+  color: var(--eg-color-text-muted);
+  font-size: var(--eg-font-size-sm);
+  padding: var(--eg-space-3) var(--eg-space-4);
+}
+
+.source-unavailable-title {
+  color: var(--eg-color-text);
+  font-size: var(--eg-font-size-md);
+  font-weight: 600;
+}
+
+/* Long shape descriptions wrap inside the card instead of widening the setup column. */
+.exam-settings > *,
+.start-cards > li {
+  min-width: 0;
+}
+
+.start-card,
+.start-card[aria-pressed]:not(:disabled) {
+  min-width: 0;
+  white-space: normal;
+}
+
+.start-card-description,
+.start-card-reason {
+  overflow-wrap: anywhere;
+}
