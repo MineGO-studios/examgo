@@ -63,6 +63,7 @@ import { teacherErrorMessage } from '../lib/safeErrorDetails'
 import SimplePaperReview from './SimplePaperReview'
 import PaperProgress from './PaperProgress'
 import { ChoiceChips, FormGroup, Stepper, ToggleChipGroup } from './controls'
+import { ErrorSummary } from './ErrorSummary'
 import CouponProgress from './CouponProgress'
 import { QUESTION_TYPE_LABELS_EN } from '../lib/questionTypeLabels'
 
@@ -130,6 +131,7 @@ export default function ExamBuilder({
   })
   const [errors, setErrors] =
     useState<ExamSettingsErrors>({})
+  const [failedAttempts, setFailedAttempts] = useState(0)
   const [status, setStatus] =
     useState<GenerationStatus>('idle')
   const [message, setMessage] = useState(
@@ -378,6 +380,7 @@ export default function ExamBuilder({
 
     if (firstError) {
       setErrors(nextErrors)
+      setFailedAttempts((count) => count + 1)
       setStatus('error')
       setMessage(firstError)
       return
@@ -674,6 +677,10 @@ export default function ExamBuilder({
       </div>
 
       <div className="exam-settings">
+      <ErrorSummary attempt={failedAttempts} items={([
+        ['schoolName', 'exam-school-name'], ['examTitle', 'exam-title'], ['teacherName', 'exam-teacher-name'],
+        ['questionCount', 'exam-question-count'], ['selectionSeed', 'exam-selection-seed'],
+      ] as const).flatMap(([key, target]) => errors[key] ? [{ target, message: errors[key] as string }] : [])} />
       {!review || showStarts
         ? startOptions
         : startOptions && <button type="button" className="button-quiet start-again" onClick={() => setShowStarts(true)}>Start from something else</button>}
@@ -686,10 +693,12 @@ export default function ExamBuilder({
             maxLength={EXAM_LIMITS.schoolNameMaxLength}
             dir="ltr"
             onChange={(event) => updateSetting('schoolName', event.target.value)}
+            id="exam-school-name"
             aria-invalid={Boolean(errors.schoolName)}
+            aria-describedby={errors.schoolName ? 'exam-school-name-error' : undefined}
           />
-          {errors.schoolName && <span role="alert" className="field-error">{errors.schoolName}</span>}
         </label>
+        {errors.schoolName && <span id="exam-school-name-error" className="field-error">{errors.schoolName}</span>}
 
         <label className="text-field">
           Test title
@@ -699,10 +708,12 @@ export default function ExamBuilder({
             maxLength={EXAM_LIMITS.examTitleMaxLength}
             dir="ltr"
             onChange={(event) => updateSetting('examTitle', event.target.value)}
+            id="exam-title"
             aria-invalid={Boolean(errors.examTitle)}
+            aria-describedby={errors.examTitle ? 'exam-title-error' : undefined}
           />
-          {errors.examTitle && <span role="alert" className="field-error">{errors.examTitle}</span>}
         </label>
+        {errors.examTitle && <span id="exam-title-error" className="field-error">{errors.examTitle}</span>}
 
         <label className="text-field">
           Teacher name for footer
@@ -712,11 +723,13 @@ export default function ExamBuilder({
             maxLength={EXAM_LIMITS.teacherNameMaxLength}
             dir="ltr"
             onChange={(event) => updateSetting('teacherName', event.target.value)}
+            id="exam-teacher-name"
             aria-invalid={Boolean(errors.teacherName)}
+            aria-describedby={errors.teacherName ? 'exam-teacher-name-error' : undefined}
           />
           <small>Leave blank to print a line for handwriting.</small>
-          {errors.teacherName && <span role="alert" className="field-error">{errors.teacherName}</span>}
         </label>
+        {errors.teacherName && <span id="exam-teacher-name-error" className="field-error">{errors.teacherName}</span>}
       </FormGroup>
 
       <FormGroup title="Questions" aside={<><span className="unit-swatch" style={{ ['--plan-unit' as string]: `var(--eg-unit-${settings.unit})` }} />Grade 6 · Unit {settings.unit}</>}>
@@ -751,14 +764,15 @@ export default function ExamBuilder({
           onChange={(difficulty) => updateFilter('difficulty', difficulty)}
           options={[{ value: '', label: 'Any' }, { value: 'easy', label: 'Easy' }, { value: 'medium', label: 'Medium' }, { value: 'hard', label: 'Hard' }] as { value: ExamQuestionFilters['difficulty']; label: string }[]} />
 
-        <fieldset className="stepper-group">
+        <fieldset className="stepper-group" id="exam-question-count" tabIndex={-1}
+          aria-describedby={errors.questionCount ? 'exam-question-count-error' : undefined}>
           <legend>How many of each type</legend>
           {SIMPLE_QUESTION_TYPES.map((type) => (
             <Stepper key={type} label={questionTypeLabels[type]} hint={`${eligibleQuestionCounts[type]} available`}
               value={getQuestionQuantities(settings)[type]} max={eligibleQuestionCounts[type]}
               disabled={isLoadingQuestions || isBusy} onChange={(value) => updateQuestionQuantity(type, value)} />
           ))}
-          {errors.questionCount && <span role="alert" className="field-error">{errors.questionCount}</span>}
+          {errors.questionCount && <span id="exam-question-count-error" className="field-error">{errors.questionCount}</span>}
         </fieldset>
       </FormGroup>
 
@@ -781,11 +795,13 @@ export default function ExamBuilder({
             step="1"
             value={settings.selectionSeed}
             onChange={(event) => updateSetting('selectionSeed', event.target.valueAsNumber || 0)}
+            id="exam-selection-seed"
             aria-invalid={Boolean(errors.selectionSeed)}
+            aria-describedby={errors.selectionSeed ? 'exam-selection-seed-error' : undefined}
           />
           <small>Keep the same number to get the same questions again. Change it for a different selection.</small>
-          {errors.selectionSeed && <span role="alert" className="field-error">{errors.selectionSeed}</span>}
         </label>
+        {errors.selectionSeed && <span id="exam-selection-seed-error" className="field-error">{errors.selectionSeed}</span>}
       </details>
 
       <p className="setup-total">

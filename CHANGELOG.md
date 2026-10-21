@@ -12,6 +12,7 @@ Notable ExamGO changes are recorded here. Version labels identify development ch
 
 ### Added
 
+- Show one error summary when the New paper setup has problems: it takes focus, links to each field and keeps the teacher's input. Field messages are linked to their fields instead of being separate announcements (D9.6, MIN-258).
 - Rename Account to **Settings**, with one section per scope: the account (sign out, sign out of all devices), interface language and appearance on this device, the My papers default view on this device, and the reviewer tools entry. Device choices apply at once and confirm "Saved on this device", or say when the browser cannot remember them. Saved paper defaults wait for account storage (D9.3, MIN-253).
 - Use one teacher name per question type on every screen (for example "Short answer" everywhere, "Fill in from a word bank", "Odd word out"), with Arabic names ready for review. The question form's type chooser is a grouped dropdown (Choose the answer / Write the answer) that says where the chosen type can be used in papers today; matching states that it is not in hosted papers yet. Stored types are unchanged (D9.1, MIN-249).
 - Adopt a Radix icon vocabulary for repeated actions and an accessible help tip for secondary explanations (hover, keyboard focus, Escape, tap on touch screens; 44px target). Help tips explain the My papers timeline dates and the Filed note; essential instructions stay visible (D6.3, MIN-254).
