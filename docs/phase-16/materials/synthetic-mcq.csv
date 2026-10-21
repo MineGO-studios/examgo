@@ -1,0 +1,3 @@
+external_id,unit,lesson,difficulty,prompt,option_a,option_b,correct_option_label
+ALPHA-PRACTICE-01,1,1,easy,Choose the plural of book.,books,bookes,A
+ALPHA-PRACTICE-02,1,1,easy,Choose the correct sentence.,She are a teacher.,She is a teacher.,B

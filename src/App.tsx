@@ -209,7 +209,7 @@ function App() {
         </p>
       )}
       {workspaceView === 'questions' && (
-        <QuestionEditor ownerId={workspaceUser.id} />
+        <QuestionEditor ownerId={workspaceUser.id} onUsePresets={() => { setExamMode('presets'); setWorkspaceView('exam') }} />
       )}
       {workspaceView === 'drafts' && (
         <MyPapers

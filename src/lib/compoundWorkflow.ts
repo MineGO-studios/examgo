@@ -1,3 +1,4 @@
+import { preparePaperTemplate } from './paperTemplateFormat'
 import { compoundBranchPointIds, parseCompoundSnapshot, type CompoundBranch, type CompoundSnapshot } from '../domain/compoundStructure'
 import type { DomainQuestion } from '../domain/questionDomain'
 import { hasPrintedChoiceOptions } from './printedChoiceOptions'
@@ -31,10 +32,6 @@ function printedQuestion(question: DomainQuestion): string {
   return question.prompt
 }
 
-function printedPointMark(branch: CompoundBranch, index: number): string {
-  return branch.pointMarks ? ` (${branch.pointMarks[compoundBranchPointIds(branch)[index]]}M)` : ''
-}
-
 function studentBranch(branch: CompoundBranch, seed: number): PhaseNineStudentBranch {
   let body = ''
   let alternativeA = ''; let alternativeB = ''
@@ -42,17 +39,17 @@ function studentBranch(branch: CompoundBranch, seed: number): PhaseNineStudentBr
     const question = branch.items[0].question
     if (question.type === 'matching') {
       const projection = projectMatching(question, seed)
-      body = `List (A)\n${projection.left.map((item, index) => `${index + 1}. ${item.text}${printedPointMark(branch, index)}`).join('\n')}\nList (B)\n${projection.right.map((item, index) => `${String.fromCharCode(97 + index)}. ${item.text}`).join('\n')}`
+      body = `List (A)\n${projection.left.map((item, index) => `${index + 1}. ${item.text}`).join('\n')}\nList (B)\n${projection.right.map((item, index) => `${String.fromCharCode(97 + index)}. ${item.text}`).join('\n')}`
     }
   } else if (branch.kind === 'completion') {
     const lines = branch.items.flatMap(({ question }) => question.type === 'completion' ? question.content.text.split(/\r?\n/) : [])
-    body = lines.map((line, index) => `${index + 1}. ${line}${printedPointMark(branch, index)}`).join('\n')
+    body = lines.map((line, index) => `${index + 1}. ${line}`).join('\n')
   } else if (branch.kind === 'alternatives') {
-    alternativeA = `A- ${printedQuestion(branch.items[0].question)}${printedPointMark(branch, 0)}`
-    alternativeB = `B- ${printedQuestion(branch.items[1].question)}${printedPointMark(branch, 1)}`
+    alternativeA = `A- ${printedQuestion(branch.items[0].question)}`
+    alternativeB = `B- ${printedQuestion(branch.items[1].question)}`
   } else {
-    const questions = branch.items.map((item, index) => (item.label === 'Main'
-      ? printedQuestion(item.question) : `${item.label}. ${printedQuestion(item.question)}`) + printedPointMark(branch, index)).join('\n')
+    const questions = branch.items.map((item) => (item.label === 'Main'
+      ? printedQuestion(item.question) : `${item.label}. ${printedQuestion(item.question)}`)).join('\n')
     body = branch.kind === 'passage' ? `${branch.passageGroup?.passage ?? ''}\n${questions}` : questions
   }
   return {
@@ -176,7 +173,7 @@ async function compactCompoundStudent<T extends Blob | ArrayBuffer>(exam: T, sna
     for (let i = 0; i < 2; i++) { const col = w('gridCol'); attr(col, 'w', columnWidth); grid.appendChild(col) }
     table.appendChild(grid)
     const rows = [['List (A)', 'List (B)'], ...projection.left.map((left, index) => [
-      `${index + 1}. ${left.text}${printedPointMark(branch, index)}`, `${String.fromCharCode(97 + index)}. ${projection.right[index].text}`,
+      `${index + 1}. ${left.text}`, `${String.fromCharCode(97 + index)}. ${projection.right[index].text}`,
     ])]
     for (const row of rows) { const tr = w('tr'); row.forEach((value) => tr.appendChild(cell(value, columnWidth))); table.appendChild(tr) }
     return table
@@ -228,8 +225,8 @@ export async function createCompoundDocumentBlobs<T extends Blob | ArrayBuffer>(
   validateDocumentText(projection.answerKey)
   const { TemplateHandler } = await import('easy-template-x')
   const [exam, rawAnswerKey] = await Promise.all([
-    new TemplateHandler().process(examTemplate, projection.exam),
-    new TemplateHandler().process(answerKeyTemplate, projection.answerKey),
+    new TemplateHandler().process(await preparePaperTemplate(examTemplate, 'student'), projection.exam),
+    new TemplateHandler().process(await preparePaperTemplate(answerKeyTemplate, 'key'), projection.answerKey),
   ])
   return { exam: await compactCompoundStudent(exam, captured),
     answerKey: await mergeStructuredAnswerCells(rawAnswerKey, projection.mergeGroups) }

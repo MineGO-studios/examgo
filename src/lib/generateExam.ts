@@ -1,3 +1,4 @@
+import { preparePaperTemplate } from './paperTemplateFormat'
 import type { ExamQuestion } from '../types/question'
 import { hasPrintedChoiceOptions } from './printedChoiceOptions'
 import {
@@ -186,11 +187,11 @@ export async function createExamDocumentBlobs<
   const { TemplateHandler } = await import('easy-template-x')
   const [exam, answerKey] = await Promise.all([
     new TemplateHandler().process(
-      examTemplate,
+      await preparePaperTemplate(examTemplate, 'student'),
       examData,
     ),
     new TemplateHandler().process(
-      answerKeyTemplate,
+      await preparePaperTemplate(answerKeyTemplate, 'key'),
       keyData,
     ),
   ])

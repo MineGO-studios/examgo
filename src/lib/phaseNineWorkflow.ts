@@ -1,3 +1,4 @@
+import { preparePaperTemplate } from './paperTemplateFormat'
 import {
   MANUAL_MARKING_NOTE,
   validateDomainQuestion,
@@ -961,11 +962,11 @@ export async function createPhaseNineDocumentBlobs<
   const { TemplateHandler } = await import('easy-template-x')
   const [exam, rawAnswerKey] = await Promise.all([
     new TemplateHandler().process(
-      examTemplate,
+      await preparePaperTemplate(examTemplate, 'student'),
       examData,
     ),
     new TemplateHandler().process(
-      answerKeyTemplate,
+      await preparePaperTemplate(answerKeyTemplate, 'key'),
       keyData,
     ),
   ])

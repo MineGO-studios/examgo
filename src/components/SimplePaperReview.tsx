@@ -78,9 +78,9 @@ export default function SimplePaperReview({ questions, settings, totalMarks, ren
     <article className="ministry-sheet" lang="en" dir="ltr" aria-label={mode === 'student' ? 'Student paper content' : 'Answer key content'}>
       {stamp && <PaperStamp label={stamp} />}
       <header className="ministry-sheet-header">
-        <p dir="auto">{exam.SchoolName}</p>
+        <p>Grade {exam.Grade}</p>
         <h4 dir="auto">{exam.ExamTitle}{mode === 'key' ? ' — Answer key' : ''}</h4>
-        <p>Grade {exam.Grade}<br />{totalMarks === null ? 'Fix question marks' : markLabel(totalMarks)}</p>
+        <p dir="auto">{exam.SchoolName}<br />{totalMarks === null ? 'Fix question marks' : markLabel(totalMarks)}</p>
       </header>
       {mode === 'student' ? <>
         <p className="ministry-sheet-instructions">{exam.Instructions}</p>
@@ -92,9 +92,6 @@ export default function SimplePaperReview({ questions, settings, totalMarks, ren
             <p className="structured-question-content" dir="auto">{question.StudentLine}</p>
             {question.AnswerSpace && <p className="structured-question-content ministry-answer-space" aria-hidden="true">{question.AnswerSpace}</p>}
           </div>
-          <p className="ministry-mark" aria-label={Number.isSafeInteger(question.Marks) ? markLabel(question.Marks) : 'Marks needed'}>
-            {Number.isSafeInteger(question.Marks) ? question.Marks : '?'}
-          </p>
           {index === focused
             ? <div className="question-tools">{renderControls(questions[index], index)}</div>
             : <div className="question-summary">

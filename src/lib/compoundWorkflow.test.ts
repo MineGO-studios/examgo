@@ -120,7 +120,7 @@ it('generates a structurally complete candidate pair with aligned branch-local k
   vi.unstubAllGlobals()
 })
 
-it('renders all nine markless question types with exam-owned point marks in both DOCX files', async () => {
+it('keeps all nine question types free of student point marks while preserving answer-key scoring', async () => {
   // Synthetic renderer coverage; this is not an approved source profile or imported-content acceptance.
   const value = makeExam002Candidate('tissue')
   value.schemaVersion = 2
@@ -169,7 +169,8 @@ it('renders all nine markless question types with exam-owned point marks in both
       Uint8Array.from(templates[0]).buffer, Uint8Array.from(templates[1]).buffer)
     const [student, key] = await Promise.all([inspectDocx(pair.exam), inspectDocx(pair.answerKey)])
     const matching = student.tables.find((rows) => rows[1]?.[0].text.includes('Can I help you?'))!
-    expect(matching.slice(1).map((row) => row[0].text.match(/\((\d+)M\)$/)?.[1])).toEqual(['1', '3', '2', '1', '3'])
+    expect(matching.slice(1).every((row) => !/\(\d+M\)/.test(row[0].text))).toBe(true)
+    expect(student.text).not.toMatch(/\(\d+M\)/)
     const keyTable = key.tables.find((rows) => rows[0].map((cell) => cell.text).join('|') === 'Q|Part|Rule|Point|Answer|Mark|Total')!
     expect(keyTable.slice(1).map((row) => [row[3].text, row[4].text, row[5].text])).toEqual(
       projected.answerKey.Answers.map((row) => [row.Point, row.Answer, String(row.Mark)]))

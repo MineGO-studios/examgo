@@ -1,7 +1,9 @@
 import { ChoiceChips, Stepper } from './controls'
-import { questionAnswerPreview, questionTypeMark, unitCounts } from '../lib/questionCards'
+import QuestionBankBrowser from './QuestionBankBrowser'
+import { presetBankViews, presetUnitContent } from '../lib/presetBankViews'
+import PublishedPresetGroups from './PublishedPresetGroups'
+import { getPresetBanks, getPresetBankBrowser, type PresetBank, type PresetBrowserQuestion, type PresetBrowserGroup } from '../lib/presetBankRepository'
 import {
-  type CSSProperties,
   type FormEvent,
   lazy,
   Suspense,
@@ -20,7 +22,7 @@ import {
 } from '../lib/questionRepository'
 import { getQuestionsForBanks } from '../lib/questionMembershipRepository'
 import { getStructuredQuestionPoolForBanks } from '../lib/passageGroupRepository'
-import { EMPTY_BANK_FILTERS, bankQuestionCounts, browseBankQuestions, type BankQuestionFilters } from '../lib/questionBankBrowse'
+import { EMPTY_BANK_FILTERS, type BankQuestionFilters } from '../lib/questionBankBrowse'
 import {
   getFirstQuestionValidationError,
   questionToInput,
@@ -50,17 +52,6 @@ function getErrorMessage(error: unknown): string {
   return teacherErrorMessage(error, 'Something went wrong. Please try again.')
 }
 
-const questionTypeLabels: Record<QuestionInput['questionType'], string> = {
-  'multiple-choice': 'Multiple choice',
-  binary: 'True/False or Yes/No',
-  'short-answer': 'Short open answer',
-  completion: 'Word-bank completion',
-  'odd-word': 'Odd-word selection',
-  'word-relationship': 'Word relationship / transformation',
-  rewrite: 'Punctuation / capitalization rewrite',
-  'extended-writing': 'Extended writing / composition',
-  matching: 'Match List A and List B',
-}
 
 function splitNonEmptyLines(value: string): string[] {
   return value
@@ -69,9 +60,25 @@ function splitNonEmptyLines(value: string): string[] {
     .filter(Boolean)
 }
 
-export default function QuestionEditor({ ownerId }: { ownerId: string }) {
+export default function QuestionEditor({ ownerId, onUsePresets }: { ownerId: string; onUsePresets: () => void }) {
   const [banks, setBanks] = useState<QuestionBank[]>([])
   const [selectedBankId, setSelectedBankId] = useState('')
+  const [presetBanks,setPresetBanks]=useState<PresetBank[]>([])
+  const [presetError,setPresetError]=useState('')
+  const [presetQuestions,setPresetQuestions]=useState<PresetBrowserQuestion[]>([])
+  const [presetGroups,setPresetGroups]=useState<PresetBrowserGroup[]>([])
+  const [presetReload,setPresetReload]=useState(0)
+  const presetViews = presetBankViews(presetBanks)
+  const selectedPreset = presetViews.find(bank => bank.value === selectedBankId)
+  const selectedPresetBankId = selectedPreset?.bankId
+  const isPresetBank = !!selectedPreset
+  const presetContent = presetUnitContent(presetQuestions, presetGroups, selectedPreset?.unit)
+  const allBanks = [...banks.map(bank => ({value:bank.id,label:bank.name})), ...presetViews]
+  useEffect(()=>{let active=true
+    void getPresetBanks().then(value=>{if(active){setPresetBanks(value);setPresetError('');setSelectedBankId(current=>current|| (value[0]?'preset:'+value[0].id:''))}})
+      .catch(()=>{if(active)setPresetError('Preset banks could not be loaded. Retry loading presets.')})
+    return()=>{active=false}
+  },[presetReload])
   const [questions, setQuestions] = useState<Question[]>([])
   const [questionReload, setQuestionReload] = useState(0)
   const [editingQuestionId, setEditingQuestionId] =
@@ -149,6 +156,13 @@ export default function QuestionEditor({ ownerId }: { ownerId: string }) {
 
     const loadQuestions = async (): Promise<void> => {
       try {
+        if(selectedPresetBankId) {
+          const result=await getPresetBankBrowser(selectedPresetBankId)
+          if(!active)return
+          setPresetQuestions(result.questions);setPresetGroups(result.groups)
+          setLinkedIds(new Set(result.questions.filter(q=>q.linked).map(q=>q.id)))
+          setStatus('idle');setMessage('');return
+        }
         const loadedQuestions = await getQuestionsForBanks([selectedBankId])
 
         if (!active) {
@@ -178,7 +192,7 @@ export default function QuestionEditor({ ownerId }: { ownerId: string }) {
     return () => {
       active = false
     }
-  }, [selectedBankId, questionReload])
+  }, [selectedBankId, selectedPresetBankId, questionReload])
 
   const updateDraft = <K extends keyof QuestionInput>(
     field: K,
@@ -200,6 +214,8 @@ export default function QuestionEditor({ ownerId }: { ownerId: string }) {
   const selectBank = (bankId: string): void => {
     setSelectedBankId(bankId)
     setQuestions([])
+    setPresetQuestions([])
+    setPresetGroups([])
     setLinkedIds(null)
     setFilters(EMPTY_BANK_FILTERS)
     setPage(1)
@@ -392,32 +408,37 @@ export default function QuestionEditor({ ownerId }: { ownerId: string }) {
       <header className="qb-head">
         <div>
           <h2 id="question-editor-title" className="qb-title">Question banks</h2>
-          <p className="qb-lede">{selectedBankId && banks.length > 0
-            ? `${questions.length} question${questions.length === 1 ? '' : 's'} in ${banks.find((bank) => bank.id === selectedBankId)?.name ?? 'this bank'}`
+          <p className="qb-lede">{selectedBankId && allBanks.length > 0
+            ? `${(isPresetBank?presetContent.questions:questions).length} questions in ${selectedPreset?.label.replace(' (Preset)', '') ?? banks.find((bank) => bank.id === selectedBankId)?.name ?? 'this bank'}`
             : 'Your questions, ready to use in papers.'}</p>
         </div>
-        {banks.length > 0 && selectedBankId && <button type="button" className="qb-add" disabled={isBusy} onClick={() => { resetDraft(); setView('question') }}>
+        {!isPresetBank && banks.length > 0 && selectedBankId && <button type="button" className="qb-add" disabled={isBusy} onClick={() => { resetDraft(); setView('question') }}>
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" /></svg>Add question
         </button>}
       </header>
 
-      {banks.length > 0 && <ChoiceChips legend="Active bank" value={selectedBankId} disabled={isBusy}
+      {presetError && <div role="alert"><p>{presetError}</p><button type="button" className="button-secondary" onClick={()=>setPresetReload(n=>n+1)}>Retry loading presets</button></div>}
+      {allBanks.length > 0 && <ChoiceChips legend="Active bank" value={selectedBankId} disabled={isBusy} maxInlineOptions={6}
         onChange={(bankId) => selectBank(bankId)}
-        options={banks.map((bank) => ({ value: bank.id, label: bank.name }))} />}
+        options={allBanks} />}
 
-      {banks.length > 0 && selectedBankId && (() => {
+      {isPresetBank && <div className="field-help"><p>Official preset bank · read-only. Choose a unit below to browse its published questions.</p>
+        <div className="recovery-actions"><button type="button" className="button-secondary" onClick={onUsePresets}>Create from approved presets</button>
+        <button type="button" className="button-secondary" disabled={isBusy} onClick={()=>{setPresetQuestions([]);setPresetGroups([]);setStatus('loading');setQuestionReload(n=>n+1)}}>Reload bank</button></div></div>}
+
+      {allBanks.length > 0 && selectedBankId && (() => {
         const sections = [['list', 'Questions'], ['import', 'Import file'], ['groups', 'Passages'], ['manage', 'Manage banks']] as const
         const open = (key: typeof sections[number][0]) => key === 'list' ? showList() : setView(key)
         return <div className="qb-sections">
           <div className="eg-seg qb-seg" role="group" aria-label="Question bank sections">
-            {sections.map(([key, label]) => <button key={key} type="button" aria-pressed={view === key} disabled={isBusy} onClick={() => open(key)}>{label}</button>)}
+            {sections.map(([key, label]) => <button key={key} type="button" aria-pressed={view === key} disabled={isBusy || (isPresetBank && (key==='import' || key==='manage'))} onClick={() => open(key)}>{label}</button>)}
           </div>
           <label className="eg-select qb-section-select">
             <span className="visually-hidden">Question bank section</span>
             <select value={sections.some(([key]) => key === view) ? view : ''} disabled={isBusy}
               onChange={(event) => open(event.target.value as typeof sections[number][0])}>
               {!sections.some(([key]) => key === view) && <option value="" disabled>{editingQuestionId ? 'Editing a question' : 'Adding a question'}</option>}
-              {sections.map(([key, label]) => <option key={key} value={key}>{label}</option>)}
+              {sections.map(([key, label]) => <option key={key} value={key} disabled={isPresetBank && (key==='import' || key==='manage')}>{label}</option>)}
             </select>
           </label>
         </div>
@@ -431,7 +452,7 @@ export default function QuestionEditor({ ownerId }: { ownerId: string }) {
         {message}
       </p>
 
-      {(banks.length === 0 || view === 'manage') && <section className="bank-focus" aria-label="Manage banks">
+      {!isPresetBank && (banks.length === 0 || view === 'manage') && <section className="bank-focus" aria-label="Manage banks">
         <form className="create-bank" onSubmit={handleCreateBank}>
           <label>
             New Grade 6 English bank
@@ -471,7 +492,7 @@ export default function QuestionEditor({ ownerId }: { ownerId: string }) {
         <p className="field-help">Preset review and publication for MineGO reviewers is under Account.</p>
       </section>}
 
-      {view === 'import' && <section className="bank-focus" aria-label="Import file">
+      {!isPresetBank && view === 'import' && <section className="bank-focus" aria-label="Import file">
         {selectedBankId && <Suspense fallback={<p role="status">Loading intake preview…</p>}>
           <QuestionImportPreview key={selectedBankId} bankId={selectedBankId}
             onCommitted={() => setQuestionReload((current) => current + 1)}
@@ -479,7 +500,7 @@ export default function QuestionEditor({ ownerId }: { ownerId: string }) {
         </Suspense>}
       </section>}
 
-      {selectedBankId && view === 'question' && (
+      {!isPresetBank && selectedBankId && view === 'question' && (
         <div className="editor-layout question-view">
           <form
             className="question-form"
@@ -1157,99 +1178,16 @@ export default function QuestionEditor({ ownerId }: { ownerId: string }) {
 
         </div>
       )}
-      {selectedBankId && view === 'list' && status === 'loading' && questions.length === 0 &&
+      {selectedBankId && view === 'list' && status === 'loading' && (isPresetBank?presetQuestions:questions).length === 0 &&
         <div className="empty-state" aria-busy="true">Loading this bank's questions…</div>}
-      {selectedBankId && view === 'list' && !(status === 'loading' && questions.length === 0) && (() => {
-        const counts = bankQuestionCounts(questions, linkedIds)
-        const result = browseBankQuestions(questions, filters, linkedIds, page)
-        const types = [...new Set(questions.map((question) => question.question_type))].sort()
-        const setFilter = (patch: Partial<BankQuestionFilters>) => { setFilters((current) => ({ ...current, ...patch })); setPage(1) }
-        const typeOptions = [{ value: '', label: 'All types' }, ...types.map((type) => ({ value: type, label: questionTypeLabels[type as QuestionInput['questionType']] ?? type }))]
-        const units = unitCounts(questions)
-        const largest = Math.max(1, ...units.map((entry) => entry.total))
-        return <section className="question-browser" aria-labelledby="saved-questions-title">
-          {units.length > 0 && <section className="qb-units" aria-labelledby="qb-units-title">
-            <div className="qb-units-head">
-              <h3 id="qb-units-title">Questions by unit</h3>
-              {filters.unit !== undefined && filters.unit !== '' && <button type="button" className="button-quiet" onClick={() => setFilter({ unit: '' })}>Show every unit</button>}
-            </div>
-            <ul>
-              {units.map((entry, order) => <li key={entry.unit}>
-                <button type="button" aria-pressed={filters.unit === entry.unit}
-                  aria-label={`Unit ${entry.unit}, ${entry.total} question${entry.total === 1 ? '' : 's'}, ${entry.usable} ready`}
-                  style={{ '--unit': `var(--eg-unit-${entry.unit >= 1 && entry.unit <= 4 ? entry.unit : 'none'})`, '--share': entry.total / largest, '--ready': entry.total ? entry.usable / entry.total : 0, '--n': order } as CSSProperties}
-                  onClick={() => setFilter({ unit: filters.unit === entry.unit ? '' : entry.unit })}>
-                  <span className="qb-unit-name">Unit {entry.unit}</span>
-                  <span className="qb-unit-bar" aria-hidden="true"><i /></span>
-                  <span className="qb-unit-count">{entry.total}</span>
-                </button>
-              </li>)}
-            </ul>
-          </section>}
-          <div className="question-browser-header">
-            <h3 id="saved-questions-title">Questions</h3>
-            <p className="field-help">
-              {counts.total} question{counts.total === 1 ? '' : 's'} · {counts.usable} ready for new papers
-              {counts.inactive > 0 && ` · ${counts.inactive} switched off`}
-            </p>
-          </div>
-          <div className="question-filters" role="search" aria-label="Find questions">
-            <label className="search-field">
-              <span className="visually-hidden">Search questions</span>
-              <input type="search" value={filters.search} placeholder="Search questions, units or lessons"
-                onChange={(event) => setFilter({ search: event.target.value })} />
-            </label>
-            {types.length > 1 && <ChoiceChips legend="Type" value={filters.type} options={typeOptions}
-              onChange={(type) => setFilter({ type })} />}
-            {counts.inactive > 0 && <ChoiceChips legend="Show" value={filters.status}
-              options={[{ value: 'all', label: 'All' }, { value: 'usable', label: 'Ready' }, { value: 'inactive', label: 'Switched off' }] as { value: BankQuestionFilters['status']; label: string }[]}
-              onChange={(status) => setFilter({ status })} />}
-            {linkedIds && (counts.linked ?? 0) > 0 && <ChoiceChips legend="Context" value={filters.linked}
-              options={[{ value: 'all', label: 'All' }, { value: 'standalone', label: 'On their own' }, { value: 'linked', label: 'In passages and exercises' }] as { value: BankQuestionFilters['linked']; label: string }[]}
-              onChange={(linked) => setFilter({ linked })} />}
-          </div>
-          {questions.length === 0 ? (
-            <div className="empty-state">
-              <p>This bank has no questions yet. Add the first one, or import a file.</p>
-              <div className="recovery-actions">
-                <button type="button" onClick={() => { resetDraft(); setView('question') }}>Add question</button>
-                <button type="button" className="button-secondary" onClick={() => setView('import')}>Import file</button>
-              </div>
-            </div>
-          ) : result.matching === 0 ? <p role="status" className="empty-state">No questions match. Try another search or filter.</p> : <>
-            <p role="status" className="visually-hidden">{`Showing ${result.first} to ${result.last} of ${result.matching} questions.`}</p>
-            <ul className="question-rows">
-              {result.rows.map((question) => (
-                <li className="question-row" key={question.id}>
-                  <span className="qcard" aria-hidden="true">
-                    <span className="qcard-in">
-                      <span className="qcard-front"><b>{questionTypeMark(question.question_type)}</b></span>
-                      <span className="qcard-back"><i>✓</i><small>{questionAnswerPreview(question)}</small></span>
-                    </span>
-                  </span>
-                  <div className="question-row-text">
-                    <p className="question-row-prompt">{question.prompt}</p>
-                    <p className="question-row-meta">
-                      {questionTypeLabels[question.question_type as QuestionInput['questionType']] ?? question.question_type} · Unit {question.unit} · Lesson {question.lesson} · {question.difficulty}
-                      {!question.is_active && <span className="status-chip status-chip-warning">Switched off</span>}
-                      {linkedIds?.has(question.id) && <span className="status-chip">In a passage or exercise</span>}
-                    </p>
-                  </div>
-                  {question.bank_id === selectedBankId
-                    ? <button type="button" className="button-secondary" disabled={isBusy} onClick={() => editQuestion(question)}>Edit</button>
-                    : <button type="button" className="button-secondary" disabled={isBusy} onClick={() => selectBank(question.bank_id)}>Open its bank</button>}
-                </li>
-              ))}
-            </ul>
-          </>}
-          {result.pages > 1 && <div className="pager" aria-label="Question pages">
-            <button type="button" className="button-secondary" disabled={result.page <= 1} onClick={() => setPage(result.page - 1)}>Previous</button>
-            <span>Page {result.page} of {result.pages}</span>
-            <button type="button" className="button-secondary" disabled={result.page >= result.pages} onClick={() => setPage(result.page + 1)}>Next</button>
-          </div>}
-        </section>
-      })()}
-      {selectedBankId && view === 'groups' && <Suspense fallback={<p role="status">Loading passage groups…</p>}>
+      {selectedBankId && view === 'list' && !(status === 'loading' && (isPresetBank?presetQuestions:questions).length === 0) && <QuestionBankBrowser<Question | PresetBrowserQuestion>
+        questions={isPresetBank ? presetContent.questions : questions} linkedIds={linkedIds} filters={filters} setFilters={setFilters}
+        page={page} setPage={setPage} readOnly={isPresetBank} isBusy={isBusy}
+        onAction={question => { const own=questions.find(row=>row.id===question.id); if(!isPresetBank && own) { if(own.bank_id===selectedBankId)editQuestion(own);else selectBank(own.bank_id) } }}
+        actionLabel={question => 'bank_id' in question && question.bank_id!==selectedBankId ? 'Open its bank' : 'Edit'}
+        onAdd={()=>{resetDraft();setView('question')}} onImport={()=>setView('import')} />}
+      {isPresetBank && view === 'groups' && <PublishedPresetGroups groups={presetContent.groups} questions={presetQuestions} />}
+      {!isPresetBank && selectedBankId && view === 'groups' && <Suspense fallback={<p role="status">Loading passage groups…</p>}>
         <PassageGroupEditor key={`${selectedBankId}:${questions.map((question) => `${question.id}:${question.current_revision}`).join(',')}`}
           ownerId={ownerId} bankId={selectedBankId} onOpenSourceBank={selectBank} />
       </Suspense>}
