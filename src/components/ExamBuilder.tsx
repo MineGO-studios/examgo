@@ -64,6 +64,7 @@ import SimplePaperReview from './SimplePaperReview'
 import PaperProgress from './PaperProgress'
 import { ChoiceChips, FormGroup, Stepper, ToggleChipGroup } from './controls'
 import CouponProgress from './CouponProgress'
+import { QUESTION_TYPE_LABELS_EN } from '../lib/questionTypeLabels'
 
 type GenerationStatus =
   | 'idle'
@@ -96,11 +97,7 @@ function getAvailableQuestionCounts(
   return counts
 }
 
-const questionTypeLabels: Record<SimpleQuestionType, string> = {
-  'multiple-choice': 'Multiple choice',
-  binary: 'True/False or Yes/No',
-  'short-answer': 'Short open answer',
-}
+const questionTypeLabels: Record<SimpleQuestionType, string> = QUESTION_TYPE_LABELS_EN
 
 interface ExamBuilderProps {
   /** How the paper starts; shown at the top of setup. */

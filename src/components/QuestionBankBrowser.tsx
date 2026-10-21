@@ -3,18 +3,9 @@ import type { QuestionInput } from '../lib/questions'
 import { bankQuestionCounts, browseBankQuestions, type BankQuestionFilters, type BankBrowserQuestion } from '../lib/questionBankBrowse'
 import { questionAnswerPreview, questionTypeMark, unitCounts } from '../lib/questionCards'
 import { ChoiceChips } from './controls'
+import { QUESTION_TYPE_LABELS_EN } from '../lib/questionTypeLabels'
 
-const questionTypeLabels: Record<QuestionInput['questionType'], string> = {
-  'multiple-choice': 'Multiple choice',
-  binary: 'True/False or Yes/No',
-  'short-answer': 'Short open answer',
-  completion: 'Word-bank completion',
-  'odd-word': 'Odd-word selection',
-  'word-relationship': 'Word relationship / transformation',
-  rewrite: 'Punctuation / capitalization rewrite',
-  'extended-writing': 'Extended writing / composition',
-  matching: 'Match List A and List B',
-}
+const questionTypeLabels: Record<QuestionInput['questionType'], string> = QUESTION_TYPE_LABELS_EN
 
 /** Same unit overview, filters, cards and paging for personal and published banks. */
 export default function QuestionBankBrowser<T extends BankBrowserQuestion>({ questions, linkedIds, filters, setFilters, page, setPage, readOnly=false, isBusy=false, onAction, actionLabel, onAdd, onImport }: {

@@ -25,7 +25,7 @@ for (const installed of [true, false]) {
     const questionReads: string[] = []
     page.on('request', request => { if (/\/rest\/v1\/(questions|question_group_questions)\?/.test(request.url())) questionReads.push(request.url()) })
     await syntheticSignIn(page)
-    await expect(page.getByRole('spinbutton', { name: /Short open answer 2 available/ })).toBeVisible()
+    await expect(page.getByRole('spinbutton', { name: /Short answer 2 available/ })).toBeVisible()
     expect(state.poolRequests.length).toBeGreaterThan(0)
     expect(state.poolRequests.every(payload => payload.p_active_only === true && payload.p_standalone_only === true)).toBe(true)
     if (installed) expect(questionReads).toEqual([])
@@ -89,7 +89,7 @@ test('failed save preserves reviewed intent; retry saves and paired export retri
     }
   })
   await syntheticSignIn(page)
-  await page.getByRole('spinbutton', { name: /Short open answer 2 available/ }).fill('2')
+  await page.getByRole('spinbutton', { name: /Short answer 2 available/ }).fill('2')
   await page.getByRole('textbox', { name: 'Test title', exact: true }).fill('Recoverable synthetic paper')
   await page.getByRole('button', { name: 'Preview questions', exact: true }).click()
   await expect(page.getByRole('region', { name: 'Review the paper' })).toContainText('Synthetic question')
@@ -187,7 +187,7 @@ for (const sameAccount of [true, false]) {
     await page.clock.install()
     await syntheticSignIn(page)
     await page.getByRole('textbox', { name: 'Test title', exact: true }).fill('Private unsaved teacher intent')
-    await page.getByRole('spinbutton', { name: /Short open answer 2 available/ }).fill('2')
+    await page.getByRole('spinbutton', { name: /Short answer 2 available/ }).fill('2')
     await page.getByRole('button', { name: 'Preview questions', exact: true }).click()
     state.expireRefresh = true
     await page.clock.fastForward(3 * 60 * 60 * 1000)

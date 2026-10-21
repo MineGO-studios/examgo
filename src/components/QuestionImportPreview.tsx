@@ -15,6 +15,7 @@ import {
   type StagedImportSummary, type StagedReviewPage,
 } from '../lib/questionImportRepository'
 import { teacherErrorMessage } from '../lib/safeErrorDetails'
+import { QUESTION_TYPE_LABELS_EN } from '../lib/questionTypeLabels'
 
 type Format = ImportFileFormat
 const FORMAT_LABELS: Record<Format, string> = {
@@ -50,10 +51,7 @@ function ReviewValues({ value }: { value: unknown }) {
   </pre>
 }
 
-const TYPE_LABELS: Record<string, string> = {
-  'multiple-choice': 'Multiple choice', binary: 'True/False or Yes/No', 'short-answer': 'Short answer', completion: 'Word-bank completion',
-  'odd-word': 'Odd word', matching: 'Matching', 'word-relationship': 'Word relationship', rewrite: 'Rewrite', 'extended-writing': 'Writing',
-}
+const TYPE_LABELS: Record<string, string> = QUESTION_TYPE_LABELS_EN
 
 function QuestionInterpretation({ question, bankId, plan, diagnostics }: {
   question: StagedInterchangeQuestion; bankId: string;
