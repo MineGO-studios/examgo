@@ -50,7 +50,9 @@ function App() {
   >('exam')
   const [reopenedDraft, setReopenedDraft] =
     useState<ReopenedExamDraft | null>(null)
-  const [examMode, setExamMode] = useState<'simple' | 'phase-nine' | 'phase-ten-candidate' | 'presets' | 'blueprint'>('simple')
+  const [examMode, setExamMode] = useState<'simple' | 'shared' | 'phase-nine' | 'phase-ten-candidate' | 'presets' | 'blueprint'>('simple')
+  /** Whether the teacher has any bank; null until known. "Pick questions by type" needs one. */
+  const [hasBanks, setHasBanks] = useState<boolean | null>(null)
   const [blueprintStarted, setBlueprintStarted] = useState(false)
   const [initialBlueprint, setInitialBlueprint] = useState<SavedExamBlueprint | null>(null)
   const blueprintEditor = useRef<BlueprintEditorHandle>(null)
@@ -99,6 +101,7 @@ function App() {
       try {
         const banks = await getQuestionBanks()
 
+        if (active) setHasBanks(banks.length > 0)
         if (active && banks.length === 0) {
           setWorkspaceView('questions')
         }
@@ -133,7 +136,7 @@ function App() {
     }
   }
 
-  const paperStarts = <PaperStarts current={examMode} showDevelopment={{ candidate: Boolean(PhaseTenCandidateBuilder), structured: Boolean(ExamBlueprintBuilder) }}
+  const paperStarts = <PaperStarts current={examMode === 'shared' ? 'simple' : examMode} unavailable={hasBanks === false ? { simple: 'Add or import questions to a bank in Question banks first.' } : {}} showDevelopment={{ candidate: Boolean(PhaseTenCandidateBuilder), structured: Boolean(ExamBlueprintBuilder) }}
     onChoose={(start) => { if (start === 'blueprint') setBlueprintStarted(true); setExamMode(start) }} />
 
   if (!authReady) {
@@ -231,7 +234,9 @@ function App() {
       {workspaceView === 'exam' && (
         <div className="create-exam">{examMode !== 'simple' && paperStarts}
         {examMode === 'blueprint' && ExamBlueprintBuilder ? null : examMode === 'presets' ? <Suspense fallback={<p role="status">Loading approved presets…</p>}>
-          <SimplePresetExams key={workspaceUser.id} ownerId={workspaceUser.id}/>
+          <SimplePresetExams key={workspaceUser.id} ownerId={workspaceUser.id} section="exercise"/>
+        </Suspense> : examMode === 'shared' ? <Suspense fallback={<p role="status">Loading shared MineGO questions…</p>}>
+          <SimplePresetExams key={`${workspaceUser.id}:shared`} ownerId={workspaceUser.id} section="standalone"/>
         </Suspense> : examMode === 'phase-nine' ? <Suspense fallback={<p role="status">Loading source-specific builder…</p>}>
           <PhaseNineBuilder key={`${workspaceUser.id}:${reopenedStructured?.id ?? 'new'}`} ownerId={workspaceUser.id} reopened={reopenedStructured}
             onSavedWork={() => setWorkspaceView('drafts')} onAuthorQuestions={() => setWorkspaceView('questions')} />
@@ -240,6 +245,7 @@ function App() {
             onSavedWork={() => setWorkspaceView('drafts')} onAuthorQuestions={() => setWorkspaceView('questions')} />
         </Suspense> : <ExamBuilder
           startOptions={paperStarts}
+          onUseSharedQuestions={() => setExamMode('shared')}
           reopenedDraft={reopenedDraft}
           onViewDrafts={() => setWorkspaceView('drafts')}
         />}</div>

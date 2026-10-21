@@ -70,7 +70,7 @@ for (const width of [320, 1280]) {
     await page.emulateMedia({ colorScheme: 'dark' })
     const state = await openMyPapers(page)
     await checkAccessibility(page)
-    await page.getByRole('navigation', { name: 'Teacher workspace' }).getByRole('button', { name: 'Create exam', exact: true }).click()
+    await page.getByRole('navigation', { name: 'Teacher workspace' }).getByRole('button', { name: 'New paper', exact: true }).click()
     await page.getByRole('button', { name: 'Preview questions', exact: true }).click()
     await expect(page.getByRole('region', { name: 'Review the paper' })).toBeVisible()
     await checkAccessibility(page)

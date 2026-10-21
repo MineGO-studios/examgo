@@ -16,7 +16,8 @@ import PaperProgress from './PaperProgress'
 
 const typeNames={'multiple-choice':'Multiple choice',binary:'True/False or Yes/No','short-answer':'Short answer'}
 const errorText=(e:unknown)=>teacherErrorMessage(e, 'Preset request failed. Reload and review again.')
-export default function SimplePresetExams({ownerId}:{ownerId:string}){
+/** `exercise` is the "Use an approved exercise" shape; `standalone` is the shared-questions source under "Pick questions by type". */
+export default function SimplePresetExams({ownerId,section}:{ownerId:string;section:'exercise'|'standalone'}){
   const [pool,setPool]=useState<EligibleSimplePreset[]>([]),[history,setHistory]=useState<SavedSimplePresetExam[]>([])
   const [settings,setSettings]=useState<ExamSettings>({...DEFAULT_EXAM_SETTINGS,questionCount:1,
     questionQuantities:{'multiple-choice':1,binary:0,'short-answer':0}})
@@ -52,12 +53,22 @@ export default function SimplePresetExams({ownerId}:{ownerId:string}){
     catch(e){setError(errorText(e))}finally{setBusy(false)}
   }
   function openSaved(exam:SavedSimplePresetExam){setSaved(exam);setReview(null);setDocuments(null);setError('');setMessage('Historical paper opened. Later corrections or withdrawals do not alter this snapshot.')}
-  return <section className="preset-page" aria-labelledby="simple-presets-title">
-    <h2 id="simple-presets-title">Approved preset papers</h2>
-    <PaperProgress current={documents||saved?'download':review?'review':'setup'}/>
-    <p>Questions reviewed and approved by MineGO. Make one complete exercise, or a paper from approved questions.</p>
+  const historyList = <><h4>Your finalized papers from shared questions</h4>
+    {history.length===0?<p className="field-help">None yet.</p>:<ul>{history.map(exam=><li key={exam.id}>
+      {exam.settings.examTitle} — {exam.totalMarks} marks <button type="button" disabled={busy} onClick={()=>openSaved(exam)}>Open saved preset paper</button></li>)}</ul>}</>
+  if(section==='exercise')return <section className="preset-page" aria-labelledby="simple-presets-title">
+    <h2 id="simple-presets-title">Use an approved exercise</h2>
+    <PaperProgress current="setup"/>
+    <p>One complete MineGO exercise, kept in source order with its answer rule.</p>
     <PresetCoverageSummary key={ownerId} ownerId={ownerId}/>
     <GroupedPresetExams key={ownerId} ownerId={ownerId}/>
+    {error&&<p role="alert">{error}</p>}
+    {history.length>0&&<section className="preset-section" aria-label="Finalized papers from shared questions">{historyList}</section>}
+  </section>
+  return <section className="preset-page" aria-labelledby="simple-presets-title">
+    <h2 id="simple-presets-title">Shared MineGO questions</h2>
+    <PaperProgress current={documents||saved?'download':review?'review':'setup'}/>
+    <p>Pick questions by type from standalone questions reviewed and approved by MineGO.</p>
     {busy&&<p role="status">Loading or saving presets…</p>}{error&&<p role="alert">{error}</p>}{message&&<p role="status">{message}</p>}
     <section className="preset-section" aria-labelledby="preset-paper-title"><div className="preset-section-header"><h3 id="preset-paper-title">Paper from approved questions</h3>
     <button disabled={busy} type="button" className="button-quiet" onClick={()=>{setBusy(true);setPool([]);setError('');setReload(n=>n+1);setReview(null);resetCapture()}}>Reload available presets</button></div>
@@ -105,9 +116,7 @@ export default function SimplePresetExams({ownerId}:{ownerId:string}){
         if(result.status==='failed')setError(result.error??'Download failed. Retry this document.')
       })}>Download {kind==='exam'?'student exam':'answer key'}</button>)}
     </div>}
-    <h4>Your finalized preset papers</h4>
-    {history.length===0?<p className="field-help">None yet.</p>:<ul>{history.map(exam=><li key={exam.id}>
-      {exam.settings.examTitle} — {exam.totalMarks} marks <button type="button" disabled={busy} onClick={()=>openSaved(exam)}>Open saved preset paper</button></li>)}</ul>}
+    {historyList}
     </section>
   </section>
 }

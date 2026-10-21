@@ -193,7 +193,7 @@ for (const sameAccount of [true, false]) {
     await page.clock.fastForward(3 * 60 * 60 * 1000)
     await expect(page.getByRole('textbox', { name: 'Email', exact: true })).toBeVisible()
     await expect(page.getByRole('textbox', { name: 'Email', exact: true })).toBeFocused()
-    await expect(page.getByRole('heading', { name: 'Build exam', exact: true })).toBeHidden()
+    await expect(page.getByRole('heading', { name: 'New paper', exact: true })).toBeHidden()
     await expect(page.getByRole('alert')).toContainText('same account')
     state.expireRefresh = false
     if (!sameAccount) state.currentUser = { ...state.currentUser, id: '10000000-0000-4000-8000-000000000002', email: 'other@example.invalid' }
@@ -212,7 +212,7 @@ for (const sameAccount of [true, false]) {
 test('grouped preset finalization survives a lost response, keeps source order and seals one paired snapshot', async ({ page }) => {
   const state = await syntheticBackend(page)
   await syntheticSignIn(page)
-  await page.getByRole('button', { name: 'Approved preset papers', exact: true }).click()
+  await page.getByRole('button', { name: 'Use an approved exercise', exact: true }).click()
   const exercise = page.getByRole('region', { name: 'Complete preset exercise' })
   await expect(exercise.getByRole('group', { name: 'Published exercise' }).getByRole('radio', { checked: true })).toHaveCount(1)
   await expect(page.getByRole('alert').filter({ hasText: 'Coverage overview unavailable' })).toBeVisible()
