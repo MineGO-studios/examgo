@@ -3,11 +3,19 @@ import { buildAnswerKeyData, buildExamData } from '../lib/generateExam'
 import type { ExamSettings } from '../types/exam'
 import type { ExamQuestion, SimpleQuestionType } from '../types/question'
 import { PaperStamp } from './CouponProgress'
+import { useI18n } from '../lib/i18n'
+import { questionTypeLabel } from '../lib/questionTypeLabels'
+import { PAPER_REVIEW_STRINGS } from './SimplePaperReview.strings'
 
 const TYPE_SHORT: Record<SimpleQuestionType, string> = {
   'multiple-choice': 'Choice',
   binary: 'T/F',
   'short-answer': 'Short',
+}
+const TYPE_SHORT_AR: Record<SimpleQuestionType, string> = {
+  'multiple-choice': 'اختيار',
+  binary: 'صح/خطأ',
+  'short-answer': 'قصيرة',
 }
 
 const markLabel = (marks: number): string => `${marks} mark${marks === 1 ? '' : 's'}`
@@ -32,6 +40,8 @@ export default function SimplePaperReview({ questions, settings, totalMarks, ren
   /** Requested questions the paper no longer has (removed during review). */
   emptySlots?: number
 }) {
+  const { language } = useI18n()
+  const s = PAPER_REVIEW_STRINGS[language]
   const [mode, setMode] = useState<'student' | 'key'>('student')
   const exam = buildExamData(questions, settings)
   const answerKey = buildAnswerKeyData(questions, settings)
@@ -43,10 +53,10 @@ export default function SimplePaperReview({ questions, settings, totalMarks, ren
     requestAnimationFrame(() => document.getElementById(`paper-question-${index + 1}`)?.focus())
   }
   return <div className="paper-review">
-    <section className="paper-plan" aria-label="Paper plan">
+    <section className="paper-plan" aria-label={s.plan}>
       <p className="paper-plan-summary">
-        <span>Paper plan · {questions.length} question{questions.length === 1 ? '' : 's'}</span>
-        <span>{totalMarks === null ? 'Fix question marks' : markLabel(totalMarks)}</span>
+        <span>{s.plan} · {s.questions(questions.length)}</span>
+        <span>{totalMarks === null ? s.fixMarks : s.marks(totalMarks)}</span>
       </p>
       <ol className="paper-plan-strip" dir="ltr">
         {questions.map((question, index) => {
@@ -54,28 +64,28 @@ export default function SimplePaperReview({ questions, settings, totalMarks, ren
           return <li key={question.id} style={{ flexGrow: Math.max(marks, 1), ['--plan-unit' as string]: unitMarker(question.unit) }}
             className={`paper-plan-block${question.unit === 2 ? ' is-light' : ''}${index === focused ? ' is-focused' : ''}${marks ? '' : ' is-gap'}`}>
             <button type="button" onClick={() => focusQuestion(index)}
-              aria-label={`Go to question ${index + 1}, unit ${question.unit}, ${marks ? markLabel(marks) : 'marks needed'}`}>
-              <span>Q{index + 1} {TYPE_SHORT[question.type]}</span>
+              aria-label={s.goTo(index + 1, question.unit, marks ? s.marks(marks) : s.marksNeeded)} title={questionTypeLabel(question.type, language)}>
+              <span>Q{index + 1} {(language === 'ar' ? TYPE_SHORT_AR : TYPE_SHORT)[question.type]}</span>
               <span className="paper-plan-marks">{marks || '—'}</span>
             </button>
           </li>
         })}
         {Array.from({ length: emptySlots }, (_, gap) => <li key={`gap-${gap}`} className="paper-plan-block is-gap is-empty">
-          <span className="paper-plan-gap">Empty<span className="visually-hidden"> slot: preview again to fill it</span></span>
+          <span className="paper-plan-gap">{s.empty}<span className="visually-hidden">{s.emptyHint}</span></span>
         </li>)}
       </ol>
-      {emptySlots > 0 && <p className="field-help">{emptySlots} requested question{emptySlots === 1 ? ' is' : 's are'} missing. Preview again to fill the paper.</p>}
+      {emptySlots > 0 && <p className="field-help">{s.missing(emptySlots)}</p>}
     </section>
 
     <div className="paper-toolbar">
-      <div className="segmented" role="group" aria-label="Paper view">
-        <button type="button" aria-pressed={mode === 'student'} onClick={() => setMode('student')}>Student paper</button>
-        <button type="button" aria-pressed={mode === 'key'} onClick={() => setMode('key')}>Answer key</button>
+      <div className="segmented" role="group" aria-label={s.view}>
+        <button type="button" aria-pressed={mode === 'student'} onClick={() => setMode('student')}>{s.student}</button>
+        <button type="button" aria-pressed={mode === 'key'} onClick={() => setMode('key')}>{s.key}</button>
       </div>
-      <p className="field-help">Content preview. Page breaks and Word layout are not shown.</p>
+      <p className="field-help">{s.contentOnly}</p>
     </div>
 
-    <article className="ministry-sheet" lang="en" dir="ltr" aria-label={mode === 'student' ? 'Student paper content' : 'Answer key content'}>
+    <article className="ministry-sheet" lang="en" dir="ltr" aria-label={mode === 'student' ? s.studentContent : s.keyContent}>
       {stamp && <PaperStamp label={stamp} />}
       <header className="ministry-sheet-header">
         <p>Grade {exam.Grade}</p>
@@ -85,7 +95,7 @@ export default function SimplePaperReview({ questions, settings, totalMarks, ren
       {mode === 'student' ? <>
         <p className="ministry-sheet-instructions">{exam.Instructions}</p>
         {exam.Questions.map((question, index) => <section key={questions[index].id} id={`paper-question-${question.Number}`}
-          className={`ministry-question${index === focused ? ' is-focused' : ''}`} tabIndex={-1} aria-label={`Question ${question.Number}`}
+          className={`ministry-question${index === focused ? ' is-focused' : ''}`} tabIndex={-1} aria-label={s.question(question.Number)}
           style={{ ['--plan-unit' as string]: unitMarker(questions[index].unit) }}>
           <div className="ministry-question-body">
             <p className="ministry-question-heading" dir="auto">{question.Heading}</p>
@@ -95,18 +105,18 @@ export default function SimplePaperReview({ questions, settings, totalMarks, ren
           {index === focused
             ? <div className="question-tools">{renderControls(questions[index], index)}</div>
             : <div className="question-summary">
-              <span className="unit-tag">Unit {questions[index].unit}</span>
-              <button type="button" className="button-quiet" aria-label={`Edit question ${question.Number}`} onClick={() => focusQuestion(index)}>Edit</button>
+              <span className="unit-tag">{s.unit(questions[index].unit)}</span>
+              <button type="button" className="button-quiet" aria-label={s.editQuestion(question.Number)} onClick={() => focusQuestion(index)}>{s.edit}</button>
             </div>}
         </section>)}
-      </> : <div className="blueprint-answer-table" role="region" aria-label="Scrollable answers" tabIndex={0}><table>
+      </> : <div className="blueprint-answer-table" role="region" aria-label={s.scrollable} tabIndex={0}><table>
         <caption>Answers and marks</caption>
         <thead><tr><th scope="col">Q</th><th scope="col">Answer</th><th scope="col">Marks</th></tr></thead>
         <tbody>{answerKey.Answers.map((row, index) => <tr key={questions[index].id}>
           <th scope="row">{row.Q}</th><td dir="auto">{row.Answer}</td><td>{Number.isSafeInteger(row.Marks) ? row.Marks : '—'}</td>
         </tr>)}</tbody>
       </table></div>}
-      {mode === 'key' && <p className="field-help">Switch to Student paper to lock, replace, remove or re-mark questions.</p>}
+      {mode === 'key' && <p className="field-help">{s.switchToStudent}</p>}
       <footer dir="auto">Teacher: {exam.TeacherName}</footer>
     </article>
   </div>

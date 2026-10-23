@@ -14,3 +14,15 @@ describe('localizeAppMessage', () => {
     expect(localizeAppMessage('ar', 'The bank is locked. Nothing was changed.')).toBe('The bank is locked. Nothing was changed.')
   })
 })
+
+describe('New paper messages', () => {
+  it('translates validation messages with their numbers', () => {
+    expect(localizeAppMessage('ar', 'School name cannot exceed 80 characters.')).toBe('لا يمكن أن يتجاوز اسم المدرسة 80 حرفًا.')
+    expect(localizeAppMessage('ar', 'Question quantity must be between 1 and 12.')).toBe('يجب أن يكون عدد الأسئلة بين 1 و12.')
+  })
+
+  it('translates a fallback and keeps its reference', () => {
+    expect(localizeAppMessage('ar', 'Unable to save the exam draft. Reference: EG-12ab'))
+      .toBe('تعذّر حفظ مسودة الامتحان. الرمز المرجعي: EG-12ab')
+  })
+})

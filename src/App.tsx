@@ -137,7 +137,7 @@ function App() {
     }
   }
 
-  const paperStarts = <PaperStarts current={examMode === 'shared' ? 'simple' : examMode} unavailable={hasBanks === false ? { simple: 'Add or import questions to a bank in Question banks first.' } : {}} showDevelopment={{ candidate: Boolean(PhaseTenCandidateBuilder), structured: Boolean(ExamBlueprintBuilder) }}
+  const paperStarts = <PaperStarts current={examMode === 'shared' ? 'simple' : examMode} unavailable={hasBanks === false ? { simple: t('noBankReason') } : {}} showDevelopment={{ candidate: Boolean(PhaseTenCandidateBuilder), structured: Boolean(ExamBlueprintBuilder) }}
     onChoose={(start) => { if (start === 'blueprint') setBlueprintStarted(true); setExamMode(start) }} />
 
   if (!authReady) {
@@ -194,7 +194,7 @@ function App() {
           </button>
         </nav>
         <div className="shell-actions">
-          <span className="shell-context">Private preview</span>
+          <span className="shell-context">{t('privatePreview')}</span>
           <button
             type="button"
             className="shell-account"
@@ -234,14 +234,14 @@ function App() {
       )}
       {workspaceView === 'exam' && (
         <div className="create-exam">{examMode !== 'simple' && paperStarts}
-        {examMode === 'blueprint' && ExamBlueprintBuilder ? null : examMode === 'presets' ? <Suspense fallback={<p role="status">Loading approved presets…</p>}>
+        {examMode === 'blueprint' && ExamBlueprintBuilder ? null : examMode === 'presets' ? <Suspense fallback={<p role="status">{t('loadingPresets')}</p>}>
           <SimplePresetExams key={workspaceUser.id} ownerId={workspaceUser.id} section="exercise"/>
-        </Suspense> : examMode === 'shared' ? <Suspense fallback={<p role="status">Loading shared MineGO questions…</p>}>
+        </Suspense> : examMode === 'shared' ? <Suspense fallback={<p role="status">{t('loadingShared')}</p>}>
           <SimplePresetExams key={`${workspaceUser.id}:shared`} ownerId={workspaceUser.id} section="standalone"/>
-        </Suspense> : examMode === 'phase-nine' ? <Suspense fallback={<p role="status">Loading source-specific builder…</p>}>
+        </Suspense> : examMode === 'phase-nine' ? <Suspense fallback={<p role="status">{t('loadingIraqi')}</p>}>
           <PhaseNineBuilder key={`${workspaceUser.id}:${reopenedStructured?.id ?? 'new'}`} ownerId={workspaceUser.id} reopened={reopenedStructured}
             onSavedWork={() => setWorkspaceView('drafts')} onAuthorQuestions={() => setWorkspaceView('questions')} />
-        </Suspense> : examMode === 'phase-ten-candidate' && PhaseTenCandidateBuilder ? <Suspense fallback={<p role="status">Loading complete-paper candidate…</p>}>
+        </Suspense> : examMode === 'phase-ten-candidate' && PhaseTenCandidateBuilder ? <Suspense fallback={<p role="status">{t('loadingCandidate')}</p>}>
           <PhaseTenCandidateBuilder key={`${workspaceUser.id}:${reopenedCandidate?.id ?? 'new'}`} ownerId={workspaceUser.id} reopened={reopenedCandidate}
             onSavedWork={() => setWorkspaceView('drafts')} onAuthorQuestions={() => setWorkspaceView('questions')} />
         </Suspense> : <ExamBuilder
@@ -253,7 +253,7 @@ function App() {
         />}</div>
       )}
       {ExamBlueprintBuilder && blueprintStarted && <div hidden={workspaceView !== 'exam' || examMode !== 'blueprint'}>
-        <Suspense fallback={<p role="status">Loading structured paper…</p>}>
+        <Suspense fallback={<p role="status">{t('loadingStructured')}</p>}>
           <ExamBlueprintBuilder key={workspaceUser.id} ownerId={workspaceUser.id} initialBlueprint={initialBlueprint} editorRef={blueprintEditor} />
         </Suspense>
       </div>}
@@ -262,8 +262,8 @@ function App() {
       )}
       {workspaceView === 'review' && (
         <div className="reviewer-page">
-          <button type="button" className="button-quiet" onClick={() => setWorkspaceView('account')}>Back to settings</button>
-          <Suspense fallback={<p role="status">Loading reviewer tools…</p>}>
+          <button type="button" className="button-quiet" onClick={() => setWorkspaceView('account')}>{t('backToSettings')}</button>
+          <Suspense fallback={<p role="status">{t('loadingReviewer')}</p>}>
             <PresetReviewTools key={workspaceUser.id} />
           </Suspense>
         </div>

@@ -64,7 +64,14 @@ import { ChoiceChips, FormGroup, Stepper, ToggleChipGroup } from './controls'
 import { ErrorSummary } from './ErrorSummary'
 import { readSelectionSeed } from '../lib/selectionSeed'
 import CouponProgress from './CouponProgress'
-import { QUESTION_TYPE_LABELS_EN } from '../lib/questionTypeLabels'
+import { questionTypeLabel } from '../lib/questionTypeLabels'
+import { useI18n } from '../lib/i18n'
+import { localizeAppMessage } from '../lib/appMessages'
+import { EXAM_BUILDER_STRINGS } from './ExamBuilder.strings'
+
+type Strings = (typeof EXAM_BUILDER_STRINGS)['en']
+/** Status messages resolve at render time, so switching language translates the current message too. */
+type Message = (s: Strings) => string
 
 type GenerationStatus =
   | 'idle'
@@ -97,8 +104,6 @@ function getAvailableQuestionCounts(
   return counts
 }
 
-const questionTypeLabels: Record<SimpleQuestionType, string> = QUESTION_TYPE_LABELS_EN
-
 interface ExamBuilderProps {
   /** How the paper starts; shown at the top of setup. */
   startOptions?: ReactNode
@@ -117,6 +122,9 @@ export default function ExamBuilder({
   onUseSharedQuestions,
   ownerId,
 }: ExamBuilderProps) {
+  const { language } = useI18n()
+  const s = EXAM_BUILDER_STRINGS[language]
+  const tm = (text: string): string => localizeAppMessage(language, text)
   // Approved standalone supply: null while checking, -1 when it could not be checked.
   const [sharedCount, setSharedCount] = useState<number | null>(null)
   useEffect(() => {
@@ -137,9 +145,8 @@ export default function ExamBuilder({
   const [failedAttempts, setFailedAttempts] = useState(0)
   const [status, setStatus] =
     useState<GenerationStatus>('idle')
-  const [message, setMessage] = useState(
-    'Loading your approved questions…',
-  )
+  const [message, setMessage] = useState<Message>(() => (t: Strings) => t.loadingQuestions)
+  const say = (next: Message): void => setMessage(() => next)
   const [banks, setBanks] = useState<QuestionBank[]>([])
   const [selectedBankId, setSelectedBankId] = useState('')
   const [selectedBankIds, setSelectedBankIds] = useState<string[]>([])
@@ -173,9 +180,7 @@ export default function ExamBuilder({
 
         if (loadedBanks.length === 0) {
           setQuestionLoadStatus('error')
-          setMessage(
-            'Create a question bank and add approved questions before generating an exam.',
-          )
+          say((t: Strings) => t.noBanks)
           return
         }
 
@@ -221,18 +226,16 @@ export default function ExamBuilder({
           })
         }
         setQuestionLoadStatus('ready')
-        setMessage(
-          reopenedDraft
-            ? `${reopenedDraft.draft.exam_title} reopened with its saved question order and locks.`
-            : `${examQuestions.length} active question${examQuestions.length === 1 ? '' : 's'} available from selected banks.`,
-        )
+        const reopenedTitle = reopenedDraft?.draft.exam_title
+        say((t: Strings) => reopenedTitle !== undefined ? t.reopened(reopenedTitle) : t.activeAvailable(examQuestions.length))
       } catch (error) {
         if (!active) {
           return
         }
 
         setQuestionLoadStatus('error')
-        setMessage(getErrorMessage(error))
+        const reason = getErrorMessage(error)
+        say(() => reason)
       }
     }
 
@@ -269,7 +272,7 @@ export default function ExamBuilder({
       setReview(null)
 
       if (review) {
-        setMessage('Selection settings changed. Preview questions again.')
+        say((t: Strings) => t.selectionChanged)
       }
     }
   }
@@ -286,7 +289,7 @@ export default function ExamBuilder({
     setDraftSaved(false)
     setGeneratedDocuments(null)
     setDownloadResult(null)
-    setMessage('Loading approved questions…')
+    say((t: Strings) => t.loadingApproved)
 
     try {
       const rows = await getActiveStandaloneQuestionsForBanks(bankIds)
@@ -306,13 +309,12 @@ export default function ExamBuilder({
         return { ...current, questionQuantities: next, questionCount: Object.values(next).reduce((sum, count) => sum + count, 0) }
       })
       setQuestionLoadStatus('ready')
-      setMessage(
-        `${examQuestions.length} active question${examQuestions.length === 1 ? '' : 's'} available from ${bankIds.length} selected bank${bankIds.length === 1 ? '' : 's'}.`,
-      )
+      say((t: Strings) => t.activeFromBanks(examQuestions.length, bankIds.length))
     } catch (error) {
       if (loadVersion !== bankLoadVersion.current) return
       setQuestionLoadStatus('error')
-      setMessage(getErrorMessage(error))
+      const reason = getErrorMessage(error)
+      say(() => reason)
     }
   }
 
@@ -362,11 +364,8 @@ export default function ExamBuilder({
     setDownloadResult(null)
     setDraftSaved(false)
     setReview(null)
-    setMessage(
-      Object.values(nextAvailableCounts).some((count) => count > 0)
-        ? `${Object.values(nextAvailableCounts).reduce((sum, count) => sum + count, 0)} approved questions match the selected controls.`
-        : 'No approved questions match the selected controls.',
-    )
+    const matching = Object.values(nextAvailableCounts).reduce((sum, count) => sum + count, 0)
+    say((t: Strings) => matching > 0 ? t.match(matching) : t.noMatch)
   }
 
   const handleSubmit = (
@@ -384,7 +383,7 @@ export default function ExamBuilder({
       setErrors(nextErrors)
       setFailedAttempts((count) => count + 1)
       setStatus('error')
-      setMessage(firstError)
+      say(() => firstError)
       return
     }
 
@@ -400,15 +399,13 @@ export default function ExamBuilder({
       setGeneratedDocuments(null)
       setDownloadResult(null)
       setStatus('success')
-      setMessage(
-        'Question preview ready. Lock, remove, or replace questions before generating.',
-      )
+      say((t: Strings) => t.previewReady)
     } catch (error) {
       const errorMessage =
         teacherErrorMessage(error, 'Unknown generation error.')
 
       setStatus('error')
-      setMessage(`Preview failed: ${errorMessage}`)
+      say((t: Strings) => t.previewFailed(tm(errorMessage)))
     }
   }
 
@@ -423,7 +420,7 @@ export default function ExamBuilder({
     setGeneratedDocuments(null)
     setDownloadResult(null)
     setStatus('idle')
-    setMessage('Selection quantities changed. Preview questions again.')
+    say((t: Strings) => t.quantitiesChanged)
   }
 
   const handleLock = (questionId: string): void => {
@@ -432,7 +429,7 @@ export default function ExamBuilder({
     setReview(toggleQuestionLock(review, questionId))
     setStatus('idle')
     setDraftSaved(false)
-    setMessage('Question lock updated.')
+    say((t: Strings) => t.lockUpdated)
   }
 
   const updateQuestionMarks = (questionId: string, marks: number): void => {
@@ -450,7 +447,7 @@ export default function ExamBuilder({
     if (!review) throw new Error('Preview questions before assigning marks.')
     review.forEach(({ question }, index) => {
       try { assignMarks([question.id], question.marks, { mode: 'equal' }) }
-      catch (error) { throw new Error(`Question ${index + 1}: ${teacherErrorMessage(error, 'invalid marks')}`) }
+      catch (error) { throw new Error(s.questionError(index + 1, tm(teacherErrorMessage(error, 'invalid marks')))) }
     })
   }
 
@@ -472,12 +469,11 @@ export default function ExamBuilder({
       setDraftSaved(false)
       setGeneratedDocuments(null)
       setDownloadResult(null)
-      setMessage('Question removed from this exam preview.')
+      say((t: Strings) => t.removed)
     } catch (error) {
       setStatus('error')
-      setMessage(
-        teacherErrorMessage(error, 'Unable to remove question.'),
-      )
+      const reason = teacherErrorMessage(error, 'Unable to remove question.')
+      say(() => reason)
     }
   }
 
@@ -498,12 +494,11 @@ export default function ExamBuilder({
       setDraftSaved(false)
       setGeneratedDocuments(null)
       setDownloadResult(null)
-      setMessage('Question replaced with another eligible question.')
+      say((t: Strings) => t.replaced)
     } catch (error) {
       setStatus('error')
-      setMessage(
-        teacherErrorMessage(error, 'Unable to replace question.'),
-      )
+      const reason = teacherErrorMessage(error, 'Unable to replace question.')
+      say(() => reason)
     }
   }
 
@@ -515,22 +510,23 @@ export default function ExamBuilder({
       setDraftSaved(false)
       setGeneratedDocuments(null)
       setDownloadResult(null)
-      setMessage('Question replaced with your choice.')
+      say((t: Strings) => t.replacedChoice)
     } catch (error) {
       setStatus('error')
-      setMessage(teacherErrorMessage(error, 'Unable to replace question.'))
+      const reason = teacherErrorMessage(error, 'Unable to replace question.')
+      say(() => reason)
     }
   }
 
   const handleGenerate = async (): Promise<void> => {
     if (!review) {
       setStatus('error')
-      setMessage('Preview the questions before generating documents.')
+      say((t: Strings) => t.previewFirst)
       return
     }
 
     setStatus('generating')
-    setMessage('Generating the reviewed exam and answer key…')
+    say((t: Strings) => t.generatingStatus)
 
     try {
       validateReviewMarks()
@@ -543,21 +539,17 @@ export default function ExamBuilder({
 
       if (result.delivery.hasFailures) {
         setStatus('error')
-        setMessage(
-          'The documents are ready, but one or more download requests were blocked. Retry the failed file below.',
-        )
+        say((t: Strings) => t.blockedStatus)
       } else {
         setStatus('success')
-        setMessage(
-          'Exam and answer key are ready. Both named DOCX downloads were requested.',
-        )
+        say((t: Strings) => t.readyStatus)
       }
     } catch (error) {
       const errorMessage =
         teacherErrorMessage(error, 'Unknown generation error.')
 
       setStatus('error')
-      setMessage(`Generation failed: ${errorMessage}`)
+      say((t: Strings) => t.generationFailed(tm(errorMessage)))
     }
   }
 
@@ -567,7 +559,7 @@ export default function ExamBuilder({
     }
 
     setStatus('generating')
-    setMessage('Retrying the blocked document download…')
+    say((t: Strings) => t.retrying)
 
     const nextResult = await retryFailedDocumentDownloads(
       generatedDocuments,
@@ -576,11 +568,7 @@ export default function ExamBuilder({
 
     setDownloadResult(nextResult)
     setStatus(nextResult.hasFailures ? 'error' : 'success')
-    setMessage(
-      nextResult.hasFailures
-        ? 'A download request is still blocked. Use the individual file buttons or check browser download permissions.'
-        : 'The failed download was requested again successfully.',
-    )
+    say((t: Strings) => nextResult.hasFailures ? t.stillBlocked : t.retried)
   }
 
   const handleIndividualDownload = async (
@@ -605,34 +593,29 @@ export default function ExamBuilder({
 
     setDownloadResult(nextResult)
     setStatus(outcome.status === 'failed' ? 'error' : 'success')
-    setMessage(
-      outcome.status === 'failed'
-        ? `${outcome.filename} could not be requested. Check browser download permissions and try again.`
-        : `${outcome.filename} download requested.`,
-    )
+    say((t: Strings) => outcome.status === 'failed' ? t.fileFailed(outcome.filename) : t.fileRequested(outcome.filename))
   }
 
   const handleSaveDraft = async (): Promise<void> => {
     if (!review) {
       setStatus('error')
-      setMessage('Preview the questions before saving a draft.')
+      say((t: Strings) => t.previewBeforeSave)
       return
     }
 
     setStatus('saving')
-    setMessage('Saving the exam draft…')
+    say((t: Strings) => t.savingDraft)
 
     try {
       validateReviewMarks()
       await saveExamDraft(selectedBankId, settings, review, selectedBankIds)
       setStatus('success')
       setDraftSaved(true)
-      setMessage('Exam draft saved in My papers.')
+      say((t: Strings) => t.draftSaved)
     } catch (error) {
       setStatus('error')
-      setMessage(
-        teacherErrorMessage(error, 'Unable to save the exam draft.'),
-      )
+      const reason = teacherErrorMessage(error, 'Unable to save the exam draft.')
+      say(() => reason)
     }
   }
 
@@ -652,7 +635,7 @@ export default function ExamBuilder({
       role={status === 'error' || questionLoadStatus === 'error' ? 'alert' : 'status'}
       aria-live="polite"
     >
-      {message}
+      {tm(message(s))}
     </p>
   )
 
@@ -664,25 +647,23 @@ export default function ExamBuilder({
     >
       <div className="section-heading exam-builder-heading">
         <div>
-          <h2>New paper</h2>
-          <p>
-            Set up the paper, then review it as the student will see it before you download the paper and its answer key.
-          </p>
+          <h2>{s.title}</h2>
+          <p>{s.lede}</p>
         </div>
         <PaperProgress current={generatedDocuments ? 'download' : review ? 'review' : 'setup'} />
       </div>
 
       <div className="exam-settings">
-      <ErrorSummary attempt={failedAttempts} items={([
+      <ErrorSummary title={s.errorTitle} attempt={failedAttempts} items={([
         ['schoolName', 'exam-school-name'], ['examTitle', 'exam-title'], ['teacherName', 'exam-teacher-name'],
         ['questionCount', 'exam-question-count'],
-      ] as const).flatMap(([key, target]) => errors[key] ? [{ target, message: errors[key] as string }] : [])} />
+      ] as const).flatMap(([key, target]) => errors[key] ? [{ target, message: tm(errors[key] as string) }] : [])} />
       {!review || showStarts
         ? startOptions
-        : startOptions && <button type="button" className="button-quiet start-again" onClick={() => setShowStarts(true)}>Start from something else</button>}
-      <FormGroup title="Paper details">
+        : startOptions && <button type="button" className="button-quiet start-again" onClick={() => setShowStarts(true)}>{s.startAgain}</button>}
+      <FormGroup title={s.details}>
         <label className="text-field">
-          School name
+          {s.school}
           <input
             type="text"
             value={settings.schoolName}
@@ -694,10 +675,10 @@ export default function ExamBuilder({
             aria-describedby={errors.schoolName ? 'exam-school-name-error' : undefined}
           />
         </label>
-        {errors.schoolName && <span id="exam-school-name-error" className="field-error">{errors.schoolName}</span>}
+        {errors.schoolName && <span id="exam-school-name-error" className="field-error">{tm(errors.schoolName)}</span>}
 
         <label className="text-field">
-          Test title
+          {s.testTitle}
           <input
             type="text"
             value={settings.examTitle}
@@ -709,10 +690,10 @@ export default function ExamBuilder({
             aria-describedby={errors.examTitle ? 'exam-title-error' : undefined}
           />
         </label>
-        {errors.examTitle && <span id="exam-title-error" className="field-error">{errors.examTitle}</span>}
+        {errors.examTitle && <span id="exam-title-error" className="field-error">{tm(errors.examTitle)}</span>}
 
         <label className="text-field">
-          Teacher name for footer
+          {s.teacher}
           <input
             type="text"
             value={settings.teacherName ?? ''}
@@ -723,15 +704,15 @@ export default function ExamBuilder({
             aria-invalid={Boolean(errors.teacherName)}
             aria-describedby={errors.teacherName ? 'exam-teacher-name-error' : undefined}
           />
-          <small>Leave blank to print a line for handwriting.</small>
+          <small>{s.teacherHint}</small>
         </label>
-        {errors.teacherName && <span id="exam-teacher-name-error" className="field-error">{errors.teacherName}</span>}
+        {errors.teacherName && <span id="exam-teacher-name-error" className="field-error">{tm(errors.teacherName)}</span>}
       </FormGroup>
 
-      <FormGroup title="Questions" aside={<><span className="unit-swatch" style={{ ['--plan-unit' as string]: `var(--eg-unit-${settings.unit})` }} />Grade 6 · Unit {settings.unit}</>}>
+      <FormGroup title={s.questions} aside={<><span className="unit-swatch" style={{ ['--plan-unit' as string]: `var(--eg-unit-${settings.unit})` }} />{s.gradeUnit(settings.unit)}</>}>
         {banks.length > 0 && (
-          <ToggleChipGroup legend="Question banks" disabled={isLoadingQuestions || isBusy}
-            hint={`${Object.values(eligibleQuestionCounts).reduce((sum, count) => sum + count, 0)} questions available`}
+          <ToggleChipGroup legend={s.banks} disabled={isLoadingQuestions || isBusy}
+            hint={s.available(Object.values(eligibleQuestionCounts).reduce((sum, count) => sum + count, 0))}
             items={banks.map((bank) => {
               const checked = selectedBankIds.includes(bank.id)
               return { key: bank.id, label: bank.name, checked, disabled: checked && selectedBankIds.length === 1,
@@ -741,40 +722,40 @@ export default function ExamBuilder({
 
         <div className="shared-source">
           {sharedCount === null
-            ? <p role="status" className="field-help">Checking shared MineGO questions…</p>
+            ? <p role="status" className="field-help">{s.checkingShared}</p>
             : sharedCount > 0 && onUseSharedQuestions
-              ? <button type="button" className="button-secondary" onClick={onUseSharedQuestions}>Use shared MineGO questions ({sharedCount})</button>
-              : <div className="source-unavailable" role="group" aria-label="Shared MineGO questions">
-                  <span className="source-unavailable-title">Shared MineGO questions</span>
+              ? <button type="button" className="button-secondary" onClick={onUseSharedQuestions}>{s.useShared(sharedCount)}</button>
+              : <div className="source-unavailable" role="group" aria-label={s.shared}>
+                  <span className="source-unavailable-title">{s.shared}</span>
                   <span>{sharedCount === -1
-                    ? 'Shared questions could not be checked right now. Your own banks still work.'
-                    : 'No approved standalone questions are available yet. They will appear here once MineGO publishes them.'}</span>
+                    ? s.sharedFailed
+                    : s.sharedNone}</span>
                 </div>}
         </div>
 
-        <ChoiceChips legend="Lesson" disabled={isLoadingQuestions || isBusy} value={filters.lesson}
+        <ChoiceChips legend={s.lesson} disabled={isLoadingQuestions || isBusy} value={filters.lesson}
           onChange={(lesson) => updateFilter('lesson', lesson)}
-          options={[{ value: '', label: 'All lessons' }, ...availableLessons.map((lesson) => ({ value: lesson, label: `Lesson ${lesson}` }))]} />
+          options={[{ value: '', label: s.allLessons }, ...availableLessons.map((lesson) => ({ value: lesson, label: s.lessonN(lesson) }))]} />
 
-        <ChoiceChips legend="Difficulty" disabled={isLoadingQuestions || isBusy} value={filters.difficulty}
+        <ChoiceChips legend={s.difficulty} disabled={isLoadingQuestions || isBusy} value={filters.difficulty}
           onChange={(difficulty) => updateFilter('difficulty', difficulty)}
-          options={[{ value: '', label: 'Any' }, { value: 'easy', label: 'Easy' }, { value: 'medium', label: 'Medium' }, { value: 'hard', label: 'Hard' }] as { value: ExamQuestionFilters['difficulty']; label: string }[]} />
+          options={[{ value: '', label: s.any }, { value: 'easy', label: s.easy }, { value: 'medium', label: s.medium }, { value: 'hard', label: s.hard }] as { value: ExamQuestionFilters['difficulty']; label: string }[]} />
 
         <fieldset className="stepper-group" id="exam-question-count" tabIndex={-1}
           aria-describedby={errors.questionCount ? 'exam-question-count-error' : undefined}>
-          <legend>How many of each type</legend>
+          <legend>{s.howMany}</legend>
           {SIMPLE_QUESTION_TYPES.map((type) => (
-            <Stepper key={type} label={questionTypeLabels[type]} hint={`${eligibleQuestionCounts[type]} available`}
+            <Stepper key={type} label={questionTypeLabel(type, language)} hint={s.typeAvailable(eligibleQuestionCounts[type])}
               value={getQuestionQuantities(settings)[type]} max={eligibleQuestionCounts[type]}
               disabled={isLoadingQuestions || isBusy} onChange={(value) => updateQuestionQuantity(type, value)} />
           ))}
-          {errors.questionCount && <span id="exam-question-count-error" className="field-error">{errors.questionCount}</span>}
+          {errors.questionCount && <span id="exam-question-count-error" className="field-error">{tm(errors.questionCount)}</span>}
         </fieldset>
-        {paperLengthWarning && <p className="page-target-warning" role="status">{paperLengthWarning}</p>}
+        {paperLengthWarning && <p className="page-target-warning" role="status">{tm(paperLengthWarning)}</p>}
       </FormGroup>
 
       <p className="setup-total">
-        Total marks <strong>{review ? totalMarks ?? 'Fix question marks' : 'after preview'}</strong>
+        {s.totalMarks} <strong>{review ? totalMarks ?? s.fixMarks : s.afterPreview}</strong>
       </p>
 
       <button
@@ -783,7 +764,7 @@ export default function ExamBuilder({
           isBusy || questionLoadStatus !== 'ready'
         }
       >
-        Preview questions
+        {s.preview}
       </button>
       </div>
 
@@ -794,7 +775,7 @@ export default function ExamBuilder({
         >
           <div className="section-heading">
             <div>
-              <h3 id="exam-review-title">Review the paper</h3>
+              <h3 id="exam-review-title">{s.review}</h3>
             </div>
           </div>
 
@@ -810,11 +791,11 @@ export default function ExamBuilder({
               const locked = review[index].locked
               return <>
                 <small>
-                  {questionTypeLabels[question.type]} · Lesson {question.lesson} · {question.difficulty}
-                  {locked && <> · <span className="status-chip">Locked</span></>}
+                  {questionTypeLabel(question.type, language)} · {s.lessonN(question.lesson)} · {s[question.difficulty as 'easy' | 'medium' | 'hard'] ?? question.difficulty}
+                  {locked && <> · <span className="status-chip">{s.locked}</span></>}
                 </small>
                 <label>
-                  Total marks for question {index + 1}
+                  {s.questionMarks(index + 1)}
                   <input type="number" min="1" max="1000" step="1"
                     value={Number.isNaN(question.marks) ? '' : question.marks}
                     onChange={(event) => updateQuestionMarks(question.id, event.target.valueAsNumber)}
@@ -828,7 +809,7 @@ export default function ExamBuilder({
                     disabled={isBusy}
                     aria-pressed={locked}
                   >
-                    {locked ? 'Unlock' : 'Lock'}
+                    {locked ? s.unlock : s.lock}
                   </button>
                   <button
                     type="button"
@@ -836,7 +817,7 @@ export default function ExamBuilder({
                     onClick={() => handleReplace(question.id)}
                     disabled={locked || isBusy}
                   >
-                    Replace
+                    {s.replace}
                   </button>
                   <button
                     type="button"
@@ -846,38 +827,38 @@ export default function ExamBuilder({
                       locked || isBusy || review.length === 1
                     }
                   >
-                    Remove
+                    {s.remove}
                   </button>
                 </div>
               </>
             }}
           />
 
-          <aside className="paper-actions" aria-label="Save and download">
+          <aside className="paper-actions" aria-label={s.saveAndDownload}>
           {(() => {
             const slot = Math.min(Math.max(focusedQuestion, 0), review.length - 1)
             const target = review[slot]
             if (!target) return null
             const candidates = target.locked ? [] : replacementCandidates(review, target.question.id, questions, settings, filters)
             return <section className="replace-panel" aria-labelledby="replace-panel-title">
-              <h4 id="replace-panel-title">Replace question {slot + 1}</h4>
+              <h4 id="replace-panel-title">{s.replaceTitle(slot + 1)}</h4>
               {target.locked
-                ? <p className="field-help">Unlock this question to choose a replacement.</p>
+                ? <p className="field-help">{s.unlockToReplace}</p>
                 : candidates.length === 0
-                  ? <p className="field-help">No other question of this type matches your banks and filters.</p>
+                  ? <p className="field-help">{s.noReplacement}</p>
                   : <ul className="replace-candidates">
                     {candidates.slice(0, 5).map((candidate) => <li key={candidate.id}>
                       <p className="question-row-prompt">{candidate.prompt}</p>
-                      <p className="question-row-meta">Lesson {candidate.lesson} · {candidate.difficulty}</p>
+                      <p className="question-row-meta">{s.lessonN(candidate.lesson)} · {s[candidate.difficulty as 'easy' | 'medium' | 'hard'] ?? candidate.difficulty}</p>
                       <button type="button" className="button-secondary" disabled={isBusy}
-                        aria-label={`Use this question instead of question ${slot + 1}: ${candidate.prompt}`}
-                        onClick={() => handleReplaceWith(target.question.id, candidate.id)}>Use this question</button>
+                        aria-label={s.useThisLabel(slot + 1, candidate.prompt)}
+                        onClick={() => handleReplaceWith(target.question.id, candidate.id)}>{s.useThis}</button>
                     </li>)}
                   </ul>}
-              {candidates.length > 5 && <p className="field-help">{candidates.length - 5} more match. Narrow the lesson or difficulty to see others.</p>}
+              {candidates.length > 5 && <p className="field-help">{s.moreMatch(candidates.length - 5)}</p>}
             </section>
           })()}
-          <CouponProgress working={isGenerating} steps={['Paper setup', 'Paper reviewed']} />
+          <CouponProgress working={isGenerating} steps={[s.stepSetup, s.stepReviewed]} pendingLabel={s.preparing} />
 
           <div className="review-final-actions">
             <button
@@ -886,7 +867,7 @@ export default function ExamBuilder({
               onClick={() => void handleSaveDraft()}
               disabled={isBusy}
             >
-              {isSaving ? 'Saving…' : 'Save draft'}
+              {isSaving ? s.saving : s.saveDraft}
             </button>
             {draftSaved && (
               <button
@@ -894,7 +875,7 @@ export default function ExamBuilder({
                 className="button-quiet"
                 onClick={onViewDrafts}
               >
-                View in My papers
+                {s.viewInPapers}
               </button>
             )}
             <button
@@ -903,9 +884,7 @@ export default function ExamBuilder({
               onClick={() => void handleGenerate()}
               disabled={isBusy}
             >
-              {isGenerating
-                ? 'Generating…'
-                : 'Generate Exam + Answer Key'}
+              {isGenerating ? s.generating : s.generate}
             </button>
           </div>
 
@@ -914,7 +893,7 @@ export default function ExamBuilder({
               className="document-downloads"
               aria-labelledby="document-downloads-title"
             >
-              <h4 id="document-downloads-title">Prepared documents</h4>
+              <h4 id="document-downloads-title">{s.prepared}</h4>
               <ul>
                 {([
                   generatedDocuments.exam,
@@ -930,9 +909,7 @@ export default function ExamBuilder({
                       <span>
                         <strong>{preparedDocument.filename}</strong>{' '}
                         —{' '}
-                        {outcome.status === 'failed'
-                          ? 'Download blocked'
-                          : 'Download requested'}
+                        {outcome.status === 'failed' ? s.blocked : s.requested}
                       </span>
                       <button
                         type="button"
@@ -944,9 +921,7 @@ export default function ExamBuilder({
                         }
                         disabled={isBusy}
                       >
-                        Download {preparedDocument.kind === 'exam'
-                          ? 'exam'
-                          : 'answer key'}
+                        {preparedDocument.kind === 'exam' ? s.downloadExam : s.downloadKey}
                       </button>
                     </li>
                   )
@@ -958,7 +933,7 @@ export default function ExamBuilder({
                   onClick={() => void handleRetryFailedDownloads()}
                   disabled={isBusy}
                 >
-                  Retry failed download
+                  {s.retry}
                 </button>
               )}
             </section>

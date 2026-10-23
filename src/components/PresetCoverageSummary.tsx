@@ -1,56 +1,59 @@
 import { useEffect, useId, useState } from 'react'
 import type { PresetCoverageReport } from '../lib/presetCoverageRepository'
 import { getReviewedCoverageOverview, type ReviewedCoverageOverview } from '../lib/reviewedCoverage'
-import { QUESTION_TYPE_LABELS_EN } from '../lib/questionTypeLabels'
-
-const typeNames: Record<string, string> = QUESTION_TYPE_LABELS_EN
+import { questionTypeLabel } from '../lib/questionTypeLabels'
+import { useI18n } from '../lib/i18n'
+import { formatNumber } from '../lib/localize'
+import { PRESET_STRINGS } from './PresetExams.strings'
 
 export function PresetCoverageTable({ report }: { report: PresetCoverageReport }) {
-  const numbers = new Intl.NumberFormat('en')
-  return <div className="preset-coverage-scroll" role="region" aria-label="Preset coverage by unit" tabIndex={0}>
+  const { language } = useI18n(), s = PRESET_STRINGS[language]
+  const numbers = { format: (n: number) => formatNumber(language, n) }
+  return <div className="preset-coverage-scroll" role="region" aria-label={s.byUnit} tabIndex={0}>
     <table className="preset-coverage-table">
-      <caption>Current Unit 1 builder formats</caption>
-      <thead><tr><th scope="col">Unit</th><th scope="col">Published questions</th>
-        <th scope="col">Builder exercises</th><th scope="col">Individual questions</th><th scope="col">Builder status</th></tr></thead>
+      <caption>{s.builderFormats}</caption>
+      <thead><tr><th scope="col">{s.unit}</th><th scope="col">{s.published}</th>
+        <th scope="col">{s.builderExercises}</th><th scope="col">{s.individual}</th><th scope="col">{s.builderStatus}</th></tr></thead>
       <tbody>{report.units.map(unit => <tr key={unit.unit}>
         <th scope="row">{unit.unit}</th><td>{numbers.format(unit.publishedQuestionCount)}</td>
         <td>{numbers.format(unit.capturableGroupCount)}</td><td>{numbers.format(unit.capturableStandaloneCount)}</td>
-        <td>{unit.capturableGroupCount || unit.capturableStandaloneCount ? 'Limited format' : 'Not available in this format'}</td>
+        <td>{unit.capturableGroupCount || unit.capturableStandaloneCount ? s.limited : s.notInFormat}</td>
       </tr>)}</tbody>
     </table>
   </div>
 }
 
 export function ReviewedSourceCoverage({ overview }: { overview: ReviewedCoverageOverview }) {
-  const numbers = new Intl.NumberFormat('en')
+  const { language } = useI18n(), s = PRESET_STRINGS[language]
+  const numbers = { format: (n: number) => formatNumber(language, n) }
   return <>
-    <div className="preset-coverage-scroll" role="region" aria-label="Reviewed source supply by exam period" tabIndex={0}>
+    <div className="preset-coverage-scroll" role="region" aria-label={s.supplyByPeriod} tabIndex={0}>
       <table className="preset-coverage-table">
-        <caption>Complete reviewed source inventory</caption>
-        <thead><tr><th scope="col">Period</th><th scope="col">Units</th><th scope="col">Exercises</th><th scope="col">Displayed items</th>
-          <th scope="col"><abbr title="Same ordered question types, units and response counts. This is a source-only comparison, not a full-paper replacement check.">Formats without distinct alternatives</abbr></th></tr></thead>
+        <caption>{s.inventory}</caption>
+        <thead><tr><th scope="col">{s.period}</th><th scope="col">{s.units}</th><th scope="col">{s.exercises}</th><th scope="col">{s.displayed}</th>
+          <th scope="col"><abbr title={s.noAlternativesHint}>{s.noAlternatives}</abbr></th></tr></thead>
         <tbody>{overview.profiles.map(profile => <tr key={profile.name}>
-          <th scope="row">{profile.name}</th><td>{profile.units.join(', ')}</td><td>{numbers.format(profile.exercises)}</td>
-          <td>{numbers.format(profile.displayedPoints)}</td><td>{profile.formatsWithoutAlternative === null ? 'Not assessed' :
-            `${numbers.format(profile.formatsWithoutAlternative)} of ${numbers.format(profile.formats)}`}</td>
+          <th scope="row"><bdi>{profile.name}</bdi></th><td>{profile.units.join(', ')}</td><td>{numbers.format(profile.exercises)}</td>
+          <td>{numbers.format(profile.displayedPoints)}</td><td>{profile.formatsWithoutAlternative === null ? s.notAssessed :
+            s.ofTotal(numbers.format(profile.formatsWithoutAlternative), numbers.format(profile.formats))}</td>
         </tr>)}</tbody>
       </table>
     </div>
-    <p className="preset-coverage-note">Source inventory only. Full-paper approval and replacement checks remain pending.</p>
-    <details className="preset-coverage-details"><summary>Lesson and question-type gaps</summary>
-      <p className="preset-coverage-note">Lesson alignment: unconfirmed. Difficulty: not calibrated. Edition: unconfirmed.</p>
-      <div className="preset-coverage-scroll" role="region" aria-label="Observed lessons without reviewed exercises" tabIndex={0}>
-        <table className="preset-coverage-table"><caption>Published lesson labels without a complete reviewed exercise</caption>
-          <thead><tr><th scope="col">Unit</th><th scope="col">Lesson labels</th></tr></thead>
+    <p className="preset-coverage-note">{s.inventoryNote}</p>
+    <details className="preset-coverage-details"><summary>{s.gaps}</summary>
+      <p className="preset-coverage-note">{s.gapsNote}</p>
+      <div className="preset-coverage-scroll" role="region" aria-label={s.lessonsWithout} tabIndex={0}>
+        <table className="preset-coverage-table"><caption>{s.lessonsCaption}</caption>
+          <thead><tr><th scope="col">{s.unit}</th><th scope="col">{s.lessonLabels}</th></tr></thead>
           <tbody>{overview.units.map(unit => <tr key={unit.unit}><th scope="row">{unit.unit}</th>
-            <td>{unit.missingObservedLessons.join(', ') || 'None among published labels'}</td></tr>)}</tbody>
+            <td>{unit.missingObservedLessons.join(', ') || s.noneAmong}</td></tr>)}</tbody>
         </table>
       </div>
-      <div className="preset-coverage-scroll" role="region" aria-label="Question type inventory by unit" tabIndex={0}>
-        <table className="preset-coverage-table"><caption>Question type inventory</caption>
-          <thead><tr><th scope="col">Unit</th><th scope="col">Question type</th><th scope="col">Published questions</th><th scope="col">Questions in complete reviewed sources</th></tr></thead>
+      <div className="preset-coverage-scroll" role="region" aria-label={s.typeInventoryLabel} tabIndex={0}>
+        <table className="preset-coverage-table"><caption>{s.typeInventory}</caption>
+          <thead><tr><th scope="col">{s.unit}</th><th scope="col">{s.questionType}</th><th scope="col">{s.published}</th><th scope="col">{s.inComplete}</th></tr></thead>
           <tbody>{overview.units.flatMap(unit => unit.types.map(type => <tr key={`${unit.unit}-${type.type}`}>
-            <th scope="row">{unit.unit}</th><td>{typeNames[type.type]}</td><td>{numbers.format(type.publishedRecords)}</td>
+            <th scope="row">{unit.unit}</th><td>{questionTypeLabel(type.type, language)}</td><td>{numbers.format(type.publishedRecords)}</td>
             <td>{numbers.format(type.completeSourceRecords)}</td></tr>))}</tbody>
         </table>
       </div>
@@ -59,6 +62,7 @@ export function ReviewedSourceCoverage({ overview }: { overview: ReviewedCoverag
 }
 
 export default function PresetCoverageSummary({ ownerId }: { ownerId: string }) {
+  const { language } = useI18n(), s = PRESET_STRINGS[language]
   const id = useId()
   const [result, setResult] = useState<{ ownerId: string; retry: number; overview: ReviewedCoverageOverview | null; error: string } | null>(null)
   const [retry, setRetry] = useState(0)
@@ -67,18 +71,18 @@ export default function PresetCoverageSummary({ ownerId }: { ownerId: string }) 
   useEffect(() => {
     let active = true
     void getReviewedCoverageOverview(ownerId).then(value => { if (active) setResult({ ownerId, retry, overview: value, error: '' }) })
-      .catch(() => { if (active) setResult({ ownerId, retry, overview: null, error: 'Coverage overview unavailable. Reload and try again.' }) })
+      .catch(() => { if (active) setResult({ ownerId, retry, overview: null, error: 'coverageFailed' }) })
     return () => { active = false }
   }, [ownerId, retry])
   return <section className="preset-coverage" aria-labelledby={id} aria-busy={loading}>
-    <div className="preset-coverage-heading"><h3 id={id}>Preset coverage</h3>
-      <button className="button-secondary preset-coverage-reload" type="button" aria-label="Reload coverage" title="Reload coverage" disabled={loading} onClick={() => {
+    <div className="preset-coverage-heading"><h3 id={id}>{s.coverageTitle}</h3>
+      <button className="button-secondary preset-coverage-reload" type="button" aria-label={s.reloadCoverage} title={s.reloadCoverage} disabled={loading} onClick={() => {
         setRetry(value => value + 1)
       }}><svg aria-hidden="true" width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M14.5 9a5.5 5.5 0 1 1-1.6-3.9" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /><path d="M13.4 2.6v3h-3" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg></button>
     </div>
-    {loading && <p role="status">Loading preset coverage...</p>}
-    {error && <p role="alert">{error}</p>}
+    {loading && <p role="status">{s.loadingCoverage}</p>}
+    {error && <p role="alert">{s.coverageFailed}</p>}
     {overview && <><ReviewedSourceCoverage overview={overview}/><details className="preset-coverage-details">
-      <summary>Current builder availability</summary><PresetCoverageTable report={overview.legacy}/></details></>}
+      <summary>{s.builderAvailability}</summary><PresetCoverageTable report={overview.legacy}/></details></>}
   </section>
 }
