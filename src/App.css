@@ -477,9 +477,9 @@ button[aria-pressed='false']:hover:not(:disabled) {
 .structured-branch li { margin-block: 1rem; }
 .structured-question-content { white-space: pre-wrap; }
 .structured-answer { white-space: pre-wrap; overflow-wrap: anywhere; }
-.candidate-review-items { list-style: none; padding-left: 0; }
+.candidate-review-items { list-style: none; padding-inline-start: 0; }
 .candidate-review-items li { margin-block: 0.5rem; }
-.candidate-review-items ol { padding-left: 1.5rem; }
+.candidate-review-items ol { padding-inline-start: 1.5rem; }
 
 .preset-coverage {
   min-width: 0;

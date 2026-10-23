@@ -35,6 +35,8 @@ The interface is available in English and Arabic. Paper content stays in its sou
 - **Counts:** `plural(language, count, forms)` chooses the grammatical form. Arabic has six forms (zero, one, two, few for 3–10, many for 11–99, and other); give at least `other`.
 - **Numbers and dates:** use `formatNumber` and `formatDate`. Arabic uses Iraqi month names with Western digits (`ar-IQ-u-nu-latn`).
 - **Application messages:** repositories write their messages in English. `localizeAppMessage` in `src/lib/appMessages.ts` translates them where they are displayed, and keeps any support reference code unchanged. A message missing from its catalog is shown in English, never half-translated.
+- **Right to left:** use logical properties (`margin-inline-start`, `inset-inline-end`, `text-align: start`). Wrap names, emails, references and other data in `<bdi>`; mark English paper content `dir="ltr" lang="en"`. Paper sheets opt out of the Arabic alignment rule in `src/index.css`.
+- **Sweep:** `e2e/local-arabic-rtl-sweep.spec.ts` visits every teacher and reviewer screen in Arabic at 320, 390 and 1280px, light and dark, with reduced motion. It checks overflow, leftover English (header included), axe and header focus order, and writes screenshots to `output/rtl-audit/`. Add a new screen to it.
 - **Review:** a native-speaking Iraqi teacher reviews the Arabic before release ([MIN-274](https://linear.app/minego/issue/MIN-274)).
 
 ## Record verification
