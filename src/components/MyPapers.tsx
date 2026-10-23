@@ -11,6 +11,7 @@ import type { SavedPhaseTenCandidate } from '../lib/phaseTenCandidateRepository'
 import type { SavedExamBlueprint } from '../lib/examBlueprintRepository'
 import type { SavedBlueprintPaper } from '../lib/blueprintPaperRepository'
 import { matchesPaper, sortPapers, type PaperItem, type PaperScope } from '../lib/myPapers'
+import { localizeAppMessage } from '../lib/appMessages'
 import { teacherErrorMessage } from '../lib/safeErrorDetails'
 import { useI18n } from '../lib/i18n'
 import { PaperSheet, PaperThumb } from './PaperSheet'
@@ -164,7 +165,7 @@ export default function MyPapers(props: MyPapersProps) {
   const action = (item: PaperItem) => {
     const draft = item.state === 'draft'
     return <button type="button" className={draft ? undefined : 'button-secondary'} disabled={opening !== null} onClick={() => void open(item)}>
-      {opening === item.key ? s.opening : draft ? s.cont : s.open}<span className="visually-hidden"> {item.title}</span>
+      {opening === item.key ? s.opening : draft ? s.cont : s.open}<span className="visually-hidden"> <bdi>{item.title}</bdi></span>
     </button>
   }
   const flashClass = (item: PaperItem) => flash?.key === item.key ? ` is-flash flash-${flash.n % 2}` : ''
@@ -192,9 +193,9 @@ export default function MyPapers(props: MyPapersProps) {
   if (recovery) {
     return <section className="draft-recovery" aria-labelledby="recovery-title">
       <span className="status-chip status-chip-warning">{s.recoveryChip}</span>
-      <h2 id="recovery-title">{recovery.title}</h2>
-      <p>{s.recovery(recovery.bankName)}</p>
-      <ul>{recovery.issues.map((issue, index) => <li key={`${issue.kind}-${issue.position ?? 'unknown'}-${index}`}>{issue.message}</li>)}</ul>
+      <h2 id="recovery-title"><bdi>{recovery.title}</bdi></h2>
+      <p>{s.recoveryLead} <bdi>{recovery.bankName}</bdi>{s.recoveryRest}</p>
+      <ul>{recovery.issues.map((issue, index) => <li key={`${issue.kind}-${issue.position ?? 'unknown'}-${index}`}>{localizeAppMessage(language, issue.message)}</li>)}</ul>
       <div className="recovery-actions">
         <button type="button" onClick={props.onManageQuestions}>{s.reviewBank}</button>
         <button type="button" className="button-secondary" onClick={() => setRecovery(null)}>{s.back}</button>
@@ -220,7 +221,7 @@ export default function MyPapers(props: MyPapersProps) {
       <button type="button" className="button-secondary" onClick={() => { document.getElementById('my-papers-title')?.focus(); setLoaded(null); setAttempt(n => n + 1) }}>{s.retry}</button>
     </div>}
 
-    {openError && <p role="alert" className="saved-work-failure">{openError}</p>}
+    {openError && <p role="alert" className="saved-work-failure">{localizeAppMessage(language, openError)}</p>}
 
     {loaded && items.length === 0 && !loaded.failed && <div className="empty-state mp-empty">
       <h3>{s.emptyTitle}</h3>

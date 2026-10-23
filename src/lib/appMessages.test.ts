@@ -26,3 +26,19 @@ describe('New paper messages', () => {
       .toBe('تعذّر حفظ مسودة الامتحان. الرمز المرجعي: EG-12ab')
   })
 })
+
+describe('Sign-in, saved work and limit messages', () => {
+  it('translates sign-in and session messages', () => {
+    expect(localizeAppMessage('ar', 'Password must contain at least 12 characters.')).toBe('يجب أن تحتوي كلمة المرور على 12 حرفًا على الأقل.')
+    expect(localizeAppMessage('ar', 'Unable to sign in. Check your email and password.')).toBe('تعذّر تسجيل الدخول. تحقّق من بريدك الإلكتروني وكلمة المرور.')
+  })
+
+  it('translates recovery issues with their question number', () => {
+    expect(localizeAppMessage('ar', 'Question 3 changed after this draft was saved.')).toBe('تغيّر السؤال 3 بعد حفظ هذه المسودة.')
+  })
+
+  it('translates an account limit and keeps its reference', () => {
+    expect(localizeAppMessage('ar', 'Your account has reached a usage limit. Contact MineGO to raise it. Reference: EG-9f'))
+      .toBe('بلغ حسابك حدًّا للاستخدام. تواصل مع MineGO لرفعه. الرمز المرجعي: EG-9f')
+  })
+})

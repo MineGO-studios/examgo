@@ -7,6 +7,7 @@ import SettingsPage from './components/SettingsPage'
 import QuestionEditor from './components/QuestionEditor'
 import type { ReopenedExamDraft } from './lib/examDraftRepository'
 import { getQuestionBanks } from './lib/questionBankRepository'
+import { localizeAppMessage } from './lib/appMessages'
 import { reportSafeError } from './lib/safeErrorDetails'
 import { signOutWithRetry, type SignOutScope } from './lib/signOut'
 import { supabase } from './lib/supabase'
@@ -40,7 +41,7 @@ const ExamBlueprintBuilder = import.meta.env.DEV ? lazy(() => import('./componen
 })) : null
 
 function App() {
-  const { t } = useI18n()
+  const { t, language } = useI18n()
   const [session, setSession] =
     useState<Session | null>(null)
   const [authReady, setAuthReady] = useState(false)
@@ -150,12 +151,12 @@ function App() {
   }
 
   if (!workspaceUser) {
-    return <AuthForm sessionNotice={authError} />
+    return <AuthForm sessionNotice={authError && localizeAppMessage(language, authError)} />
   }
 
   return (
     <>
-    {!session && <AuthForm sessionNotice={authError} />}
+    {!session && <AuthForm sessionNotice={authError && localizeAppMessage(language, authError)} />}
     <div className="app-shell" key={workspaceUser.id} hidden={!session} inert={!session}>
       <header className="shell-bar">
         <div className="shell-brand">
@@ -209,7 +210,7 @@ function App() {
     <main className="workspace">
       {authError && (
         <p role="alert" className="session-notice">
-          {authError}
+          {localizeAppMessage(language, authError)}
         </p>
       )}
       {workspaceView === 'questions' && (

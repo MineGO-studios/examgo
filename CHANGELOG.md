@@ -13,6 +13,7 @@ Notable ExamGO changes are recorded here. Version labels identify development ch
 
 ### Added
 
+- Translate recovery and error messages into Arabic: sign-in, session expiry and sign-out notices, saved-draft recovery issues on My papers, account limits, and the save, load, preset, passage and import failures teachers can reach. Support references stay visible as "الرمز المرجعي", and messages without a translation still appear in English (MIN-271, part of MIN-56).
 - Translate Question banks into Arabic: the bank page and question list, the question form for every type with its validation messages, passages and linked exercises, and file import with its column questions, readable question checks, problems and remedies, totals and history. Question content keeps the language it was written in (MIN-270, part of MIN-56).
 - Translate the New paper journey into Arabic: the paper choices, setup and its error summary and validation messages, the review controls, saving and downloads, the preset paper and complete exercise pages with their coverage tables, and the Iraqi exercises builder for saved drafts. The paper and answer key stay in English, and names and references are isolated so they read correctly in Arabic sentences (MIN-269, part of MIN-56).
 - Move the selection number to **Settings › Question selection**. Each account starts with its own number, so teachers with the same settings get different papers; the number is kept on the device for that account until account settings exist (MIN-261). The per-paper field is removed.
