@@ -537,6 +537,17 @@ input[type='checkbox'] {
     grid-column: 1 / -1;
   }
 
+  /* The Word files sit above the paper they came from; the actions stay beside both. */
+  .exam-builder.has-review .exam-review > .word-preview,
+  .exam-builder.has-review .exam-review > .paper-review {
+    grid-column: 1;
+  }
+
+  .exam-builder.has-review .exam-review > .paper-actions {
+    grid-column: 2;
+    grid-row: 2 / span 2;
+  }
+
   .paper-actions {
     position: sticky;
     top: 5.5rem;

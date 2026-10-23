@@ -7,10 +7,11 @@ import {
   useState,
 } from 'react'
 import {
-  generateReviewedExamDocuments,
   prepareExamQuestions,
+  prepareReviewedExamDocuments,
 } from '../lib/generateExam'
 import {
+  downloadExamDocumentPair,
   downloadPreparedDocument,
   requestBrowserDownload,
   retryFailedDocumentDownloads,
@@ -64,6 +65,7 @@ import { ChoiceChips, FormGroup, Stepper, ToggleChipGroup } from './controls'
 import { ErrorSummary } from './ErrorSummary'
 import { readSelectionSeed } from '../lib/selectionSeed'
 import CouponProgress from './CouponProgress'
+import WordFilePreview from './WordFilePreview'
 import { questionTypeLabel } from '../lib/questionTypeLabels'
 import { useI18n } from '../lib/i18n'
 import { localizeAppMessage } from '../lib/appMessages'
@@ -530,20 +532,15 @@ export default function ExamBuilder({
 
     try {
       validateReviewMarks()
-      const result = await generateReviewedExamDocuments(
+      // Preview first (D8.8): the files are built in the browser and downloaded only when the teacher asks.
+      const documents = await prepareReviewedExamDocuments(
         settings,
         review.map((item) => item.question),
       )
-      setGeneratedDocuments(result.documents)
-      setDownloadResult(result.delivery)
-
-      if (result.delivery.hasFailures) {
-        setStatus('error')
-        say((t: Strings) => t.blockedStatus)
-      } else {
-        setStatus('success')
-        say((t: Strings) => t.readyStatus)
-      }
+      setGeneratedDocuments(documents)
+      setDownloadResult(null)
+      setStatus('success')
+      say((t: Strings) => t.previewReadyStatus)
     } catch (error) {
       const errorMessage =
         teacherErrorMessage(error, 'Unknown generation error.')
@@ -551,6 +548,14 @@ export default function ExamBuilder({
       setStatus('error')
       say((t: Strings) => t.generationFailed(tm(errorMessage)))
     }
+  }
+
+  const handleDownloadBoth = async (): Promise<void> => {
+    if (!generatedDocuments) return
+    const delivery = await downloadExamDocumentPair(generatedDocuments)
+    setDownloadResult(delivery)
+    setStatus(delivery.hasFailures ? 'error' : 'success')
+    say((t: Strings) => delivery.hasFailures ? t.blockedStatus : t.readyStatus)
   }
 
   const handleRetryFailedDownloads = async (): Promise<void> => {
@@ -628,7 +633,7 @@ export default function ExamBuilder({
   const isSaving = status === 'saving'
   const isBusy = isGenerating || isSaving
   const isLoadingQuestions = questionLoadStatus === 'loading'
-  const documentsReady = Boolean(generatedDocuments && downloadResult && !downloadResult.hasFailures && !isBusy)
+  const documentsReady = Boolean(generatedDocuments && !downloadResult?.hasFailures && !isBusy)
   const statusMessage = (
     <p
       className="builder-status"
@@ -779,6 +784,7 @@ export default function ExamBuilder({
             </div>
           </div>
 
+          {generatedDocuments && <WordFilePreview documents={generatedDocuments} downloaded={Boolean(downloadResult)} busy={isBusy} onDownload={() => void handleDownloadBoth()} />}
           <SimplePaperReview
             questions={review.map((item) => item.question)}
             settings={settings}
