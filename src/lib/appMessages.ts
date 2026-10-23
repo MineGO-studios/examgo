@@ -293,6 +293,10 @@ const ARABIC: ReadonlyArray<readonly [string | RegExp, Translation]> = [
   ['Use one to 100 distinct revisions, short idea names and a decision reason.', 'استخدم من 1 إلى 100 نسخة مختلفة وأسماء أفكار قصيرة وسبب قرار.'],
   ['Use provenance schema version 2 with only supported fields.', 'استخدم الإصدار 2 من مخطط المصادر مع الحقول المدعومة فقط.'],
   ['Use provenance schema/mapping 1, an exact saved release hash and one to 10,000 records.', 'استخدم الإصدار 1 من مخطط المصادر وتحويلها، وبصمة إصدار محفوظ دقيقة، ومن 1 إلى 10,000 سجل.'],
+  // Finalized papers
+  ['Review the paper settings.', 'راجع إعدادات الورقة.'],
+  ['Documents could not be prepared. Reopen saved work and review the source text before retrying.', 'تعذّر تجهيز المستندات. أعد فتح العمل المحفوظ وراجع نص المصدر قبل المحاولة.'],
+  ['This paper is larger than the verified one-page volume. Edit it, or record the unchanged two-page layout exception before downloading.', 'هذه الورقة أكبر من حجم الصفحة الواحدة المتحقَّق منه. عدّلها، أو سجّل استثناء الصفحتين دون تغيير قبل التنزيل.'],
 ]
 
 const REFERENCE = /\s*Reference: (EG-[0-9a-f-]+)$/i
