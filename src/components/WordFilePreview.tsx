@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useId, useRef, useState } from 'react'
 import type { ExamDocumentKind, PreparedExamDocumentPair } from '../lib/documentDelivery'
 import { useI18n } from '../lib/i18n'
 import { renderWordPreview } from '../lib/wordPreview'
@@ -12,13 +12,15 @@ const PAGE_WIDTH_PX = 794
  * The generated Word files, shown before download (D8.8). Both come from the exact bytes the teacher
  * downloads; nothing is kept once the teacher leaves the review.
  */
-export default function WordFilePreview({ documents, downloaded, busy, onDownload }: {
+export default function WordFilePreview({ documents, downloaded = false, busy = false, onDownload }: {
   documents: PreparedExamDocumentPair
   /** Once both downloads were requested, the per-file results beside the paper take over. */
-  downloaded: boolean
-  busy: boolean
-  onDownload: () => void
+  downloaded?: boolean
+  busy?: boolean
+  /** Omitted where the screen keeps its own download buttons right after the preview. */
+  onDownload?: () => void
 }) {
+  const titleId = useId()
   const { language } = useI18n(), s = EXAM_BUILDER_STRINGS[language]
   const [view, setView] = useState<ExamDocumentKind>('exam')
   const [state, setState] = useState<'loading' | 'ready' | 'failed'>('loading')
@@ -48,16 +50,16 @@ export default function WordFilePreview({ documents, downloaded, busy, onDownloa
     return () => observer.disconnect()
   }, [])
 
-  return <section className="word-preview" aria-labelledby="word-preview-title">
+  return <section className="word-preview" aria-labelledby={titleId}>
     <div className="word-preview-head">
-      <h4 id="word-preview-title" ref={title} tabIndex={-1}>{s.wordPreviewTitle}</h4>
+      <h4 id={titleId} ref={title} tabIndex={-1}>{s.wordPreviewTitle}</h4>
       <div className="segmented" role="group" aria-label={s.wordPreviewFile}>
         <button type="button" aria-pressed={view === 'exam'} onClick={() => setView('exam')}>{s.wordPreviewStudent}</button>
         <button type="button" aria-pressed={view === 'answerKey'} onClick={() => setView('answerKey')}>{s.wordPreviewKey}</button>
       </div>
     </div>
     <p className="field-help">{s.wordPreviewNote}</p>
-    {!downloaded && <button type="button" className="word-preview-download" onClick={onDownload} disabled={busy}>
+    {onDownload && !downloaded && <button type="button" className="word-preview-download" onClick={onDownload} disabled={busy}>
       <Icon name="download" />{s.downloadBoth}
     </button>}
     {state === 'loading' && <p role="status">{s.wordPreviewLoading}</p>}

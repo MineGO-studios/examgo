@@ -18,6 +18,7 @@ import { PHASE_TEN_CANDIDATE_PROFILE_ID, PHASE_TEN_GENERAL_INSTRUCTION, PHASE_TE
 import { finalizePhaseTenCandidate, savePhaseTenCandidateDraft, type SavedPhaseTenCandidate } from '../lib/phaseTenCandidateRepository'
 import { renderFinalizedPhaseTenCandidate } from '../lib/phaseTenDelivery'
 import { downloadPreparedDocument, requestBrowserDownload, type PreparedExamDocumentPair } from '../lib/documentDelivery'
+import WordFilePreview from './WordFilePreview'
 import { teacherErrorMessage } from '../lib/safeErrorDetails'
 
 interface Props {
@@ -310,6 +311,7 @@ export default function PhaseTenCandidateBuilder({ ownerId, reopened, onSavedWor
         })}>Prepare saved documents</button>}
       </div>
     </div>}
+    {documents && <WordFilePreview documents={documents} />}
     {documents && <div className="recovery-actions">{(['exam', 'answerKey'] as const).map((kind) => <button key={kind} disabled={busy} onClick={() => void run(async () => {
       const result = await downloadPreparedDocument(documents[kind], requestBrowserDownload)
       if (result.status === 'failed') throw new Error(result.error)

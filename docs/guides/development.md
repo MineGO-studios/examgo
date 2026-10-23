@@ -41,7 +41,7 @@ The interface is available in English and Arabic. Paper content stays in its sou
 
 ## Word file preview
 
-New paper previews the generated Word files before download (`src/lib/wordPreview.ts`, `src/components/WordFilePreview.tsx`). The files are built in the browser, and the preview renders the same Blob with `docx-preview`, loaded lazily on Generate. Nothing is uploaded or stored.
+Every paper flow previews its generated Word files before download (`src/lib/wordPreview.ts`, `src/components/WordFilePreview.tsx`): New paper, preset papers, complete exercises, Iraqi exercises, complete-paper candidates, and structured or finalized papers opened from My papers. Use the same component for any new flow. The files are built in the browser, and the preview renders the same Blob with `docx-preview`, loaded lazily on Generate. Nothing is uploaded or stored.
 
 - **Content Security Policy:** the renderer writes `<style>` elements and `style` attributes, which `style-src 'self'` refuses. `renderWordPreview` renders into detached containers, moves the CSS into a constructed stylesheet in a shadow root and re-applies inline declarations through `element.style`. Do not add `'unsafe-inline'`.
 - **Fonts:** embedded fonts are ignored (they would be `data:` URLs, which `font-src 'self'` refuses), and Vite never inlines font files (`assetsInlineLimit` in `vite.config.ts`).

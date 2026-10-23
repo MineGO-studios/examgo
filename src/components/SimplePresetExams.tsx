@@ -8,6 +8,7 @@ import {finalizeSimplePresetExam,getEligibleSimplePresets,getSimplePresetExams,
 import {prepareExamQuestions,prepareReviewedExamDocuments} from '../lib/generateExam'
 import {createQuestionReview,replaceQuestionInReview,toggleQuestionLock,type ReviewedQuestion} from '../lib/reviewQuestions'
 import {downloadPreparedDocument,requestBrowserDownload,type PreparedExamDocumentPair} from '../lib/documentDelivery'
+import WordFilePreview from './WordFilePreview'
 import {DEFAULT_EXAM_SETTINGS,DEFAULT_EXAM_QUESTION_FILTERS,SIMPLE_QUESTION_TYPES,type ExamSettings} from '../types/exam'
 import GroupedPresetExams from './GroupedPresetExams'
 import SourceReference from './SourceReference'
@@ -112,6 +113,7 @@ export default function SimplePresetExams({ownerId,section}:{ownerId:string;sect
     {saved&&<div className="finalized-record"><PaperStamp label="Finalized"/><h3><bdi>{saved.settings.examTitle}</bdi></h3><p>{s.sealed(saved.items.length, s.marks(saved.totalMarks))}</p>
       <ol>{saved.items.map(item=><li key={item.question.id}><bdi>{item.question.prompt}</bdi> — {s.marks(item.marks)}{item.isLocked?s.lockedSuffix:''}</li>)}</ol>
       <button type="button" disabled={busy} onClick={()=>void prepare()}>{s.prepareSaved}</button>
+      {documents&&<WordFilePreview documents={documents}/>}
       {documents&&(['exam','answerKey'] as const).map(kind=><button key={kind} type="button" onClick={()=>void downloadPreparedDocument(documents[kind],requestBrowserDownload).then(result=>{
         if(result.status==='failed')setError(result.error??'Download failed. Retry this document.')
       })}>{kind==='exam'?s.downloadStudentExam:s.downloadAnswerKey}</button>)}

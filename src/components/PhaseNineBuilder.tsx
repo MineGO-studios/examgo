@@ -12,6 +12,7 @@ import BranchMarkEditor from './BranchMarkEditor'
 import { savePhaseNineDraft, finalizePhaseNineExam, type SavedPhaseNineWorkflow } from '../lib/phaseNineRepository'
 import { renderFinalizedPhaseNine } from '../lib/phaseNineDelivery'
 import { downloadPreparedDocument, requestBrowserDownload, type PreparedExamDocumentPair } from '../lib/documentDelivery'
+import WordFilePreview from './WordFilePreview'
 import type { PageTarget } from '../lib/pageTarget'
 import { teacherErrorMessage } from '../lib/safeErrorDetails'
 import { useI18n } from '../lib/i18n'
@@ -202,6 +203,7 @@ export default function PhaseNineBuilder({ ownerId, reopened, onSavedWork, onAut
         }}>{s.newCopy}</button>}
       </div>
     </div>}
+    {documents && <WordFilePreview documents={documents} />}
     {documents && <div className="recovery-actions">{(['exam', 'answerKey'] as const).map((kind) => <button key={kind} disabled={busy} onClick={() => void run(async () => {
       const result = await downloadPreparedDocument(documents[kind], requestBrowserDownload)
       if (result.status === 'failed') throw new Error(result.error)
