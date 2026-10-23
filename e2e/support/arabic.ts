@@ -7,7 +7,7 @@ export async function englishLeft(page: Page): Promise<string[]> {
     const out = new Set<string>()
     const walker = document.createTreeWalker(document.querySelector('main') ?? document.body, NodeFilter.SHOW_TEXT)
     for (let node = walker.nextNode(); node; node = walker.nextNode()) {
-      const text = node.textContent?.replace(/MineGO|ExamGO|DOCX|CSV|JSON|Word|Q\d+/g, '').trim() ?? ''
+      const text = node.textContent?.replace(/EG-[0-9a-f-]+|MineGO Studio|MineGO|ExamGO|DOCX|CSV|JSON|Word|Q\d+/g, '').trim() ?? ''
       const el = node.parentElement
       if (!el || !/[A-Za-z]{3,}/.test(text) || skip(el)) continue
       out.add(text.slice(0, 80))

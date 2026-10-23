@@ -4,6 +4,7 @@ import {
   useRef,
   useState,
 } from 'react'
+import { localizeAppMessage } from '../lib/appMessages'
 import { reportSafeError } from '../lib/safeErrorDetails'
 import { supabase } from '../lib/supabase'
 import { useI18n } from '../lib/i18n'
@@ -20,7 +21,7 @@ type Feedback = {
 const MINIMUM_PASSWORD_LENGTH = 12
 
 export default function AuthForm({ sessionNotice }: { sessionNotice?: string | null } = {}) {
-  const { t } = useI18n()
+  const { t, language } = useI18n()
   const emailInput = useRef<HTMLInputElement>(null)
   useEffect(() => { if (sessionNotice) emailInput.current?.focus() }, [sessionNotice])
   const [mode, setMode] =
@@ -170,7 +171,7 @@ export default function AuthForm({ sessionNotice }: { sessionNotice?: string | n
           {feedback && (
             <p role={feedback.type === 'error' ? 'alert' : 'status'} aria-live="polite"
               className={feedback.type === 'error' ? 'saved-work-failure' : undefined}>
-              {feedback.message}
+              {localizeAppMessage(language, feedback.message)}
             </p>
           )}
         </form>

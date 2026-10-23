@@ -57,7 +57,7 @@ Page estimates are advisory. Do not assume browser pagination exactly matches Wo
 
 Open **Settings** to sign out, sign out of all devices, or change two choices kept on this device: the interface language, and whether My papers opens as Desk or List. Everyone using the same device shares those two choices. Light or dark appearance follows the device's own setting. Saved paper defaults, such as a school name, are not available yet.
 
-In Arabic, New paper (both kinds of paper, setup, review, saving and downloads), Question banks (the question list, the question form, passages and file import), My papers and Settings are translated. The paper, its answer key and your question content stay in the language you wrote them in. The reviewer tools are still English.
+In Arabic, New paper (both kinds of paper, setup, review, saving and downloads), Question banks (the question list, the question form, passages and file import), My papers and Settings are translated, along with sign-in, session and recovery messages, account limits and save failures. The paper, its answer key and your question content stay in the language you wrote them in. The reviewer tools are still English.
 
 ## Save and download
 

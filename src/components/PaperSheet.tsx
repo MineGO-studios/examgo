@@ -23,7 +23,7 @@ export function PaperSheet({ item }: { item: PaperItem }) {
   const count = Math.max(2, Math.min(item.questions ?? INSTRUCTIONS.length, INSTRUCTIONS.length))
   const lines = INSTRUCTIONS.slice(0, count)
   const next = lines[count - 1]
-  return <div className="paper-sheet" aria-hidden="true" dir="ltr">
+  return <div className="paper-sheet" aria-hidden="true" dir="ltr" lang="en">
     <div className="paper-page">
       <div className="paper-head"><b>{item.title}</b><span>{paperSheetSubtitle(item)}</span></div>
       <div className="paper-name"><span>Name</span><i /><span>Class</span><i className="short" /></div>
