@@ -2,6 +2,7 @@ import { renderToStaticMarkup } from 'react-dom/server'
 import { expect, it } from 'vitest'
 import { makeExam002Candidate } from '../lib/fixtures/phaseTenExam002Candidate'
 import BlueprintPaperReview from './BlueprintPaperReview'
+import { LanguageContext, translate } from '../lib/i18n'
 
 it('renders the student production projection without answer-only content or false page boundaries', () => {
   const snapshot = makeExam002Candidate('tissue')
@@ -29,4 +30,19 @@ it('withholds the paper when header settings are invalid', () => {
       marksPerQuestion: 1, questionCount: 30, selectionSeed: snapshot.selectionSeed }} generalInstruction="Answer." />)
   expect(html).toContain('School name is required.')
   expect(html).not.toContain('Student paper content')
+})
+
+it('shows its controls in Arabic while the paper stays English and left to right', () => {
+  const snapshot = makeExam002Candidate('tissue')
+  const html = renderToStaticMarkup(<LanguageContext.Provider value={{ language: 'ar', setLanguage: () => {}, t: (key) => translate('ar', key) }}>
+    <BlueprintPaperReview snapshot={snapshot}
+      settings={{ schoolName: 'Synthetic school', examTitle: 'Synthetic paper', teacherName: 'Synthetic teacher',
+        grade: 6, unit: 1, marksPerQuestion: 1, questionCount: 30, selectionSeed: snapshot.selectionSeed }}
+      generalInstruction="Follow the instructions." />
+  </LanguageContext.Provider>)
+  expect(html).toContain('ورقة الطالب')
+  expect(html).toContain('معاينة للمحتوى')
+  expect(html).not.toContain('Content preview.')
+  expect(html).toMatch(/<article class="blueprint-paper" lang="en" dir="ltr"/)
+  expect(html).toContain('Teacher: Synthetic teacher')
 })
