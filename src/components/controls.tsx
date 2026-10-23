@@ -1,5 +1,7 @@
 import { useEffect, useId, useRef, useState, type ReactNode } from 'react'
 import { Icon } from './icons'
+import { useI18n } from '../lib/i18n'
+import { CONTROLS_STRINGS } from './controls.strings'
 
 /** More options than this become a dropdown instead of a row of pills, so screens stay calm. */
 export const MAX_INLINE_OPTIONS = 5
@@ -67,6 +69,7 @@ export function Stepper({ label, hint, value, min = 0, max, disabled, onChange }
   disabled?: boolean
   onChange: (value: number) => void
 }) {
+  const s = CONTROLS_STRINGS[useI18n().language]
   const clamp = (next: number): number => Math.min(Math.max(next, min), max)
   return <div className="stepper">
     <label className="stepper-label">
@@ -76,9 +79,9 @@ export function Stepper({ label, hint, value, min = 0, max, disabled, onChange }
         onChange={(event) => onChange(event.target.valueAsNumber || 0)} />
     </label>
     <div className="stepper-buttons">
-      <button type="button" className="button-secondary" aria-label={`Fewer: ${label}`} disabled={disabled || value <= min}
+      <button type="button" className="button-secondary" aria-label={s.fewer(label)} disabled={disabled || value <= min}
         onClick={() => onChange(clamp(value - 1))}><Icon name="remove" /></button>
-      <button type="button" className="button-secondary" aria-label={`More: ${label}`} disabled={disabled || value >= max}
+      <button type="button" className="button-secondary" aria-label={s.more(label)} disabled={disabled || value >= max}
         onClick={() => onChange(clamp(value + 1))}><Icon name="add" /></button>
     </div>
   </div>
@@ -102,6 +105,7 @@ export function ToggleChipGroup({ legend, items, disabled, hint }: {
   disabled?: boolean
   hint?: ReactNode
 }) {
+  const s = CONTROLS_STRINGS[useI18n().language]
   const [open, setOpen] = useState(false)
   const root = useRef<HTMLDivElement>(null)
   const panelId = useId()
@@ -128,7 +132,7 @@ export function ToggleChipGroup({ legend, items, disabled, hint }: {
     </fieldset>
   }
   const chosen = items.filter((item) => item.checked)
-  const summary = chosen.length === 0 ? 'None selected' : chosen.length <= 2 ? chosen.map((item) => item.label).join(', ') : `${chosen.length} selected`
+  const summary = chosen.length === 0 ? s.none : chosen.length <= 2 ? chosen.map((item) => item.label).join('، ') : s.selected(chosen.length)
   return <div className="eg-multi" ref={root}>
     <span className="eg-multi-legend" id={`${panelId}-legend`}>{legend}</span>
     <button type="button" className="eg-multi-button" disabled={disabled} aria-expanded={open} aria-controls={panelId}

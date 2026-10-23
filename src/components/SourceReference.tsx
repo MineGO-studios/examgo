@@ -11,5 +11,5 @@ export default function SourceReference({value}:{value:string}){
     offset=start+text.length
   }
   parts.push(value.slice(offset))
-  return <span style={{overflowWrap:'anywhere'}}>{parts}</span>
+  return <bdi style={{overflowWrap:'anywhere'}}>{parts}</bdi>
 }

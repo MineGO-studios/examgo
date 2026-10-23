@@ -14,6 +14,13 @@ import { renderFinalizedPhaseNine } from '../lib/phaseNineDelivery'
 import { downloadPreparedDocument, requestBrowserDownload, type PreparedExamDocumentPair } from '../lib/documentDelivery'
 import type { PageTarget } from '../lib/pageTarget'
 import { teacherErrorMessage } from '../lib/safeErrorDetails'
+import { useI18n } from '../lib/i18n'
+import { localizeAppMessage } from '../lib/appMessages'
+import { IRAQI_BUILDER_STRINGS } from './PhaseNineBuilder.strings'
+
+type Strings = (typeof IRAQI_BUILDER_STRINGS)['en']
+/** Messages resolve at render time so a language switch translates the current one. */
+type Message = (s: Strings) => string
 
 interface Props {
   ownerId: string
@@ -23,6 +30,9 @@ interface Props {
 }
 
 export default function PhaseNineBuilder({ ownerId, reopened, onSavedWork, onAuthorQuestions }: Props) {
+  const { language } = useI18n()
+  const s = IRAQI_BUILDER_STRINGS[language]
+  const tm = (text: string) => localizeAppMessage(language, text)
   const initial = reopened?.intent
   const [settings, setSettings] = useState<ExamSettings>(initial?.settings ?? { ...DEFAULT_EXAM_SETTINGS, questionCount: 16, marksPerQuestion: 2 })
   const [filters, setFilters] = useState<PhaseNineTeacherIntent['filters']>(initial?.filters ?? { lesson: '', difficulty: '' })
@@ -40,7 +50,9 @@ export default function PhaseNineBuilder({ ownerId, reopened, onSavedWork, onAut
   const [loadedBankKey, setLoadedBankKey] = useState('')
   const [busy, setBusy] = useState(false)
   const busyRef = useRef(false)
-  const [message, setMessage] = useState('Choose your banks, preview, then set the marks before saving.')
+  const [message, setMessage] = useState<Message>(() => (t: Strings) => t.start)
+  const say = (next: Message) => setMessage(() => next)
+  const sayText = (text: string) => setMessage(() => () => text)
   const [failed, setFailed] = useState(false)
   const [documents, setDocuments] = useState<PreparedExamDocumentPair | null>(null)
   const [pendingSave, setPendingSave] = useState<{ intent: PhaseNineTeacherIntent; id: string; version: number; request: string } | null>(null)
@@ -56,7 +68,7 @@ export default function PhaseNineBuilder({ ownerId, reopened, onSavedWork, onAut
       setBanks(rows)
       setBankIds((current) => current.length ? current : rows[0] ? [rows[0].id] : [])
     }).catch((error: unknown) => {
-      if (active) { setFailed(true); setMessage(teacherErrorMessage(error, 'Unable to load question banks.')) }
+      if (active) { setFailed(true); sayText(teacherErrorMessage(error, 'Unable to load question banks.')) }
     })
     return () => { active = false }
   }, [finalized])
@@ -68,7 +80,7 @@ export default function PhaseNineBuilder({ ownerId, reopened, onSavedWork, onAut
     void getActiveStandaloneQuestionsForBanks(selected).then((rows) => {
       if (active) { setQuestions(rows.map(questionRowToDomain)); setLoadedBankKey(bankKey) }
     }).catch((error: unknown) => {
-      if (active) { setFailed(true); setMessage(teacherErrorMessage(error, 'Unable to load questions. Reopen the bank and try again.')) }
+      if (active) { setFailed(true); sayText(teacherErrorMessage(error, 'Unable to load questions. Reopen the bank and try again.')) }
     })
     return () => { active = false }
   }, [bankId, bankKey, finalized])
@@ -85,7 +97,7 @@ export default function PhaseNineBuilder({ ownerId, reopened, onSavedWork, onAut
     if (busyRef.current) return
     busyRef.current = true; setBusy(true); setFailed(false)
     try { await operation() }
-    catch (error) { setFailed(true); setMessage(teacherErrorMessage(error, 'The operation could not be confirmed. Reopen saved work before continuing.')) }
+    catch (error) { setFailed(true); sayText(teacherErrorMessage(error, 'The operation could not be confirmed. Reopen saved work before continuing.')) }
     finally { busyRef.current = false; setBusy(false) }
   }
   const intent = (): PhaseNineTeacherIntent => {
@@ -101,77 +113,76 @@ export default function PhaseNineBuilder({ ownerId, reopened, onSavedWork, onAut
     setPendingSave(request)
     const result = await savePhaseNineDraft(request.intent, request.id, request.version, request.request)
     setSaved(result); setPendingSave(null); setDirty(false)
-    setMessage('Draft saved with your settings, chosen questions, order and locks. Reopen it from My papers to save another version.')
+    say((t) => t.saved)
   })
   const finalize = () => run(async () => {
     if (!saved || dirty) throw new Error('Save the current reviewed draft before finalizing.')
     const result = await finalizePhaseNineExam(saved, finalizationRequest.current)
     setSaved(result)
-    setMessage('Finalized paper saved. Prepare the matching documents from this captured version.')
+    say((t) => t.finalized)
   })
 
   return <section className="builder-page" aria-labelledby="structured-builder-title">
-    <h2 id="structured-builder-title">Iraqi exercises and writing</h2>
+    <h2 id="structured-builder-title">{s.title}</h2>
     <PaperProgress current={finalized ? 'download' : review ? 'review' : 'setup'} />
     {finalized && <PaperStamp label="Finalized" />}
-    <p>Completion, odd words, word relationships, a rewrite and a writing task (Q3/A to Q5).
-      {examOwnedMarks ? ` ${review?.snapshot.totalMarks ?? 60} marks to share between the questions.` : ' 60 marks.'} This is part of a paper, not a full Q1 to Q5 paper.</p>
-    <p role={failed ? 'alert' : 'status'} aria-live="polite" className="field-help">{message}</p>
+    <p>{s.lede} {examOwnedMarks ? s.shareMarks(review?.snapshot.totalMarks ?? 60) : s.fixedMarks} {s.partOfPaper}</p>
+    <p role={failed ? 'alert' : 'status'} aria-live="polite" className="field-help">{tm(message(s))}</p>
     <fieldset disabled={locked} className="plain-fields">
-      <legend className="visually-hidden">Paper settings</legend>
-      <FormGroup title="Questions">
-        <label className="text-field">Primary question bank<select value={bankId} onChange={(e) => { setBankIds([e.target.value, ...bankIds.slice(1).filter((id) => id !== e.target.value)]); changed(true) }}>
+      <legend className="visually-hidden">{s.paperSettings}</legend>
+      <FormGroup title={s.questions}>
+        <label className="text-field">{s.primaryBank}<select value={bankId} onChange={(e) => { setBankIds([e.target.value, ...bankIds.slice(1).filter((id) => id !== e.target.value)]); changed(true) }}>
           {banks.map((bank) => <option key={bank.id} value={bank.id}>{bank.name}</option>)}
-          {finalized && <option value={bankId}>Saved question bank</option>}
+          {finalized && <option value={bankId}>{s.savedBank}</option>}
         </select></label>
-        {examOwnedMarks && !finalized && banks.length > 1 && <ToggleChipGroup legend="Also use" hint="A question shared by two banks appears once."
+        {examOwnedMarks && !finalized && banks.length > 1 && <ToggleChipGroup legend={s.alsoUse} hint={s.alsoUseHint}
           items={banks.filter((bank) => bank.id !== bankId).map((bank) => ({ key: bank.id, label: bank.name, checked: bankIds.includes(bank.id),
             disabled: bankIds.length >= 20 && !bankIds.includes(bank.id),
             onToggle: () => { setBankIds(bankIds.includes(bank.id) ? bankIds.filter((id) => id !== bank.id) : [...bankIds, bank.id]); changed(true) } }))} />}
-        <label className="text-field">Lesson<input maxLength={40} value={filters.lesson} placeholder="All lessons" onChange={(e) => { setFilters({ ...filters, lesson: e.target.value }); changed(true) }} /></label>
-        <ChoiceChips legend="Difficulty" value={filters.difficulty}
-          options={[{ value: '', label: 'Any' }, { value: 'easy', label: 'Easy' }, { value: 'medium', label: 'Medium' }, { value: 'hard', label: 'Hard' }] as { value: typeof filters.difficulty; label: string }[]}
+        <label className="text-field">{s.lesson}<input maxLength={40} value={filters.lesson} placeholder={s.allLessons} onChange={(e) => { setFilters({ ...filters, lesson: e.target.value }); changed(true) }} /></label>
+        <ChoiceChips legend={s.difficulty} value={filters.difficulty}
+          options={[{ value: '', label: s.any }, { value: 'easy', label: s.easy }, { value: 'medium', label: s.medium }, { value: 'hard', label: s.hard }] as { value: typeof filters.difficulty; label: string }[]}
           onChange={(difficulty) => { setFilters({ ...filters, difficulty }); changed(true) }} />
       </FormGroup>
-      <FormGroup title="Paper details">
+      <FormGroup title={s.details}>
         {(['schoolName', 'examTitle', 'teacherName'] as const).map((key) => <label key={key} className="text-field">
-          {{ schoolName: 'School name', examTitle: 'Test title', teacherName: 'Teacher name' }[key]}
+          {{ schoolName: s.school, examTitle: s.testTitle, teacherName: s.teacher }[key]}
           <input maxLength={80} value={settings[key] ?? ''} onChange={(e) => { setSettings({ ...settings, [key]: e.target.value }); changed() }} />
         </label>)}
       </FormGroup>
-      <FormGroup title="Pages">
-        <ChoiceChips legend="Question pages" value={pageTarget}
+      <FormGroup title={s.pages}>
+        <ChoiceChips legend={s.questionPages} value={pageTarget}
           options={([1, 2, 3, 4, 5] as PageTarget[]).map((n) => ({ value: n, label: String(n) }))}
           onChange={(target) => { setPageTarget(target); changed() }}
-          hint="Your target, not a measured count. Check the documents in Word before printing." />
+          hint={s.pagesHint} />
       </FormGroup>
-      <details className="more-options"><summary>More options</summary>
-        <label className="text-field">Selection number<input type="number" min={0} max={4294967295} value={settings.selectionSeed} onChange={(e) => { setSettings({ ...settings, selectionSeed: Number(e.target.value) }); changed(true) }} />
-          <small>Keep the same number to get the same questions again.</small></label>
+      <details className="more-options"><summary>{s.moreOptions}</summary>
+        <label className="text-field">{s.selectionNumber}<input type="number" min={0} max={4294967295} value={settings.selectionSeed} onChange={(e) => { setSettings({ ...settings, selectionSeed: Number(e.target.value) }); changed(true) }} />
+          <small>{s.selectionHint}</small></label>
       </details>
     </fieldset>
     <div className="recovery-actions builder-actions">
       {!finalized && <button disabled={locked || loading || !bankId} onClick={() => void run(async () => {
-        setReview(examOwnedMarks ? selectPhaseNineMarkedPaper(pool, settings.selectionSeed) : selectPhaseNinePaper(pool, settings.selectionSeed)); changed(); setMessage('Review ready. Assign question marks, lock or replace questions, then save the draft.')
-      })}>{loading ? 'Loading questions…' : 'Preview questions'}</button>}
-      <button className="button-secondary" disabled={busy} onClick={onAuthorQuestions}>Author questions</button>
-      <button className="button-secondary" disabled={busy} onClick={onSavedWork}>My papers</button>
+        setReview(examOwnedMarks ? selectPhaseNineMarkedPaper(pool, settings.selectionSeed) : selectPhaseNinePaper(pool, settings.selectionSeed)); changed(); say((t) => t.reviewReady)
+      })}>{loading ? s.loadingQuestions : s.preview}</button>}
+      <button className="button-secondary" disabled={busy} onClick={onAuthorQuestions}>{s.author}</button>
+      <button className="button-secondary" disabled={busy} onClick={onSavedWork}>{s.myPapers}</button>
     </div>
     {review && <div>
       {review.snapshot.structure.branches.map((branch) => <section key={branch.id} className="structured-branch">
-        <h3>Q{branch.mainQuestionNumber}{branch.branchLabel ? `/${branch.branchLabel}` : ''} — {branch.marks} marks</h3>
-        <p>{branch.instruction}</p>
+        <h3><bdi>Q{branch.mainQuestionNumber}{branch.branchLabel ? `/${branch.branchLabel}` : ''}</bdi> — {s.branchMarks(branch.marks)}</h3>
+        <p dir="auto">{branch.instruction}</p>
         <ol>{branch.items.map((item) => <li key={item.question.id}>
           <p><strong>{item.visibleLabel}.</strong> {item.question.prompt}</p>
           <p className="structured-question-content">{item.question.type === 'completion' ? item.question.content.text : item.question.type === 'odd-word' ? item.question.content.words.join(' / ') : ''}</p>
-          <details><summary>Review answer</summary><ul className="structured-answer">{answerRows.filter((row) => row.Q === String(branch.mainQuestionNumber) && row.Part === (branch.branchLabel ?? '—') && (branch.kind === 'completion' || row.Point === item.visibleLabel)).map((row) => <li key={row.Point}>{row.Point}: {row.Answer} — {row.Mark} marks</li>)}</ul></details>
+          <details><summary>{s.reviewAnswer}</summary><ul className="structured-answer">{answerRows.filter((row) => row.Q === String(branch.mainQuestionNumber) && row.Part === (branch.branchLabel ?? '—') && (branch.kind === 'completion' || row.Point === item.visibleLabel)).map((row) => <li key={row.Point}>{row.Point}: {row.Answer} — {row.Mark} marks</li>)}</ul></details>
           {!finalized && <div className="recovery-actions">
-            <button disabled={locked} aria-pressed={review.lockedQuestionIds.includes(item.question.id)} onClick={() => { setReview(togglePhaseNineQuestionLock(review, item.question.id)); changed() }}>{review.lockedQuestionIds.includes(item.question.id) ? 'Unlock' : 'Lock'} question {item.visibleLabel}</button>
+            <button disabled={locked} aria-pressed={review.lockedQuestionIds.includes(item.question.id)} onClick={() => { setReview(togglePhaseNineQuestionLock(review, item.question.id)); changed() }}>{review.lockedQuestionIds.includes(item.question.id) ? s.unlock(item.visibleLabel) : s.lock(item.visibleLabel)}</button>
             <button disabled={locked || loading || review.lockedQuestionIds.includes(item.question.id)} onClick={() => void run(async () => {
               const replaced = replacePhaseNineQuestion(review, item.question.id, pool)
               parsePhaseNineTeacherIntent({ ...intent(), review: replaced })
-              setReview(replaced); changed(); setMessage('Replacement ready. Review and save the changed draft.')
-            })}>Replace question {item.visibleLabel}</button>
+              setReview(replaced); changed(); say((t) => t.replacementReady)
+            })}>{s.replace(item.visibleLabel)}</button>
           </div>}
         </li>)}</ol>
         {examOwnedMarks && !finalized && <BranchMarkEditor
@@ -183,18 +194,18 @@ export default function PhaseNineBuilder({ ownerId, reopened, onSavedWork, onAut
           }} />}
       </section>)}
       <div className="recovery-actions">
-        {!finalized && <button disabled={busy || pendingMarks.length > 0 || loading} onClick={() => void save()}>{pendingSave ? 'Retry the same save' : 'Save structured draft'}</button>}
-        {!finalized && <button disabled={busy || dirty || !saved || pendingSave !== null || pendingMarks.length > 0} onClick={() => void finalize()}>Finalize reviewed paper</button>}
-        {finalized && <button disabled={busy} onClick={() => void run(async () => { setDocuments(await renderFinalizedPhaseNine(saved)); setMessage('Both documents are ready from the same finalized version. Download each file below.') })}>Prepare saved documents</button>}
+        {!finalized && <button disabled={busy || pendingMarks.length > 0 || loading} onClick={() => void save()}>{pendingSave ? s.retrySave : s.saveDraft}</button>}
+        {!finalized && <button disabled={busy || dirty || !saved || pendingSave !== null || pendingMarks.length > 0} onClick={() => void finalize()}>{s.finalize}</button>}
+        {finalized && <button disabled={busy} onClick={() => void run(async () => { setDocuments(await renderFinalizedPhaseNine(saved)); say((t) => t.documentsReady) })}>{s.prepare}</button>}
         {finalized && <button disabled={busy} className="button-secondary" onClick={() => {
-          setSaved(null); setExamOwnedMarks(true); changed(true); setMessage('Editing a new copy. The finalized paper is preserved. Review current bank content and assign marks before saving.')
-        }}>Edit a new copy</button>}
+          setSaved(null); setExamOwnedMarks(true); changed(true); say((t) => t.editingCopy)
+        }}>{s.newCopy}</button>}
       </div>
     </div>}
     {documents && <div className="recovery-actions">{(['exam', 'answerKey'] as const).map((kind) => <button key={kind} disabled={busy} onClick={() => void run(async () => {
       const result = await downloadPreparedDocument(documents[kind], requestBrowserDownload)
       if (result.status === 'failed') throw new Error(result.error)
-      setMessage(`${kind === 'exam' ? 'Student exam' : 'Answer key'} download requested. Check your downloads; retry this button if needed.`)
-    })}>Download {kind === 'exam' ? 'student exam' : 'answer key'}</button>)}</div>}
+      say((t) => kind === 'exam' ? t.examRequested : t.keyRequested)
+    })}>{kind === 'exam' ? s.downloadExam : s.downloadKey}</button>)}</div>}
   </section>
 }
