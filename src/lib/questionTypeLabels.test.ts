@@ -18,7 +18,7 @@ describe('question-type vocabulary', () => {
 
   it('states where each type can be used, including the unsupported case', () => {
     expect(questionTypeUse('binary')).toBe('Used in: Pick questions by type.')
-    expect(questionTypeUse('rewrite')).toBe('Used in: Iraqi exercises and writing.')
+    expect(questionTypeUse('rewrite')).toMatch(/^Not in hosted papers yet/)
     expect(questionTypeUse('matching')).toMatch(/^Not in hosted papers yet/)
   })
 

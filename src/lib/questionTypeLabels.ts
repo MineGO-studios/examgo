@@ -44,11 +44,9 @@ export const QUESTION_TYPE_GROUPS: readonly { id: 'choose' | 'write'; label: Rec
 ]
 
 const PICK_BY_TYPE: readonly QuestionType[] = ['multiple-choice', 'binary', 'short-answer']
-const IRAQI_EXERCISES: readonly QuestionType[] = ['completion', 'odd-word', 'word-relationship', 'rewrite', 'extended-writing']
 
 /** Where a type can be used in hosted papers today, from the D9.1 support matrix. */
 export function questionTypeUse(type: QuestionType, language: Language = 'en'): string {
   if (PICK_BY_TYPE.includes(type)) return language === 'ar' ? 'تُستخدم في: اختيار الأسئلة حسب النوع.' : 'Used in: Pick questions by type.'
-  if (IRAQI_EXERCISES.includes(type)) return language === 'ar' ? 'تُستخدم في: تمارين عراقية وكتابة.' : 'Used in: Iraqi exercises and writing.'
   return language === 'ar' ? 'غير متاحة في الأوراق بعد. يمكنك حفظها في بنكك.' : 'Not in hosted papers yet. You can still save it in your bank.'
 }

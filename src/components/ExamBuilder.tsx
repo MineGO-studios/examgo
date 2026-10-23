@@ -26,9 +26,7 @@ import { getActiveStandaloneQuestionsForBanks } from '../lib/questionMembershipR
 import { questionToExamQuestion } from '../lib/questions'
 import { assignMarks } from '../domain/markAllocation'
 import {
-  estimateQuestionPages,
-  getPageTargetWarning,
-  type PageTarget,
+  getPaperLengthWarning,
 } from '../lib/pageTarget'
 import {
   createQuestionReview,
@@ -64,6 +62,7 @@ import SimplePaperReview from './SimplePaperReview'
 import PaperProgress from './PaperProgress'
 import { ChoiceChips, FormGroup, Stepper, ToggleChipGroup } from './controls'
 import { ErrorSummary } from './ErrorSummary'
+import { readSelectionSeed } from '../lib/selectionSeed'
 import CouponProgress from './CouponProgress'
 import { QUESTION_TYPE_LABELS_EN } from '../lib/questionTypeLabels'
 
@@ -107,6 +106,8 @@ interface ExamBuilderProps {
   onViewDrafts: () => void
   /** Opens the shared MineGO questions source when approved standalone questions exist. */
   onUseSharedQuestions?: () => void
+  /** The signed-in teacher; new papers use this teacher's selection number from Settings. */
+  ownerId: string
 }
 
 export default function ExamBuilder({
@@ -114,6 +115,7 @@ export default function ExamBuilder({
   reopenedDraft,
   onViewDrafts,
   onUseSharedQuestions,
+  ownerId,
 }: ExamBuilderProps) {
   // Approved standalone supply: null while checking, -1 when it could not be checked.
   const [sharedCount, setSharedCount] = useState<number | null>(null)
@@ -123,9 +125,10 @@ export default function ExamBuilder({
       .catch(() => { if (active) setSharedCount(-1) })
     return () => { active = false }
   }, [])
-  const [settings, setSettings] = useState<ExamSettings>({
+  const [settings, setSettings] = useState<ExamSettings>(() => ({
     ...DEFAULT_EXAM_SETTINGS,
-  })
+    selectionSeed: readSelectionSeed(ownerId),
+  }))
   const [filters, setFilters] = useState<ExamQuestionFilters>({
     ...DEFAULT_EXAM_QUESTION_FILTERS,
   })
@@ -145,7 +148,6 @@ export default function ExamBuilder({
   const [review, setReview] = useState<ReviewedQuestion[] | null>(
     null,
   )
-  const [pageTarget, setPageTarget] = useState<PageTarget>(1)
   const [questionLoadStatus, setQuestionLoadStatus] =
     useState<QuestionLoadStatus>('loading')
   const [generatedDocuments, setGeneratedDocuments] =
@@ -638,13 +640,7 @@ export default function ExamBuilder({
     item.question.marks >= 1 && item.question.marks <= 1000)
     ? review.reduce((total, item) => total + item.question.marks, 0) : null
   const effectiveQuestionCount = review?.length ?? settings.questionCount
-  const estimatedQuestionPages = estimateQuestionPages(
-    effectiveQuestionCount,
-  )
-  const pageTargetWarning = getPageTargetWarning(
-    effectiveQuestionCount,
-    pageTarget,
-  )
+  const paperLengthWarning = getPaperLengthWarning(effectiveQuestionCount)
   const isGenerating = status === 'generating'
   const isSaving = status === 'saving'
   const isBusy = isGenerating || isSaving
@@ -679,7 +675,7 @@ export default function ExamBuilder({
       <div className="exam-settings">
       <ErrorSummary attempt={failedAttempts} items={([
         ['schoolName', 'exam-school-name'], ['examTitle', 'exam-title'], ['teacherName', 'exam-teacher-name'],
-        ['questionCount', 'exam-question-count'], ['selectionSeed', 'exam-selection-seed'],
+        ['questionCount', 'exam-question-count'],
       ] as const).flatMap(([key, target]) => errors[key] ? [{ target, message: errors[key] as string }] : [])} />
       {!review || showStarts
         ? startOptions
@@ -774,35 +770,8 @@ export default function ExamBuilder({
           ))}
           {errors.questionCount && <span id="exam-question-count-error" className="field-error">{errors.questionCount}</span>}
         </fieldset>
+        {paperLengthWarning && <p className="page-target-warning" role="status">{paperLengthWarning}</p>}
       </FormGroup>
-
-      <FormGroup title="Pages">
-        <ChoiceChips legend="Question pages" disabled={isBusy} value={pageTarget}
-          onChange={(target) => setPageTarget(target)}
-          options={([1, 2, 3, 4, 5] as PageTarget[]).map((target) => ({ value: target, label: String(target) }))}
-          hint={`About ${estimatedQuestionPages} page${estimatedQuestionPages === 1 ? '' : 's'} of questions. Word may break pages a little differently.`} />
-        {pageTargetWarning && <p className="page-target-warning" role="alert">{pageTargetWarning}</p>}
-      </FormGroup>
-
-      <details className="more-options" open={Boolean(errors.selectionSeed)}>
-        <summary>More options</summary>
-        <label className="text-field">
-          Selection number
-          <input
-            type="number"
-            min={EXAM_LIMITS.minimumSelectionSeed}
-            max={EXAM_LIMITS.maximumSelectionSeed}
-            step="1"
-            value={settings.selectionSeed}
-            onChange={(event) => updateSetting('selectionSeed', event.target.valueAsNumber || 0)}
-            id="exam-selection-seed"
-            aria-invalid={Boolean(errors.selectionSeed)}
-            aria-describedby={errors.selectionSeed ? 'exam-selection-seed-error' : undefined}
-          />
-          <small>Keep the same number to get the same questions again. Change it for a different selection.</small>
-        </label>
-        {errors.selectionSeed && <span id="exam-selection-seed-error" className="field-error">{errors.selectionSeed}</span>}
-      </details>
 
       <p className="setup-total">
         Total marks <strong>{review ? totalMarks ?? 'Fix question marks' : 'after preview'}</strong>

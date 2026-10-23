@@ -12,7 +12,7 @@ test('the question type chooser groups types and says where each can be used', a
   await expect(chooser.locator('option')).toHaveCount(9)
   await expect(page.locator('#question-type-use')).toHaveText('Used in: Pick questions by type.')
   await chooser.selectOption('rewrite')
-  await expect(page.locator('#question-type-use')).toHaveText('Used in: Iraqi exercises and writing.')
+  await expect(page.locator('#question-type-use')).toHaveText(/^Not in hosted papers yet/)
   await chooser.selectOption('matching')
   await expect(page.locator('#question-type-use')).toContainText('Not in hosted papers yet')
   await checkAccessibility(page)

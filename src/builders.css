@@ -360,6 +360,19 @@ input[type='checkbox'] {
 }
 
 @media (max-width: 40rem) {
+  /* Narrow: numbers only, with the current step's name taking the spare width. */
+  .paper-progress {
+    display: flex;
+  }
+
+  .paper-progress li {
+    flex: none;
+  }
+
+  .paper-progress li.is-current {
+    flex: 1 1 auto;
+  }
+
   .question-placement {
     grid-template-columns: minmax(0, 1fr);
   }
@@ -393,10 +406,7 @@ input[type='checkbox'] {
   align-items: flex-start;
 }
 
-@media (max-width: 30rem) {
-  .paper-progress {
-    flex-wrap: nowrap;
-  }
+@media (max-width: 40rem) {
 
   .paper-progress li {
     padding-inline: var(--eg-space-2);

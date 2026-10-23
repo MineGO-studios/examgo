@@ -47,24 +47,36 @@ describe('term timeline', () => {
   })
 
   it('puts colliding date labels on a second row and hides the rest', () => {
-    const rows = layoutDateLabels([
+    const x = layoutDateLabels([
       { key: 'a', text: '18 Oct', center: 100, width: 40 },
       { key: 'b', text: 'Today', center: 118, width: 36 },
-      { key: 'c', text: '19 Oct', center: 130, width: 40 },
       { key: 'd', text: '2 Oct', center: 10, width: 36 },
-    ])
-    expect(rows.get('d')).toBe(0)
-    expect(rows.get('a')).toBe(0)
-    expect(rows.get('b')).toBe(1)
-    expect(rows.get('c')).toBeNull()
+    ], 400)
+    // Close labels sit side by side on one row, without overlap, and stay inside the axis.
+    expect(x.get('d')).toBe(18)
+    const a = x.get('a') as number, b = x.get('b') as number
+    expect(b - a).toBeGreaterThanOrEqual(20 + 18 + 8)
+    expect(Math.abs((a + b) / 2 - 109)).toBeLessThan(25)
+  })
+
+  it('keeps labels inside the axis and hides the most crowded when the row is full', () => {
+    const x = layoutDateLabels([
+      { key: 'a', text: '18 Oct', center: 70, width: 40 },
+      { key: 'b', text: '19 Oct', center: 75, width: 40 },
+      { key: 'c', text: 'Today', center: 80, width: 36 },
+    ], 100, 8, label => label.text === 'Today')
+    expect(x.get('c')).toBe(82)
+    expect([x.get('a'), x.get('b')].filter(v => v === null)).toHaveLength(1)
+    const shown = [x.get('a'), x.get('b')].find(v => v !== null) as number
+    expect(shown + 20).toBeLessThanOrEqual(82 - 18 - 8)
   })
 
   it('shows a repeated date once', () => {
     const rows = layoutDateLabels([
       { key: 'a', text: '12 Oct', center: 50, width: 40 },
       { key: 'b', text: '12 Oct', center: 200, width: 40 },
-    ])
-    expect(rows.get('a')).toBe(0)
+    ], 400)
+    expect(rows.get('a')).toBe(50)
     expect(rows.get('b')).toBeNull()
   })
 })

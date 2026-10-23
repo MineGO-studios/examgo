@@ -249,6 +249,7 @@ function App() {
           onUseSharedQuestions={() => setExamMode('shared')}
           reopenedDraft={reopenedDraft}
           onViewDrafts={() => setWorkspaceView('drafts')}
+          ownerId={workspaceUser.id}
         />}</div>
       )}
       {ExamBlueprintBuilder && blueprintStarted && <div hidden={workspaceView !== 'exam' || examMode !== 'blueprint'}>
@@ -257,7 +258,7 @@ function App() {
         </Suspense>
       </div>}
       {workspaceView === 'account' && (
-        <SettingsPage email={workspaceUser.email} onSignOut={(scope) => void handleSignOut(scope)} onOpenReviewer={() => setWorkspaceView('review')} />
+        <SettingsPage ownerId={workspaceUser.id} email={workspaceUser.email} onSignOut={(scope) => void handleSignOut(scope)} onOpenReviewer={() => setWorkspaceView('review')} />
       )}
       {workspaceView === 'review' && (
         <div className="reviewer-page">

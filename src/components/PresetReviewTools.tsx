@@ -22,7 +22,7 @@ export default function PresetReviewTools() {
   return <section className="card preset-review-tools" aria-labelledby="preset-review-title">
     <h2 id="preset-review-title">Preset review and publication</h2>
     <p>Recording source evidence, approving exact revisions and publishing presets for all teachers are reviewer decisions, separate from building exams and managing your own banks. Only the assigned MineGO reviewer can make them; other accounts can read the records but see no review controls.</p>
-    <p>Teachers see published presets with their source and approval details in New paper → Use an approved exercise, or under Pick questions by type → Shared MineGO questions.</p>
+    <p>Teachers see published presets with their source and approval details in New paper → Use a preset exam paper made by MineGO, or under Pick questions by type → Shared MineGO questions.</p>
     <p role="status">{message}</p>
     {banks.length > 0 && <label>Bank<select value={bankId} onChange={(event) => setBankId(event.target.value)}>
       <option value="">Choose a bank</option>

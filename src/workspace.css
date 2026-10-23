@@ -174,8 +174,9 @@
 }
 
 .paper-progress {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  width: min(100%, 44rem);
   margin: 0;
   padding: 0;
   list-style: none;
@@ -183,6 +184,7 @@
 
 .paper-progress li {
   display: flex;
+  min-width: 0;
   align-items: center;
   gap: var(--eg-space-2);
   border-bottom: 3px solid var(--eg-color-border);
@@ -192,6 +194,7 @@
 }
 
 .paper-progress-number {
+  flex: none;
   display: grid;
   place-items: center;
   width: 1.5rem;
@@ -199,6 +202,11 @@
   border: 1.5px solid currentColor;
   border-radius: 50%;
   font-variant-numeric: tabular-nums;
+}
+
+.paper-progress-label {
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .paper-progress li.is-done {

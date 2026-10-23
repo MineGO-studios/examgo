@@ -1,4 +1,5 @@
 import {useEffect,useState} from 'react'
+import {readSelectionSeed} from '../lib/selectionSeed'
 import {describeSourceTrust} from '../domain/presetCuration'
 import {finalizeSimplePresetExam,getEligibleSimplePresets,getSimplePresetExams,
   type EligibleSimplePreset,type SavedSimplePresetExam} from '../lib/simplePresetRepository'
@@ -17,11 +18,11 @@ import { QUESTION_TYPE_LABELS_EN } from '../lib/questionTypeLabels'
 
 const typeNames=QUESTION_TYPE_LABELS_EN
 const errorText=(e:unknown)=>teacherErrorMessage(e, 'Preset request failed. Reload and review again.')
-/** `exercise` is the "Use an approved exercise" shape; `standalone` is the shared-questions source under "Pick questions by type". */
+/** `exercise` is the "Use a preset exam paper made by MineGO" shape; `standalone` is the shared-questions source under "Pick questions by type". */
 export default function SimplePresetExams({ownerId,section}:{ownerId:string;section:'exercise'|'standalone'}){
   const [pool,setPool]=useState<EligibleSimplePreset[]>([]),[history,setHistory]=useState<SavedSimplePresetExam[]>([])
-  const [settings,setSettings]=useState<ExamSettings>({...DEFAULT_EXAM_SETTINGS,questionCount:1,
-    questionQuantities:{'multiple-choice':1,binary:0,'short-answer':0}})
+  const [settings,setSettings]=useState<ExamSettings>(()=>({...DEFAULT_EXAM_SETTINGS,selectionSeed:readSelectionSeed(ownerId),questionCount:1,
+    questionQuantities:{'multiple-choice':1,binary:0,'short-answer':0}}))
   const [review,setReview]=useState<ReviewedQuestion[]|null>(null),[saved,setSaved]=useState<SavedSimplePresetExam|null>(null)
   const [documents,setDocuments]=useState<PreparedExamDocumentPair|null>(null),[requestId,setRequestId]=useState(()=>crypto.randomUUID())
   const [busy,setBusy]=useState(true),[error,setError]=useState(''),[message,setMessage]=useState(''),[reload,setReload]=useState(0)
@@ -58,7 +59,7 @@ export default function SimplePresetExams({ownerId,section}:{ownerId:string;sect
     {history.length===0?<p className="field-help">None yet.</p>:<ul>{history.map(exam=><li key={exam.id}>
       {exam.settings.examTitle} — {exam.totalMarks} marks <button type="button" disabled={busy} onClick={()=>openSaved(exam)}>Open saved preset paper</button></li>)}</ul>}</>
   if(section==='exercise')return <section className="preset-page" aria-labelledby="simple-presets-title">
-    <h2 id="simple-presets-title">Use an approved exercise</h2>
+    <h2 id="simple-presets-title">Use a preset exam paper made by MineGO</h2>
     <PaperProgress current="setup"/>
     <p>One complete MineGO exercise, kept in source order with its answer rule.</p>
     <PresetCoverageSummary key={ownerId} ownerId={ownerId}/>
@@ -85,10 +86,6 @@ export default function SimplePresetExams({ownerId,section}:{ownerId:string;sect
             onChange={value=>{const quantities={...settings.questionQuantities!,[type]:value}
               changeSettings({...settings,questionQuantities:quantities,questionCount:Object.values(quantities).reduce((a,b)=>a+b,0)})}}/>})}
       </div>
-      <details className="more-options"><summary>More options</summary>
-        <label className="text-field">Selection number<input name="preset-seed" type="number" min={0} max={4294967295} value={settings.selectionSeed} onChange={e=>changeSettings({...settings,selectionSeed:Number(e.target.value)})}/>
-        <small>Keep the same number to get the same questions again.</small></label>
-      </details>
       <button type="button" disabled={!pool.length} onClick={preview}>Preview preset paper</button>
     </fieldset>
     {review&&<><h3>Review selected questions</h3><ol>{review.map(({question,locked})=>{
