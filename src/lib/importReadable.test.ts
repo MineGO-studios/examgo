@@ -40,7 +40,7 @@ it('falls back to a review notice instead of raw JSON when an answer cannot be r
 })
 
 it('names import sources without internal storage paths', () => {
-  expect(readableImportSource('Papers/Ready_Question_Bank/master_export')).toBe('Papers master catalogue')
+  expect(readableImportSource('Papers/Ready_Question_Bank/master_export')).toBe('MineGO question catalogue')
   expect(readableImportSource('teacher-import')).toBe('teacher import')
   expect(readableImportSource('schools/unit_2-revision')).toBe('unit 2 revision')
 })

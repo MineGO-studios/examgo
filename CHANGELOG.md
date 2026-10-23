@@ -13,6 +13,7 @@ Notable ExamGO changes are recorded here. Version labels identify development ch
 
 ### Added
 
+- Rename the import formats teachers see: "MineGO question catalogue (CSV)", "Older ExamGO choice questions (CSV)" and "ExamGO question file (JSON)" (D9.5 follow-up, MIN-257).
 - Link the paper review back to where each part changes (D8.3): a pen above the header and beside the teacher line focuses the matching paper detail, and each answer-key row opens its question on the student paper. Interface tools inside the paper keep the interface language and direction. The preview fidelity contract is recorded in `docs/design/d8-3-paper-review.md` (MIN-255).
 - Use icons for repeated tools (D6.5): lock, replace (circular arrow), remove (bin), edit (pen) and per-file download are icon buttons with named tooltips, Generate Exam + Answer Key is now Generate, and one globe button switches the interface language. My papers gains Unit and Paper type filters when papers differ in them, and help tips explain the paper plan and the unit overview. Icon buttons keep 44px targets (MIN-290).
 - Simplify first use and teacher wording (D9.5): an empty Question banks screen offers MineGO's preset papers as a way to start, the reviewer note no longer shows to teachers, an empty My papers has one New paper action, and system terms (eligible, snapshot, intake, immutable, exception) are replaced with plain wording in English and Arabic (MIN-257).

@@ -27,8 +27,8 @@ Arabic follows the same changes. Tests: a new first-use e2e; vitest 647 passed /
 ## Proposals for the next slice
 
 1. **Reviewer-only controls stay out of teacher screens.** The import Diagnostics link and Settings' "Open reviewer tools" show to every teacher. Hiding them needs an account-level reviewer check, filed in ExamGO as MIN-296. The UI change follows once that check exists.
-2. **Import format names.** "Papers master catalogue CSV" and "legacy template" read as internal. Proposal: "MineGO question file (CSV)" and "Older ExamGO file (CSV)", kept only in the format dropdown.
-3. **Development-only starts.** The complete-paper candidate and structured paper starts appear only in development. Keep them out of hosted builds, and name them "In development" when they do appear.
+2. **Import format names. Delivered (23 October 2026):** the import screen now says "MineGO question catalogue (CSV)", "Older ExamGO choice questions (CSV)" and "ExamGO question file (JSON)", in English and Arabic.
+3. **Development-only starts. Already met:** the complete-paper candidate and structured paper starts exist only in development builds (`import.meta.env.DEV`) and appear under their own development group, so hosted builds never show them.
 4. **First paper guidance.** Once D8.1 is wired, a new teacher's first New paper opens on the Exam layout template with a one-line hint ("Change any part, or start from a short test"). There is no tour.
 
 Measure confusion and requests for help in the Phase 16 sessions, not click counts.
