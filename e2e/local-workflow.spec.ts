@@ -237,6 +237,9 @@ test('grouped preset finalization survives a lost response, keeps source order a
   await exercise.getByRole('button', { name: 'Reload complete presets', exact: true }).click()
   await exercise.getByRole('button', { name: /^Synthetic grouped paper — 6 marks/ }).click()
   await exercise.getByRole('button', { name: 'Prepare captured exercise documents', exact: true }).click()
+  // The captured files are shown before download, from the same bytes.
+  await expect(exercise.getByRole('region', { name: 'Check the Word files' })).toBeVisible()
+  await expect.poll(() => exercise.locator('.word-preview-host').evaluate((host) => host.shadowRoot?.textContent ?? '')).toContain(presetGroup.members[0].question.prompt)
   const files: Buffer[] = []
   for (const name of ['Download exercise student paper', 'Download exercise answer key']) {
     const pending = page.waitForEvent('download')

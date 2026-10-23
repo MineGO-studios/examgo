@@ -65,7 +65,7 @@ In Arabic, New paper (both kinds of paper, setup, review, saving and downloads),
 
 Save editable work when the selected workflow supports it. **My papers** distinguishes editable configurations from finalized papers. Finalized papers preserve captured content; later bank changes do not rewrite them. Simple-paper downloads do not create the same immutable finalized history as structured workflows.
 
-In New paper, **Generate** first shows the Word files themselves under **Check the Word files**, switching between the student paper and the answer key; nothing downloads until you select **Download both files**. The preview is drawn from the exact files you download, but Word may break pages slightly differently. It is not stored: generating again rebuilds it.
+In New paper, **Generate** first shows the Word files themselves under **Check the Word files**. Preset papers, complete exercises and finalized papers show the same preview when you prepare their documents. The preview switches between the student paper and the answer key; nothing downloads until you choose a download button. The preview is drawn from the exact files you download, but Word may break pages slightly differently. It is not stored: generating again rebuilds it.
 
 Prepare and download the **Student paper** and **Answer key** from the same reviewed or finalized version. Check that both files arrived. A partial download is not a successful pair; retry the failed file through the supported action.
 

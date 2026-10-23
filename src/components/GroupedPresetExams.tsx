@@ -6,6 +6,7 @@ import {finalizePresetGroupExam,getEligiblePresetGroups,getPresetGroupExams,prep
   type EligiblePresetGroup,type SavedPresetGroupExam} from '../lib/groupedPresetRepository'
 import {DEFAULT_EXAM_SETTINGS} from '../types/exam'
 import {downloadPreparedDocument,requestBrowserDownload,type PreparedExamDocumentPair} from '../lib/documentDelivery'
+import WordFilePreview from './WordFilePreview'
 import SourceReference from './SourceReference'
 import { PaperStamp } from './CouponProgress'
 import { ChoiceChips, Stepper } from './controls'
@@ -57,6 +58,7 @@ export default function GroupedPresetExams({ownerId}:{ownerId:string}){
     {saved&&<div className="finalized-record"><PaperStamp label="Finalized"/><h4><bdi>{saved.settings.examTitle}</bdi></h4><p>{s.studentsAnswer(saved.group.attemptCount,saved.group.members.length)} · {s.marks(saved.totalMarks)}.</p>
       <ol>{saved.group.members.map(m=><li key={m.revisionId}><bdi>{m.question.prompt}</bdi> — {s.perAttempted(s.marks(m.question.marks))}</li>)}</ol>
       <button type="button" disabled={busy} onClick={()=>void prepare()}>{s.prepareExercise}</button>
+      {documents&&<WordFilePreview documents={documents}/>}
       {documents&&(['exam','answerKey'] as const).map(kind=><button key={kind} type="button" onClick={()=>void downloadPreparedDocument(documents[kind],requestBrowserDownload).then(result=>{
         if(result.status==='failed')setError(result.error??'Download failed. Retry this captured document.')
       })}>{kind==='exam'?s.downloadExerciseStudent:s.downloadExerciseKey}</button>)}
