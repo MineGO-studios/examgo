@@ -693,6 +693,77 @@ textarea:hover:not(:disabled) {
 
 @keyframes help-tip-in { from { opacity: 0; transform: translateY(0.2rem); } }
 
+/* ---- Icon buttons (D6.5): the icon is the label; the name is in the tooltip and aria-label ---- */
+.icon-button {
+  display: inline-grid;
+  place-items: center;
+  /* Never below the 44px touch target, whatever the local type scale. */
+  inline-size: max(2.75rem, 44px);
+  block-size: max(2.75rem, 44px);
+  min-block-size: max(2.75rem, 44px);
+  min-inline-size: max(2.75rem, 44px);
+  flex: none;
+  border: 1px solid var(--eg-color-border-control);
+  border-radius: var(--eg-radius-control);
+  background: var(--eg-color-surface);
+  color: var(--eg-color-text);
+  padding: 0;
+}
+
+.icon-button:hover:not(:disabled) {
+  border-color: var(--eg-color-text);
+  background: var(--eg-color-surface-subtle);
+  color: var(--eg-color-text);
+}
+
+.icon-button.is-quiet {
+  border-color: transparent;
+  background: transparent;
+}
+
+.icon-button[aria-pressed='true'],
+.icon-button[aria-pressed='true']:hover:not(:disabled) {
+  border-color: var(--eg-color-primary);
+  background: var(--eg-color-primary-soft);
+  color: var(--eg-color-text);
+}
+
+.icon-button:disabled {
+  /* Transparent, so an unavailable tool recedes on the white paper in dark mode as well as on surfaces. */
+  border-color: var(--eg-color-border);
+  background: transparent;
+  color: var(--eg-color-disabled-text);
+  cursor: not-allowed;
+}
+
+.icon-button .eg-icon {
+  inline-size: 1.05rem;
+  block-size: 1.05rem;
+}
+
+.icon-button-tip {
+  z-index: 60;
+  border-radius: var(--eg-radius-sm);
+  background: var(--eg-color-text);
+  color: var(--eg-color-canvas);
+  font-size: var(--eg-font-size-xs);
+  font-weight: 600;
+  padding: 0.3rem 0.55rem;
+}
+
+.button-with-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--eg-space-2);
+}
+
+.icon-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--eg-space-2);
+}
+
 /* ---- File picker: the native input stays underneath; the zone speaks the interface language ---- */
 .file-pick {
   display: grid;

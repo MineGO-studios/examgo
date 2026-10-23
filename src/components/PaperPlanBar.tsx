@@ -3,6 +3,7 @@ import { useI18n } from '../lib/i18n'
 import { formatNumber } from '../lib/localize'
 import { planShare, type PlanGroup } from '../lib/paperPlan'
 import { questionTypeLabel } from '../lib/questionTypeLabels'
+import { HelpTip } from './HelpTip'
 import { PAPER_REVIEW_STRINGS } from './SimplePaperReview.strings'
 
 /** Colour follows the question type, never its position, so a type keeps its colour on every paper. */
@@ -57,7 +58,7 @@ export default function PaperPlanBar({ groups, questionCount, totalMarks, emptyS
   return <section className="paper-plan" aria-label={s.plan}>
     <div ref={plan} className="paper-plan-body" onMouseLeave={() => setOpen((o) => o?.pinned ? o : null)}>
       <p className="paper-plan-summary">
-        <span>{s.plan} · {s.questions(questionCount)}</span>
+        <span className="paper-plan-title">{s.plan} · {s.questions(questionCount)} <HelpTip topic={s.plan}>{s.planHelp}</HelpTip></span>
         <span>{totalMarks === null ? s.fixMarks : s.marks(totalMarks)}</span>
       </p>
       <div className="paper-plan-bar">

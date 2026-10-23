@@ -102,3 +102,17 @@ test('a busy day becomes one numbered dot that lists its papers', async ({ page 
   await expect(page.getByRole('dialog')).toHaveCount(0)
   expect(state.unhandled).toEqual([])
 })
+
+test('a unit filter narrows the desk and dims the timeline', async ({ page }) => {
+  const state = await syntheticBackend(page)
+  state.tables.exam_drafts.push(draft(1, 'First Monthly Test', 0), { ...draft(2, 'Unit 2 Quiz', 1), unit: 2 })
+  await syntheticSignIn(page)
+  await page.getByRole('navigation', { name: 'Teacher workspace' }).getByRole('button', { name: 'My papers', exact: true }).click()
+  await page.getByRole('combobox', { name: 'Unit' }).selectOption({ label: 'Unit 2' })
+  await expect(page.getByRole('button', { name: /^Continue / })).toHaveCount(1)
+  await expect(page.getByRole('button', { name: 'Continue Unit 2 Quiz', exact: true })).toBeVisible()
+  await checkAccessibility(page)
+  await page.getByRole('combobox', { name: 'Unit' }).selectOption({ label: 'All units' })
+  await expect(page.getByRole('button', { name: /^Continue / })).toHaveCount(2)
+  expect(state.unhandled).toEqual([])
+})

@@ -1,7 +1,9 @@
 import type { CSSProperties } from 'react'
 import { bankQuestionCounts, browseBankQuestions, type BankQuestionFilters, type BankBrowserQuestion } from '../lib/questionBankBrowse'
 import { questionAnswerPreview, questionTypeMark, unitCounts } from '../lib/questionCards'
-import { ChoiceChips } from './controls'
+import { ChoiceChips, IconButton } from './controls'
+import { Icon } from './icons'
+import { HelpTip } from './HelpTip'
 import { questionTypeLabel } from '../lib/questionTypeLabels'
 import { useI18n } from '../lib/i18n'
 import { QUESTION_BANK_STRINGS } from './QuestionBanks.strings'
@@ -26,7 +28,7 @@ export default function QuestionBankBrowser<T extends BankBrowserQuestion>({ que
         return <section className="question-browser" aria-labelledby="saved-questions-title">
           {units.length > 0 && <section className="qb-units" aria-labelledby="qb-units-title">
             <div className="qb-units-head">
-              <h3 id="qb-units-title">{s.byUnit}</h3>
+              <span className="qb-units-title"><h3 id="qb-units-title">{s.byUnit}</h3><HelpTip topic={s.byUnit}>{s.byUnitHelp}</HelpTip></span>
               {filters.unit !== undefined && filters.unit !== '' && <button type="button" className="button-quiet" onClick={() => setFilter({ unit: '' })}>{s.everyUnit}</button>}
             </div>
             <ul>
@@ -68,8 +70,8 @@ export default function QuestionBankBrowser<T extends BankBrowserQuestion>({ que
             <div className="empty-state">
               <p>{readOnly ? s.noPublished : s.noQuestions}</p>
               {!readOnly && <div className="recovery-actions">
-                <button type="button" onClick={onAdd}>{s.addQuestion}</button>
-                <button type="button" className="button-secondary" onClick={onImport}>{s.importFile}</button>
+                <button type="button" className="button-with-icon" onClick={onAdd}><Icon name="add" />{s.addQuestion}</button>
+                <button type="button" className="button-secondary button-with-icon" onClick={onImport}><Icon name="import" />{s.importFile}</button>
               </div>}
             </div>
           ) : result.matching === 0 ? <p role="status" className="empty-state">{s.noMatch}</p> : <>
@@ -91,7 +93,9 @@ export default function QuestionBankBrowser<T extends BankBrowserQuestion>({ que
                       {linkedIds?.has(question.id) && <span className="status-chip">{s.inGroup}</span>}
                     </p>
                   </div>
-                  {!readOnly && onAction && <button type="button" className="button-secondary" disabled={isBusy} onClick={() => onAction(question)}>{actionLabel?.(question)??s.edit}</button>}
+                  {!readOnly && onAction && ((actionLabel?.(question) ?? s.edit) === s.edit
+                    ? <IconButton icon="edit" label={`${s.edit}: ${question.prompt.slice(0, 60)}`} disabled={isBusy} onClick={() => onAction(question)} />
+                    : <button type="button" className="button-secondary" disabled={isBusy} onClick={() => onAction(question)}>{actionLabel?.(question)}</button>)}
                 </li>
               ))}
             </ul>

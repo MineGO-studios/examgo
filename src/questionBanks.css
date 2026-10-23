@@ -281,3 +281,9 @@
     transition: none;
   }
 }
+
+.qb-units-title {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--eg-space-1);
+}

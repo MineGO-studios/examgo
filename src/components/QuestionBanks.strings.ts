@@ -121,6 +121,7 @@ export const QUESTION_BANK_STRINGS = defineStrings({
     editing: 'Editing the selected question.',
     // Browser
     byUnit: 'Questions by unit',
+    byUnitHelp: 'Select a unit to show only its questions. Select it again to show every unit.',
     everyUnit: 'Show every unit',
     unitButton: (unit: number, total: number, usable: number, published: boolean) =>
       `Unit ${unit}, ${plural('en', total, { one: '{n} question', other: '{n} questions' })}, ${usable} ${published ? 'published' : 'ready'}`,
@@ -272,6 +273,7 @@ export const QUESTION_BANK_STRINGS = defineStrings({
     creatingCombined: 'جارٍ إنشاء البنك المدمج…',
     editing: 'تعدّل السؤال المختار.',
     byUnit: 'الأسئلة حسب الوحدة',
+    byUnitHelp: 'اختر وحدة لعرض أسئلتها فقط. اخترها مرة أخرى لعرض كل الوحدات.',
     everyUnit: 'عرض كل الوحدات',
     unitButton: (unit: number, total: number, usable: number, published: boolean) =>
       `الوحدة ${unit}، ${plural('ar', total, { zero: 'لا أسئلة', one: 'سؤال واحد', two: 'سؤالان', few: '{n} أسئلة', many: '{n} سؤالًا', other: '{n} سؤال' })}، ${usable} ${published ? 'منشور' : 'جاهز'}`,

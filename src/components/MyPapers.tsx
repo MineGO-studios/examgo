@@ -103,6 +103,7 @@ export default function MyPapers(props: MyPapersProps) {
   const [loaded, setLoaded] = useState<{ raws: Raw[]; failed: boolean } | null>(null)
   const [scope, setScope] = useState<PaperScope>('all')
   const [query, setQuery] = useState('')
+  const [unitFilter, setUnitFilter] = useState<number | 'all'>('all'), [typeFilter, setTypeFilter] = useState('all')
   const [view, setView] = useState<View>(readPapersView)
   const [opening, setOpening] = useState<string | null>(null)
   const [openError, setOpenError] = useState<string | null>(null)
@@ -118,7 +119,12 @@ export default function MyPapers(props: MyPapersProps) {
 
   const raws = useMemo(() => new Map((loaded?.raws ?? []).map(raw => [toItem(raw).key, raw])), [loaded])
   const items = useMemo(() => sortPapers((loaded?.raws ?? []).map(toItem)), [loaded])
-  const matching = useMemo(() => new Set(items.filter(item => matchesPaper(item, scope, query, [s.types[item.kind], MY_PAPERS_STRINGS.en.types[item.kind]])).map(item => item.key)), [items, scope, query, s])
+  // Unit and type filters appear only when the papers differ in them; two kinds that share a name share a filter value.
+  const units = useMemo(() => [...new Set(items.flatMap(item => item.unit ? [item.unit] : []))].sort((a, b) => a - b), [items])
+  const typeNames = useMemo(() => [...new Set(items.map(item => s.types[item.kind]))], [items, s])
+  const matching = useMemo(() => new Set(items.filter(item => matchesPaper(item, scope, query, [s.types[item.kind], MY_PAPERS_STRINGS.en.types[item.kind]])
+    && (unitFilter === 'all' || item.unit === unitFilter) && (typeFilter === 'all' || s.types[item.kind] === typeFilter)).map(item => item.key)), [items, scope, query, s, unitFilter, typeFilter])
+  const filtered = unitFilter !== 'all' || typeFilter !== 'all'
   const shown = items.filter(item => matching.has(item.key))
   const drafts = shown.filter(item => item.state === 'draft'), finals = shown.filter(item => item.state === 'final')
 
@@ -129,7 +135,7 @@ export default function MyPapers(props: MyPapersProps) {
   }, [flash])
 
   const jump = (key: string) => {
-    if (!matching.has(key)) { setScope('all'); setQuery('') }
+    if (!matching.has(key)) { setScope('all'); setQuery(''); setUnitFilter('all'); setTypeFilter('all') }
     setFlash(previous => ({ key, n: (previous?.n ?? 0) + 1 }))
   }
 
@@ -240,6 +246,20 @@ export default function MyPapers(props: MyPapersProps) {
         <div className="eg-seg" role="group" aria-label={s.scopeLabel}>
           {(['all', 'draft', 'final'] as const).map(key => <button key={key} type="button" aria-pressed={scope === key} onClick={() => setScope(key)}>{s.scopes[key]}</button>)}
         </div>
+        {units.length > 1 && <label className="eg-select mp-filter">
+          <span className="visually-hidden">{s.unitFilter}</span>
+          <select value={String(unitFilter)} onChange={event => setUnitFilter(event.target.value === 'all' ? 'all' : Number(event.target.value))}>
+            <option value="all">{s.allUnits}</option>
+            {units.map(unit => <option key={unit} value={unit}>{s.unit(unit)}</option>)}
+          </select>
+        </label>}
+        {typeNames.length > 1 && <label className="eg-select mp-filter">
+          <span className="visually-hidden">{s.typeFilter}</span>
+          <select value={typeFilter} onChange={event => setTypeFilter(event.target.value)}>
+            <option value="all">{s.allTypes}</option>
+            {typeNames.map(name => <option key={name} value={name}>{name}</option>)}
+          </select>
+        </label>}
         <div className="eg-seg" role="group" aria-label={s.viewLabel}>
           {(['desk', 'list'] as const).map(key => <button key={key} type="button" aria-pressed={view === key} onClick={() => { setView(key); storePapersView(key) }}>
             <Icon name={key} />
@@ -252,8 +272,9 @@ export default function MyPapers(props: MyPapersProps) {
 
       {shown.length === 0
         ? <div className="mp-none" role="status">
-            <p>{query.trim() ? s.none(query.trim()) : s.noneInScope}</p>
+            <p>{query.trim() ? s.none(query.trim()) : filtered ? s.noneFiltered : s.noneInScope}</p>
             {query.trim() && <button type="button" className="button-secondary" onClick={() => setQuery('')}>{s.clear}</button>}
+            {filtered && <button type="button" className="button-secondary" onClick={() => { setUnitFilter('all'); setTypeFilter('all') }}>{s.clearFilters}</button>}
           </div>
         : <>
             {group('editable-papers-title', s.desk, drafts)}

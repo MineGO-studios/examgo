@@ -33,6 +33,18 @@ There is one icon per repeated meaning, defined in `src/components/icons.tsx` an
 | Help | `help` | QuestionMarkCircledIcon |
 | Expand | `expand` | ChevronDownIcon |
 | Desk view / list view | `desk` / `list` | ViewGridIcon / ListBulletIcon |
+| Interface language | `language` | GlobeIcon |
+
+## Owner decision, 23 October 2026 (D6.5, MIN-290)
+
+Repeated tools become icon-only buttons through `IconButton`. These are:
+
+- Lock (lock and unlock), Replace (circular arrow) and Remove (bin) on each question of the paper;
+- Edit (pen) on the paper and in the question list;
+- per-file Download where the file name is shown beside it;
+- the language switch, now one globe button that switches to the other language.
+
+Each `IconButton` keeps a specific accessible name, such as "Lock question 1", which also appears as a tooltip on hover and keyboard focus. Lock is a toggle with `aria-pressed`. Buttons never shrink below 44 × 44px. Downloads that have no file name beside them keep a short text label next to the icon, so the two files stay distinguishable. Rule 2 below still applies to everything else.
 
 ## Rules
 
