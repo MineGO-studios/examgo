@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useId, useRef, useState, type ChangeEvent, type DragEvent, type ReactNode } from 'react'
 import { Icon } from './icons'
 import { useI18n } from '../lib/i18n'
 import { CONTROLS_STRINGS } from './controls.strings'
@@ -88,6 +88,38 @@ export function Stepper({ label, hint, value, min = 0, max, disabled, onChange }
 }
 
 /** A titled group inside a form, quieter than a card. */
+/**
+ * A file chooser in the interface language. The browser's own file button names itself in the browser's
+ * language, so the native input stays underneath (visually hidden) for keyboard, screen readers and tests,
+ * and a file can also be dropped onto the zone.
+ */
+export function FilePicker({ label, accept, name, disabled, onChange }: {
+  label: string; accept: string; name?: string; disabled?: boolean
+  onChange: (event: ChangeEvent<HTMLInputElement>) => void
+}) {
+  const { language } = useI18n(), s = CONTROLS_STRINGS[language]
+  const id = useId(), input = useRef<HTMLInputElement>(null)
+  const [fileName, setFileName] = useState(''), [dragging, setDragging] = useState(false)
+  const over = (event: DragEvent) => { if (disabled) return; event.preventDefault(); setDragging(true) }
+  const drop = (event: DragEvent) => {
+    event.preventDefault(); setDragging(false)
+    const files = event.dataTransfer.files
+    if (disabled || !input.current || files.length === 0) return
+    input.current.files = files
+    input.current.dispatchEvent(new Event('change', { bubbles: true }))
+  }
+  return <div className="file-pick">
+    <span className="file-pick-label" id={`${id}-label`}>{label}</span>
+    <label className={`file-pick-zone${dragging ? ' is-dragging' : ''}`} onDragOver={over} onDragLeave={() => setDragging(false)} onDrop={drop}>
+      <input ref={input} type="file" className="visually-hidden" name={name} accept={accept} disabled={disabled}
+        aria-labelledby={`${id}-label`} aria-describedby={`${id}-status`}
+        onChange={(event) => { setFileName(event.target.files?.[0]?.name ?? ''); onChange(event) }} />
+      <span className="file-pick-button" aria-hidden="true"><Icon name="import" />{fileName ? s.chooseAnother : s.chooseFile}</span>
+      <span className="file-pick-status" id={`${id}-status`}>{fileName ? <bdi>{fileName}</bdi> : s.dropFile}</span>
+    </label>
+  </div>
+}
+
 export function FormGroup({ title, aside, children }: { title: string; aside?: ReactNode; children: ReactNode }) {
   return <div className="form-group">
     <div className="form-group-header"><h3>{title}</h3>{aside && <span className="form-group-aside">{aside}</span>}</div>

@@ -20,6 +20,7 @@ import { useI18n } from '../lib/i18n'
 import { localizeAppMessage } from '../lib/appMessages'
 import { formatDate } from '../lib/localize'
 import { IMPORT_STRINGS } from './QuestionImportPreview.strings'
+import { FilePicker } from './controls'
 
 type Strings = (typeof IMPORT_STRINGS)['en']
 /** Status lines resolve at render time so a language switch translates the current one. */
@@ -320,10 +321,8 @@ export default function QuestionImportPreview({ bankId, bankName, onCommitted }:
       <h3 id="staged-import-title">{s.title}</h3>
       <p className="field-help">{s.lede}</p>
     </div>
-    <label>{s.file}
-      <input type="file" accept=".csv,text/csv,.json,application/json"
-        disabled={busy} onChange={(event) => void changeFile(event)} />
-    </label>
+    <FilePicker label={s.file} accept=".csv,text/csv,.json,application/json"
+      disabled={busy} onChange={(event) => void changeFile(event)} />
     {file && recognized && <label>{s.recognisedTemplate}
       <select value={format} disabled={busy} onChange={(event) => {
         try { applyFormat(event.target.value as Format, text); say((t) => t.templateChanged) }
