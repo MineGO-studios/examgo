@@ -787,6 +787,12 @@ export default function ExamBuilder({
 
           {generatedDocuments && <WordFilePreview documents={generatedDocuments} downloaded={Boolean(downloadResult)} busy={isBusy} onDownload={() => void handleDownloadBoth()} />}
           <SimplePaperReview
+            onEditDetails={(field) => {
+              // Change links (D8.3): bring the setup field into view and focus it; the review keeps its state.
+              const element = document.getElementById(field === 'teacher' ? 'exam-teacher-name' : 'exam-title')
+              element?.scrollIntoView({ block: 'center', behavior: window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' })
+              element?.focus({ preventScroll: true })
+            }}
             questions={review.map((item) => item.question)}
             settings={settings}
             totalMarks={totalMarks}

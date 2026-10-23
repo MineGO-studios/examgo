@@ -75,3 +75,22 @@ test('review tools are named icons with tooltips, and one button switches the la
   await expect(page.locator('html')).toHaveAttribute('dir', 'ltr')
   expect(state.unhandled).toEqual([])
 })
+
+test('the paper links each part back to where it changes, and the key opens its question', async ({ page }) => {
+  const state = await syntheticBackend(page)
+  await syntheticSignIn(page)
+  await page.getByRole('button', { name: 'Preview questions', exact: true }).click()
+  await page.getByRole('button', { name: 'Edit the paper details', exact: true }).click()
+  await expect(page.getByRole('textbox', { name: 'Test title', exact: true })).toBeFocused()
+  await page.getByRole('button', { name: 'Edit the teacher name', exact: true }).click()
+  await expect(page.getByRole('textbox', { name: /^Teacher name for footer/ })).toBeFocused()
+
+  await page.getByRole('group', { name: 'Paper view' }).getByRole('button', { name: 'Answer key', exact: true }).click()
+  const key = page.getByRole('region', { name: 'Review the paper' })
+  await expect(key).not.toContainText('Lock question 1')
+  await page.getByRole('button', { name: 'Open question 1 on the student paper', exact: true }).click()
+  await expect(page.getByRole('group', { name: 'Paper view' }).getByRole('button', { name: 'Student paper', exact: true })).toHaveAttribute('aria-pressed', 'true')
+  await expect(page.locator('#paper-question-1')).toBeFocused()
+  await checkAccessibility(page)
+  expect(state.unhandled).toEqual([])
+})
