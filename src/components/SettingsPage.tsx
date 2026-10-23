@@ -35,7 +35,7 @@ export default function SettingsPage({ ownerId, email, onSignOut, onOpenReviewer
 
     <section className="settings-section" aria-labelledby="settings-account">
       <h3 id="settings-account">{s.account}</h3>
-      <p>{email ? s.signedIn(email) : null}</p>
+      <p>{email ? <>{s.signedIn} <bdi>{email}</bdi></> : null}</p>
       <div className="settings-actions">
         <button type="button" className="button-secondary" onClick={() => onSignOut('local')}>{s.signOut}</button>
         <button type="button" className="button-secondary" aria-describedby="sign-out-all-hint" onClick={() => onSignOut('global')}>{s.signOutAll}</button>

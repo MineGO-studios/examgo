@@ -164,9 +164,9 @@
   }
 }
 
-:root:lang(ar) :where(p, small, label, legend, li, h2, h3, h4, summary, td, th, output, .status-chip, .start-card-title, .start-card-description) {
-  /* Until every string is translated, each English paragraph keeps its own word order,
-     while every line still aligns to the Arabic reading edge. */
+:root:lang(ar) :where(p, small, label, legend, li, h2, h3, h4, summary, td, th, output, .status-chip, .start-card-title, .start-card-description):not(.paper-sheet *) {
+  /* A paragraph that holds English data (a bank name, a question) keeps its own word order,
+     while every line still aligns to the Arabic reading edge. Paper content opts out below. */
   unicode-bidi: plaintext;
   text-align: right;
 }
