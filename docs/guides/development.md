@@ -39,6 +39,14 @@ The interface is available in English and Arabic. Paper content stays in its sou
 - **Sweep:** `e2e/local-arabic-rtl-sweep.spec.ts` visits every teacher and reviewer screen in Arabic at 320, 390 and 1280px, light and dark, with reduced motion. It checks overflow, leftover English (header included), axe and header focus order, and writes screenshots to `output/rtl-audit/`. Add a new screen to it.
 - **Review:** a native-speaking Iraqi teacher reviews the Arabic before release ([MIN-274](https://linear.app/minego/issue/MIN-274)).
 
+## Word file preview
+
+New paper previews the generated Word files before download (`src/lib/wordPreview.ts`, `src/components/WordFilePreview.tsx`). The files are built in the browser, and the preview renders the same Blob with `docx-preview`, loaded lazily on Generate. Nothing is uploaded or stored.
+
+- **Content Security Policy:** the renderer writes `<style>` elements and `style` attributes, which `style-src 'self'` refuses. `renderWordPreview` renders into detached containers, moves the CSS into a constructed stylesheet in a shadow root and re-applies inline declarations through `element.style`. Do not add `'unsafe-inline'`.
+- **Fonts:** embedded fonts are ignored (they would be `data:` URLs, which `font-src 'self'` refuses), and Vite never inlines font files (`assetsInlineLimit` in `vite.config.ts`).
+- **Tests:** `e2e/local-word-preview.spec.ts` fails on any CSP violation, checks that nothing downloads before **Download both files**, and covers the answer key, Arabic and dark mode. It renders only synthetic papers; Word acceptance of real output stays with the owner.
+
 ## Record verification
 
 State the revision or file hashes, environment, input, command, result and limits. Report failed, skipped and not-run checks separately. Local source, mocked browser checks, real database authorization, hosted behavior, document packages and human visual acceptance prove different boundaries.

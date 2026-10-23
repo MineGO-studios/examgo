@@ -38,6 +38,10 @@ export default defineConfig(({ mode }) => {
   return {
     plugins: [react(), securityHeaders(env.VITE_SUPABASE_URL)],
     optimizeDeps: { entries: ['index.html'] },
+    build: {
+      // font-src is 'self': an inlined data: font is refused, so fonts always ship as files.
+      assetsInlineLimit: (file: string) => /\.(woff2?|ttf|otf)$/.test(file) ? false : undefined,
+    },
     server: {
       // Generated documents and disposable database clusters are not application source.
       watch: { ignored: ['**/output/**', '**/*.local/**'] },

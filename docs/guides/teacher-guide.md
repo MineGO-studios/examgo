@@ -65,6 +65,8 @@ In Arabic, New paper (both kinds of paper, setup, review, saving and downloads),
 
 Save editable work when the selected workflow supports it. **My papers** distinguishes editable configurations from finalized papers. Finalized papers preserve captured content; later bank changes do not rewrite them. Simple-paper downloads do not create the same immutable finalized history as structured workflows.
 
+In New paper, **Generate** first shows the Word files themselves under **Check the Word files**, switching between the student paper and the answer key; nothing downloads until you select **Download both files**. The preview is drawn from the exact files you download, but Word may break pages slightly differently. It is not stored: generating again rebuilds it.
+
 Prepare and download the **Student paper** and **Answer key** from the same reviewed or finalized version. Check that both files arrived. A partial download is not a successful pair; retry the failed file through the supported action.
 
 The [shared paper-format rules](../reference/paper-format-rules.md) place grade and school in their exchanged header positions and omit individual point marks from student papers. Section totals and answer-key scoring remain. These rules are implemented in the current uncommitted candidate; the older hosted Preview has not yet been updated. Confirm the exact build before expecting the revised output.

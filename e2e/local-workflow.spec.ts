@@ -105,8 +105,10 @@ test('failed save preserves reviewed intent; retry saves and paired export retri
   await expect(page.getByRole('status').last()).toContainText('Exam draft saved')
   expect(state.tables.exam_drafts).toHaveLength(1)
   expect(state.tables.exam_draft_questions).toHaveLength(2)
-  const studentPending = page.waitForEvent('download')
   await page.getByRole('button', { name: 'Generate Exam + Answer Key', exact: true }).click()
+  await expect(page.getByRole('region', { name: 'Check the Word files' })).toBeVisible()
+  const studentPending = page.waitForEvent('download')
+  await page.getByRole('button', { name: 'Download both files', exact: true }).click()
   const first = await studentPending
   const student = await readFile((await first.path())!)
   await expect(page.getByRole('button', { name: 'Retry failed download', exact: true })).toBeVisible()

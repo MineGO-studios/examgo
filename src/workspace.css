@@ -889,3 +889,46 @@
   align-items: center;
 }
 
+
+/* ---- Word file preview (D8.8): the exact files, before download ---- */
+.word-preview {
+  display: grid;
+  gap: var(--eg-space-2);
+  border: 1px solid var(--eg-color-border);
+  border-radius: var(--eg-radius-lg);
+  background: var(--eg-color-surface);
+  padding: var(--eg-space-3) var(--eg-space-4) var(--eg-space-4);
+}
+
+.word-preview-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--eg-space-3);
+}
+
+.word-preview-head h4 {
+  margin: 0;
+  font-size: var(--eg-font-size-md);
+}
+
+.word-preview-frame {
+  max-block-size: min(80vh, 70rem);
+  overflow: auto;
+  border-radius: var(--eg-radius-md);
+  background: var(--eg-color-surface-subtle);
+  padding: var(--eg-space-2);
+}
+
+.word-preview-frame:focus-visible {
+  outline: 3px solid var(--eg-color-focus);
+  outline-offset: 2px;
+}
+
+.word-preview-download {
+  display: inline-flex;
+  align-items: center;
+  justify-self: start;
+  gap: var(--eg-space-2);
+}
