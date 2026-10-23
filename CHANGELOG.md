@@ -13,6 +13,7 @@ Notable ExamGO changes are recorded here. Version labels identify development ch
 
 ### Added
 
+- Translate Question banks into Arabic: the bank page and question list, the question form for every type with its validation messages, passages and linked exercises, and file import with its column questions, readable question checks, problems and remedies, totals and history. Question content keeps the language it was written in (MIN-270, part of MIN-56).
 - Translate the New paper journey into Arabic: the paper choices, setup and its error summary and validation messages, the review controls, saving and downloads, the preset paper and complete exercise pages with their coverage tables, and the Iraqi exercises builder for saved drafts. The paper and answer key stay in English, and names and references are isolated so they read correctly in Arabic sentences (MIN-269, part of MIN-56).
 - Move the selection number to **Settings › Question selection**. Each account starts with its own number, so teachers with the same settings get different papers; the number is kept on the device for that account until account settings exist (MIN-261). The per-paper field is removed.
 - Rename **Use an approved exercise** to **Use a preset exam paper made by MineGO**, and remove **Iraqi exercises and writing** from New paper (saved drafts still open from My papers). Remove the question-pages choice; papers fit on two pages, and a note appears only past that.

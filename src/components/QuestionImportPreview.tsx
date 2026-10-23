@@ -15,75 +15,87 @@ import {
   type StagedImportSummary, type StagedReviewPage,
 } from '../lib/questionImportRepository'
 import { teacherErrorMessage } from '../lib/safeErrorDetails'
-import { QUESTION_TYPE_LABELS_EN } from '../lib/questionTypeLabels'
+import { questionTypeLabel } from '../lib/questionTypeLabels'
+import { useI18n } from '../lib/i18n'
+import { localizeAppMessage } from '../lib/appMessages'
+import { formatDate } from '../lib/localize'
+import { IMPORT_STRINGS } from './QuestionImportPreview.strings'
+
+type Strings = (typeof IMPORT_STRINGS)['en']
+/** Status lines resolve at render time so a language switch translates the current one. */
+type Message = (s: Strings) => string
 
 type Format = ImportFileFormat
-const FORMAT_LABELS: Record<Format, string> = {
-  legacy: 'ExamGO multiple-choice CSV (legacy template)', papers: 'Papers master catalogue CSV',
-  examgo: 'ExamGO versioned question file (JSON)', teacher: 'Other CSV: confirm which column holds each field',
+const FORMAT_LABELS: Record<Format, (s: Strings) => string> = {
+  legacy: (s) => s.formatLegacy, papers: (s) => s.formatPapers,
+  examgo: (s) => s.formatExamgo, teacher: (s) => s.formatTeacher,
 }
 /** Readable questions the teacher answers for an unfamiliar or ambiguous CSV. */
-const FIELDS: Array<{ key: keyof TeacherCsvMapping; label: string; required?: boolean }> = [
-  { key: 'externalId', label: 'Which column contains each question ID?', required: true },
-  { key: 'unit', label: 'Which column contains the unit (or unit tags such as 1,2)?', required: true },
-  { key: 'prompt', label: 'Which column contains the question text?', required: true },
-  { key: 'questionType', label: 'Which column contains the question type?', required: true },
-  { key: 'lesson', label: 'Which column contains the lesson?' },
-  { key: 'difficulty', label: 'Which column contains the difficulty?' },
-  { key: 'answer', label: 'Which column contains the answer?' },
-  { key: 'correctOptionLabel', label: 'Which column contains the correct option letter?' },
+const FIELDS: Array<{ key: keyof TeacherCsvMapping; label: (s: Strings) => string; required?: boolean }> = [
+  { key: 'externalId', label: (s) => s.fieldId, required: true },
+  { key: 'unit', label: (s) => s.fieldUnit, required: true },
+  { key: 'prompt', label: (s) => s.fieldPrompt, required: true },
+  { key: 'questionType', label: (s) => s.fieldType, required: true },
+  { key: 'lesson', label: (s) => s.fieldLesson },
+  { key: 'difficulty', label: (s) => s.fieldDifficulty },
+  { key: 'answer', label: (s) => s.fieldAnswer },
+  { key: 'correctOptionLabel', label: (s) => s.fieldCorrect },
   ...(['A', 'B', 'C', 'D', 'E', 'F'] as const).map((letter) => ({
-    key: `option${letter}` as keyof TeacherCsvMapping, label: `Which column contains option ${letter}?`,
+    key: `option${letter}` as keyof TeacherCsvMapping, label: (s: Strings) => s.fieldOption(letter),
   })),
-  { key: 'marks', label: 'Which column contains source marks? (kept as evidence; exam marks are set when composing)' },
-  { key: 'groupContext', label: 'Which column contains linked-group details (JSON)?' },
-  { key: 'structuredContent', label: 'Which column contains typed question content (JSON)?' },
-  { key: 'structuredAnswer', label: 'Which column contains the typed answer (JSON)?' },
+  { key: 'marks', label: (s) => s.fieldMarks },
+  { key: 'groupContext', label: (s) => s.fieldGroup },
+  { key: 'structuredContent', label: (s) => s.fieldContent },
+  { key: 'structuredAnswer', label: (s) => s.fieldTypedAnswer },
 ]
+
+const DIFFICULTY_AR: Record<string, string> = { easy: 'سهلة', medium: 'متوسطة', hard: 'صعبة' }
 
 function errorMessage(error: unknown): string {
   return teacherErrorMessage(error, 'Import preview failed.')
 }
 
 function ReviewValues({ value }: { value: unknown }) {
-  return <pre style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere', maxHeight: 300, overflow: 'auto' }}>
-    {value === null || value === undefined ? 'Not supplied' : typeof value === 'string' ? value : JSON.stringify(value, null, 2)}
+  const s = IMPORT_STRINGS[useI18n().language]
+  return <pre dir="ltr" style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere', maxHeight: 300, overflow: 'auto' }}>
+    {value === null || value === undefined ? s.notSupplied : typeof value === 'string' ? value : JSON.stringify(value, null, 2)}
   </pre>
 }
-
-const TYPE_LABELS: Record<string, string> = QUESTION_TYPE_LABELS_EN
 
 function QuestionInterpretation({ question, bankId, plan, diagnostics }: {
   question: StagedInterchangeQuestion; bankId: string;
   plan?: ReturnType<typeof prepareCataloguePromotion>; diagnostics: boolean
 }) {
-  const result = reviewImportQuestion(question, bankId, plan)
-  const readable = describeImportedQuestion(question, result)
-  return <details><summary>{question.catalogueId} · {TYPE_LABELS[question.type] ?? question.type} · Unit {question.displayUnit} · {result.heldForReview ? 'Needs review' : 'Ready to confirm'}</summary>
+  const { language } = useI18n()
+  const s = IMPORT_STRINGS[language]
+  const tm = (text: string) => localizeAppMessage(language, text)
+  const result = reviewImportQuestion(question, bankId, plan, language)
+  const readable = describeImportedQuestion(question, result, language)
+  return <details><summary><bdi>{question.catalogueId}</bdi> · {questionTypeLabel(question.type, language)} · {s.unit(String(question.displayUnit))} · {result.heldForReview ? s.needsReview : s.readyToConfirm}</summary>
     {readable.context.map((group, index) => <div key={index} className="import-context">
-      <strong>{group.label}</strong>{group.instruction && <p dir="auto">{group.instruction}</p>}
+      <strong><bdi>{group.label}</bdi></strong>{group.instruction && <p dir="auto">{group.instruction}</p>}
       {group.passage && <blockquote dir="auto">{group.passage}</blockquote>}
     </div>)}
-    <p dir="auto"><strong>Question:</strong> {readable.prompt || 'Question text is missing.'}</p>
+    <p><strong>{s.question}</strong> <bdi>{readable.prompt || s.textMissing}</bdi></p>
     {readable.details.length > 0 && <ul>{readable.details.map((line, index) => <li key={index} dir="auto">{line}</li>)}</ul>}
-    <p dir="auto"><strong>Correct answer:</strong> {readable.answer ?? 'The answer could not be read and needs review before this question can be added.'}</p>
-    <p>Lesson {question.lesson ?? 'not supplied'} · {question.difficulty}{question.difficultyProvisional ? ' (provisional)' : ''} difficulty · exam marks are assigned when composing.
-      {question.groupIds.length > 0 && !plan && ' Linked questions are checked together; use Check saved questions for the complete group check.'}</p>
-    {result.messages.length > 0 && <div role="note" aria-label={`Problems for ${question.catalogueId}`}>
-      <strong>{result.messages.length === 1 ? 'Problem' : 'Problems'} in {question.catalogueId}</strong>
+    <p><strong>{s.correctAnswer}</strong> {readable.answer === null ? s.answerUnreadable : <bdi>{readable.answer}</bdi>}</p>
+    <p>{s.lessonLine(question.lesson ?? s.notSuppliedLower, language === 'ar' ? DIFFICULTY_AR[question.difficulty] ?? question.difficulty : question.difficulty, Boolean(question.difficultyProvisional))}
+      {question.groupIds.length > 0 && !plan && s.linkedChecked}</p>
+    {result.messages.length > 0 && <div role="note" aria-label={s.problemsFor(question.catalogueId)}>
+      <strong>{s.problemsIn(result.messages.length, question.catalogueId)}</strong>
       <ul>{result.messages.map((message, index) => {
         // Adapter codes such as group-incomplete get the teacher explanation; conversion causes are already sentences.
-        const readable = /^[a-z]+(-[a-z]+)+$/.test(message.cause) ? readableImportIssue(message.cause) : { problem: message.cause, remedy: message.remedy }
-        return <li key={index}>{readable.problem}<br /><em>What to do:</em> {readable.remedy}</li>
+        const readable = /^[a-z]+(-[a-z]+)+$/.test(message.cause) ? readableImportIssue(message.cause, language) : { problem: tm(message.cause), remedy: message.remedy }
+        return <li key={index}>{readable.problem}<br /><em>{s.whatToDo}</em> {readable.remedy}</li>
       })}</ul>
     </div>}
-    {diagnostics && <details><summary>Diagnostics: original and mapped values</summary>
+    {diagnostics && <details><summary>{s.diagnosticsValues}</summary>
       <dl>{Object.entries(result.original).map(([field, value]) => <div key={field}>
         <dt>{field}</dt><dd><ReviewValues value={value} /></dd>
       </div>)}</dl>
-      <h5>Mapped content</h5><ReviewValues value={result.content} />
-      <h5>Mapped answer</h5><ReviewValues value={result.answer} />
-      <p>Group IDs: {question.groupIds.join(', ') || 'None'} · {question.groupCompleteness || 'completeness not specified'}.</p>
+      <h5>{s.mappedContent}</h5><ReviewValues value={result.content} />
+      <h5>{s.mappedAnswer}</h5><ReviewValues value={result.answer} />
+      <p>{s.groupIds(question.groupIds.join(', ') || s.none, question.groupCompleteness || s.completenessUnknown)}</p>
     </details>}
   </details>
 }
@@ -99,6 +111,9 @@ function parse(text: string, format: Format, mapping: Partial<TeacherCsvMapping>
 export default function QuestionImportPreview({ bankId, bankName, onCommitted }: {
   bankId: string; bankName: string; onCommitted?: () => void
 }) {
+  const { language } = useI18n()
+  const s = IMPORT_STRINGS[language]
+  const tm = (text: string) => localizeAppMessage(language, text)
   const [format, setFormat] = useState<Format>('teacher')
   const [file, setFile] = useState<File | null>(null)
   const [text, setText] = useState('')
@@ -110,7 +125,9 @@ export default function QuestionImportPreview({ bankId, bankName, onCommitted }:
   const [namespace, setNamespace] = useState('teacher-import')
   const [mappingConfirmed, setMappingConfirmed] = useState(false)
   const [document, setDocument] = useState<QuestionInterchangeV1 | null>(null)
-  const [status, setStatus] = useState('Choose a question file to start.')
+  const [status, setStatusMessage] = useState<Message>(() => (t: Strings) => t.start)
+  const say = (next: Message) => setStatusMessage(() => next)
+  const setStatus = (text: string) => setStatusMessage(() => () => text)
   const [busy, setBusy] = useState(false)
   const [savedImports, setSavedImports] = useState<StagedImportSummary[]>([])
   const [savedError, setSavedError] = useState('')
@@ -173,7 +190,7 @@ export default function QuestionImportPreview({ bankId, bankName, onCommitted }:
     setMappingConfirmed(false)
     if (!selected) return
     if (selected.size > 32 * 1024 * 1024) {
-      setStatus('File exceeds the 32 MiB intake limit.')
+      say((t) => t.tooLarge)
       setFile(null)
       return
     }
@@ -183,11 +200,11 @@ export default function QuestionImportPreview({ bankId, bankName, onCommitted }:
       const found = recognizeImportFile(selected.name, loaded)
       setRecognized(found.format); setExample(found.example); setNeedsChoice([...new Set([...found.missing, ...found.ambiguous])])
       applyFormat(found.format, loaded)
-      setStatus(found.format === 'teacher'
-        ? `Recognised: ${found.label}. Answer the column questions below, then confirm.`
-        : `Recognised: ${found.label}. Preview its questions before anything is saved.`)
+      const label = FORMAT_LABELS[found.format]
+      say((t) => found.format === 'teacher' ? t.recognisedTeacher(label(t)) : t.recognisedOther(label(t)))
     } catch (error) {
-      setStatus(`This file could not be recognised as a supported question file: ${errorMessage(error)} Nothing was saved.`)
+      const reason = errorMessage(error)
+      say((t) => t.unrecognised(tm(reason)))
       setFile(null)
     }
   }
@@ -203,8 +220,8 @@ export default function QuestionImportPreview({ bankId, bankName, onCommitted }:
       }
       const parsed = parse(text, format, mapping, namespace, mappingConfirmed)
       setDocument(parsed)
-      setStatus(`${parsed.questions.length} questions read from the file. Check the questions and problems before saving for review.`)
-    } catch (error) { setStatus(`The file could not be checked: ${errorMessage(error)} Correct the file or column choices and check again. Nothing was saved.`) }
+      say((t) => t.read(parsed.questions.length))
+    } catch (error) { const reason = errorMessage(error); say((t) => t.checkFailed(tm(reason))) }
   }
 
   const stage = async (): Promise<void> => {
@@ -212,27 +229,27 @@ export default function QuestionImportPreview({ bankId, bankName, onCommitted }:
     setBusy(true)
     try {
       const result = await stageQuestionInterchange(document, new Uint8Array(await file.arrayBuffer()), bankId,
-        (done, total) => setStatus(`Saving private intake batch ${done}/${total}…`))
+        (done, total) => say((t) => t.savingBatch(done, total)))
       setSavedImports(await listStagedImportsForBank(bankId))
       setSavedError('')
       setSelectedImportId(result.importId); setReviewPage(1)
       setCommitImportId(result.importId)
       const saved = await previewStagedCatalogue(result.importId, bankId)
       setSavedTotals(saved.totals)
-      setStatus(`${result.rows} rows saved privately for review; ${result.inserted} new, ${result.unchanged} already saved. Confirm the ready questions below before using them in papers.`)
+      say((t) => t.staged(result.rows, result.inserted, result.unchanged))
     } catch (error) { setStatus(errorMessage(error)) }
     finally { setBusy(false) }
   }
 
   const reopenConversion = async (importId: string): Promise<void> => {
     setBusy(true); setCommitImportId(''); setDocument(null); setCommitReport(null)
-    setStatus('Loading saved questions and checking linked passages and exercises…')
+    say((t) => t.loadingSaved)
     try {
       const saved = await previewStagedCatalogue(importId, bankId)
       setDocument(saved.document); setFile(null)
       setSavedTotals(saved.totals); setPreviewPage(1)
       setCommitImportId(importId); setSelectedImportId(importId); setReviewPage(1)
-      setStatus(`${saved.totals.added} questions can be added; ${saved.totals.unchanged} are already saved. ${saved.plan.reviewRows} remain saved for review.`)
+      say((t) => t.reopened(saved.totals.added, saved.totals.unchanged, saved.plan.reviewRows))
     } catch (error) { setStatus(errorMessage(error)) }
     finally { setBusy(false) }
   }
@@ -240,13 +257,13 @@ export default function QuestionImportPreview({ bankId, bankName, onCommitted }:
   const commit = async (): Promise<void> => {
     if (!commitImportId) return
     setBusy(true); setCommitReport(null)
-    setStatus('Checking saved questions before adding them to the bank…')
+    say((t) => t.checkingBeforeAdd)
     try {
       const report = await commitStagedCatalogue(commitImportId, bankId,
-        (done, total) => setStatus(`Adding question groups ${done}/${total}…`))
+        (done, total) => say((t) => t.addingGroups(done, total)))
       setCommitReport(report)
       onCommitted?.()
-      setStatus(`${report.readyRows} bank questions confirmed: ${report.inserted} added, ${report.unchanged} already saved. ${report.reviewRows} source rows remain for review. Assign exam marks when composing a paper.`)
+      say((t) => t.committed(report.readyRows, report.inserted, report.unchanged, report.reviewRows))
     } catch (error) { setStatus(errorMessage(error)) }
     finally { setBusy(false) }
   }
@@ -262,8 +279,8 @@ export default function QuestionImportPreview({ bankId, bankName, onCommitted }:
   const savePreset = (): void => {
     try {
       localStorage.setItem(`examgo-intake-mapping:${namespace}`, JSON.stringify(mapping))
-      setStatus(`Column choices saved on this device for ${namespace}.`)
-    } catch { setStatus('Could not save column choices on this device. Check browser storage access and try again.') }
+      say((t) => t.choicesSaved(namespace))
+    } catch { say((t) => t.choicesNotSaved) }
   }
   const loadPreset = (): void => {
     setMappingConfirmed(false)
@@ -273,7 +290,7 @@ export default function QuestionImportPreview({ bankId, bankName, onCommitted }:
       if (!saved) throw new Error('No column choices are saved for this source name. Choose each column below first.')
       const loaded = parseStoredTeacherCsvMapping(saved, headers)
       setMapping(loaded)
-      setStatus('Saved column choices loaded. Check the examples and confirm them for this file.')
+      say((t) => t.choicesLoaded)
     } catch (error) { setStatus(errorMessage(error)) }
   }
 
@@ -300,139 +317,135 @@ export default function QuestionImportPreview({ bankId, bankName, onCommitted }:
 
   return <section className="csv-import question-file-import" aria-labelledby="staged-import-title">
     <div>
-      <h3 id="staged-import-title">Import file</h3>
-      <p className="field-help">CSV or ExamGO JSON files. You check every question before anything is added to the bank.</p>
+      <h3 id="staged-import-title">{s.title}</h3>
+      <p className="field-help">{s.lede}</p>
     </div>
-    <label>Question file
+    <label>{s.file}
       <input type="file" accept=".csv,text/csv,.json,application/json"
         disabled={busy} onChange={(event) => void changeFile(event)} />
     </label>
-    {file && recognized && <label>Recognised template (change only if this is wrong)
+    {file && recognized && <label>{s.recognisedTemplate}
       <select value={format} disabled={busy} onChange={(event) => {
-        try { applyFormat(event.target.value as Format, text); setStatus('Template changed. Preview again before saving.') }
+        try { applyFormat(event.target.value as Format, text); say((t) => t.templateChanged) }
         catch (error) { setStatus(errorMessage(error)) }
         setCommitImportId(''); setCommitReport(null)
       }}>
         {(Object.keys(FORMAT_LABELS) as Format[]).map((value) => <option key={value} value={value}>
-          {FORMAT_LABELS[value]}{value === recognized ? ' (recognised)' : ''}</option>)}
+          {FORMAT_LABELS[value](s)}{value === recognized ? s.recognisedSuffix : ''}</option>)}
       </select>
     </label>}
-    {file && format !== 'papers' && format !== 'examgo' && <label>Source name (identifies this file for safe retries)
+    {file && format !== 'papers' && format !== 'examgo' && <label>{s.sourceName}
       <input value={namespace} maxLength={100} disabled={busy} onChange={(event) => {
         setNamespace(event.target.value); setDocument(null); setMappingConfirmed(false)
       }} />
     </label>}
     {format === 'teacher' && headers.length > 0 && <fieldset disabled={busy}>
-      <legend>Which column contains each field?</legend>
-      <p>Required questions are marked *. Check each example value from the first row.</p>
+      <legend>{s.whichColumn}</legend>
+      <p>{s.requiredNote}</p>
       <div className="form-grid">
-        {FIELDS.map(({ key, label, required }) => <label key={key}>{label}{required ? ' *' : ''}
-          {needsChoice.includes(key) && !mapping[key] && <strong> · Needs your choice</strong>}
+        {FIELDS.map(({ key, label, required }) => <label key={key}>{label(s)}{required ? ' *' : ''}
+          {needsChoice.includes(key) && !mapping[key] && <strong>{s.needsChoice}</strong>}
           <select value={mapping[key] ?? ''} onChange={(event) => {
             setMapping((current) => ({ ...current, [key]: event.target.value || undefined }))
             setMappingConfirmed(false); setDocument(null)
           }}>
-            <option value="">Not in this file</option>
+            <option value="">{s.notInFile}</option>
             {headers.map((header) => <option key={header} value={header}>{header}</option>)}
           </select>
-          {mapping[key] && <small>Example: {example[mapping[key]!] || '(empty in the first row)'}</small>}
+          {mapping[key] && <small>{s.example(example[mapping[key]!] || s.emptyFirstRow)}</small>}
         </label>)}
       </div>
-      <button type="button" className="button-secondary" onClick={savePreset}>Save column choices on this device</button>{' '}
-      <button type="button" className="button-secondary" onClick={loadPreset}>Load saved column choices</button>
+      <button type="button" className="button-secondary" onClick={savePreset}>{s.saveChoices}</button>{' '}
+      <button type="button" className="button-secondary" onClick={loadPreset}>{s.loadChoices}</button>
       <label className="checkbox-field"><input type="checkbox" checked={mappingConfirmed}
         onChange={(event) => { setMappingConfirmed(event.target.checked); setDocument(null) }} />
-        I checked these columns and examples for this file</label>
+        {s.confirmColumns}</label>
     </fieldset>}
     <button type="button" disabled={!file || busy || (format === 'teacher' && !mappingConfirmed)} onClick={preview}>
-      Check imported questions
+      {s.check}
     </button>
     {document && counts && <div>
-      <p>{document.questions.length} questions read · {counts.grouped} linked to passages or exercises · {counts.reviewIssues} need attention. Check the details and totals below.</p>
+      <p>{s.readSummary(document.questions.length, counts.grouped, counts.reviewIssues)}</p>
       {conversion && <>
-        {conversion.error && <p role="alert">{conversion.error}</p>}
-        {conversion.plan && <p>{conversion.plan.readyRows} questions pass the supported question and linked-exercise checks;
-          {' '}{conversion.plan.reviewRows} remain for review with their linked questions.
-          {' '}Nothing is added to the bank until you save for review and confirm the ready questions.</p>}
-        {conversion.reasons.length > 0 && <details><summary>Why questions need review</summary>
+        {conversion.error && <p role="alert">{tm(conversion.error)}</p>}
+        {conversion.plan && <p>{s.passSummary(conversion.plan.readyRows, conversion.plan.reviewRows)}</p>}
+        {conversion.reasons.length > 0 && <details><summary>{s.whyReview}</summary>
           <ul>{conversion.reasons.slice(0, 5).map(([reason, count]) =>
-            <li key={reason}>{count}: {reason}</li>)}</ul>
+            <li key={reason}>{count}: {tm(reason)}</li>)}</ul>
         </details>}
       </>}
       {totals && <div>
-        <h4>{commitReport ? 'Final import totals' : 'Planned import totals'}</h4>
-        <p>Added {totals.added} · Updated {totals.updated} · Unchanged {totals.unchanged} · Duplicate {totals.duplicate} · Rejected {totals.rejected} · Review {totals.review}</p>
-        <p>This import does not overwrite existing source questions. Exact saved retries count as unchanged.
-          {' '}Repeated question IDs inside a file prevent saving it. Conflicting saved questions stop the affected passage or exercise before it is added.
-          {!commitReport && ' Planned totals may change after checking the saved questions and complete linked exercises.'}</p>
-        {commitImportId && <p>Retry uses your preserved file and confirmed column choices. Already added questions are not added twice. Unresolved questions stay saved for review.</p>}
+        <h4>{commitReport ? s.finalTotals : s.plannedTotals}</h4>
+        <p>{s.totalsLine(totals)}</p>
+        <p>{s.totalsNote}{!commitReport && s.plannedNote}</p>
+        {commitImportId && <p>{s.retryNote}</p>}
       </div>}
-      <h4>Check imported questions</h4>
-      <p>Page {previewPage} of {Math.ceil(document.questions.length / 20)} · review every row before adding questions.</p>
+      <h4>{s.check}</h4>
+      <p>{s.previewPage(previewPage, Math.ceil(document.questions.length / 20))}</p>
       <div className="recovery-actions">
-        <button type="button" disabled={busy || previewPage === 1} onClick={() => setPreviewPage((page) => page - 1)}>Previous preview rows</button>
-        <button type="button" disabled={busy || previewPage * 20 >= document.questions.length} onClick={() => setPreviewPage((page) => page + 1)}>Next preview rows</button>
+        <button type="button" disabled={busy || previewPage === 1} onClick={() => setPreviewPage((page) => page - 1)}>{s.previousRows}</button>
+        <button type="button" disabled={busy || previewPage * 20 >= document.questions.length} onClick={() => setPreviewPage((page) => page + 1)}>{s.nextRows}</button>
       </div>
       <ol start={(previewPage - 1) * 20 + 1}>{document.questions.slice((previewPage - 1) * 20, previewPage * 20).map((question) => <li key={question.catalogueId}>
         <QuestionInterpretation question={question} bankId={bankId} plan={conversion?.plan ?? undefined} diagnostics={showDiagnostics} />
       </li>)}</ol>
       <button type="button" disabled={busy || !file} onClick={() => void stage()}>
-        Save privately for review
+        {s.savePrivately}
       </button>
       {commitImportId && conversion?.plan && <div className="recovery-actions">
-        <p>Adding these questions keeps one shared identity in this bank and its highest-tag Unit collection. Review records remain saved. Questions stay private.</p>
+        <p>{s.commitNote}</p>
         <button type="button" disabled={busy || conversion.plan.readyRows === 0} onClick={() => void commit()}>
-          Confirm {conversion.plan.readyRows} ready questions in bank
+          {s.confirmReady(conversion.plan.readyRows)}
         </button>
       </div>}
-      {commitReport && showDiagnostics && <button type="button" className="button-secondary" onClick={downloadReport}>Download import report (diagnostics)</button>}
+      {commitReport && showDiagnostics && <button type="button" className="button-secondary" onClick={downloadReport}>{s.downloadReport}</button>}
     </div>}
-    <p role="status" aria-live="polite">{status}</p>
+    <p role="status" aria-live="polite">{tm(status(s))}</p>
     <div className="recovery-actions">
-      {diagnostics === 'hidden' && <button type="button" className="button-quiet diagnostics-link" onClick={requestDiagnostics}>Show diagnostics (developers and authorized reviewers)</button>}
-      {diagnostics === 'checking' && <p role="status">Checking reviewer access…</p>}
-      {diagnostics === 'restricted' && <p role="status">Diagnostics are restricted to developers and authorized MineGO reviewers. Original source values are preserved for their review.</p>}
-      {showDiagnostics && <button type="button" className="button-secondary" onClick={() => setDiagnostics('hidden')}>Hide diagnostics</button>}
+      {diagnostics === 'hidden' && <button type="button" className="button-quiet diagnostics-link" onClick={requestDiagnostics}>{s.showDiagnostics}</button>}
+      {diagnostics === 'checking' && <p role="status">{s.checkingAccess}</p>}
+      {diagnostics === 'restricted' && <p role="status">{s.restricted}</p>}
+      {showDiagnostics && <button type="button" className="button-secondary" onClick={() => setDiagnostics('hidden')}>{s.hideDiagnostics}</button>}
     </div>
-    <h4>Past imports</h4>
-    {savedError && <p role="alert">{savedError}</p>}
-    {!savedError && savedImports.length === 0 && <p className="field-help">None yet.</p>}
+    <h4>{s.pastImports}</h4>
+    {savedError && <p role="alert">{tm(savedError)}</p>}
+    {!savedError && savedImports.length === 0 && <p className="field-help">{s.noneYet}</p>}
     {savedImports.length > 0 && <ul>{savedImports.map((item) => <li key={item.id}>
-      <strong>{readableImportSource(item.sourceNamespace)}</strong> · imported {new Date(item.createdAt).toLocaleDateString()} · {item.stagedRows} of {item.expectedRows} rows saved for review
-      {item.stagedRows === item.expectedRows ? '' : ' · Incomplete: choose the same file again to finish saving it'}
-      {showDiagnostics && <small> · Source path: {item.sourceNamespace} · Import ID: {item.id}</small>}
+      <strong><bdi>{readableImportSource(item.sourceNamespace, language)}</bdi></strong> · {s.importedLine(formatDate(language, item.createdAt), item.stagedRows, item.expectedRows)}
+      {item.stagedRows === item.expectedRows ? '' : s.incomplete}
+      {showDiagnostics && <small>{s.sourcePath(item.sourceNamespace, item.id)}</small>}
       {' '}<button type="button" className="button-secondary" onClick={() => {
         setSelectedImportId(item.id); setReviewPage(1); setReview(null)
-      }}>Review source rows</button>
+      }}>{s.reviewRows}</button>
       {' '}<button type="button" className="button-secondary" disabled={busy || item.stagedRows !== item.expectedRows}
-        onClick={() => void reopenConversion(item.id)}>Check saved questions</button>
+        onClick={() => void reopenConversion(item.id)}>{s.checkSaved}</button>
     </li>)}</ul>}
     {selectedImportId && <section aria-labelledby="saved-intake-rows-title">
-      <h4 id="saved-intake-rows-title">Source rows for review</h4>
-      <p>The original file rows are preserved. Rows that need review stay here until they can be added safely.</p>
-      {reviewError && <p role="alert">{reviewError}</p>}
+      <h4 id="saved-intake-rows-title">{s.rowsTitle}</h4>
+      <p>{s.rowsLede}</p>
+      {reviewError && <p role="alert">{tm(reviewError)}</p>}
       {review && <>
-        <p>Page {review.page} of {Math.max(1, Math.ceil(review.total / review.pageSize))} · {review.total} rows</p>
+        <p>{s.rowsPage(review.page, Math.max(1, Math.ceil(review.total / review.pageSize)), review.total)}</p>
         <div className="recovery-actions">
           <button type="button" className="button-secondary" disabled={reviewPage <= 1}
-            onClick={() => setReviewPage((current) => current - 1)}>Previous 20</button>
+            onClick={() => setReviewPage((current) => current - 1)}>{s.previous20}</button>
           <button type="button" className="button-secondary"
             disabled={reviewPage * review.pageSize >= review.total}
-            onClick={() => setReviewPage((current) => current + 1)}>Next 20</button>
+            onClick={() => setReviewPage((current) => current + 1)}>{s.next20}</button>
         </div>
         <ol start={(review.page - 1) * review.pageSize + 1}>{review.rows.map((row) => <li key={row.catalogueId}>
-          <strong>{row.catalogueId}</strong> · {TYPE_LABELS[row.type] ?? row.type} · Unit {row.displayUnit}
-          {row.unitTags.length > 1 && ` (tags ${row.unitTags.join(', ')})`}
-          {row.lesson && ` · Lesson ${row.lesson}`} · exam marks assigned when composing
-          <p>{row.prompt}</p>
-          {row.issues.length > 0 && <ul aria-label={`Problems for ${row.catalogueId}`}>{row.issues.map((issue) => {
-            const readable = readableImportIssue(issue)
-            return <li key={issue}>{readable.problem} <em>What to do:</em> {readable.remedy}</li>
+          <strong><bdi>{row.catalogueId}</bdi></strong> · {questionTypeLabel(row.type, language)} · {s.unit(String(row.displayUnit))}
+          {row.unitTags.length > 1 && s.tags(row.unitTags.join(', '))}
+          {row.lesson && s.lessonTag(row.lesson)}{s.marksLater}
+          <p dir="auto">{row.prompt}</p>
+          {row.issues.length > 0 && <ul aria-label={s.problemsFor(row.catalogueId)}>{row.issues.map((issue) => {
+            const readable = readableImportIssue(issue, language)
+            return <li key={issue}>{readable.problem} <em>{s.whatToDo}</em> {readable.remedy}</li>
           })}</ul>}
-          {showDiagnostics && <details><summary>Diagnostics: original and saved mapping</summary>
-            <h5>Original question, context, options and answer</h5><ReviewValues value={row.original} />
-            <h5>Saved normalized question and interpreted fields</h5><ReviewValues value={row.normalized} />
-            <p>Use Check saved questions above to compare the current conversion and complete group report before committing.</p>
+          {showDiagnostics && <details><summary>{s.diagnosticsMapping}</summary>
+            <h5>{s.originalHeading}</h5><ReviewValues value={row.original} />
+            <h5>{s.normalizedHeading}</h5><ReviewValues value={row.normalized} />
+            <p>{s.compareNote}</p>
           </details>}
         </li>)}</ol>
       </>}
