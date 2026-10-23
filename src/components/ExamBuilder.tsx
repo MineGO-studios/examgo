@@ -61,7 +61,8 @@ import type { QuestionBank } from '../lib/questionBankRepository'
 import { teacherErrorMessage } from '../lib/safeErrorDetails'
 import SimplePaperReview from './SimplePaperReview'
 import PaperProgress from './PaperProgress'
-import { ChoiceChips, FormGroup, Stepper, ToggleChipGroup } from './controls'
+import { ChoiceChips, FormGroup, IconButton, Stepper, ToggleChipGroup } from './controls'
+import { Icon } from './icons'
 import { ErrorSummary } from './ErrorSummary'
 import { readSelectionSeed } from '../lib/selectionSeed'
 import CouponProgress from './CouponProgress'
@@ -807,34 +808,13 @@ export default function ExamBuilder({
                     onChange={(event) => updateQuestionMarks(question.id, event.target.valueAsNumber)}
                     disabled={isBusy} />
                 </label>
-                <div className="review-question-actions">
-                  <button
-                    type="button"
-                    className="button-secondary"
-                    onClick={() => handleLock(question.id)}
-                    disabled={isBusy}
-                    aria-pressed={locked}
-                  >
-                    {locked ? s.unlock : s.lock}
-                  </button>
-                  <button
-                    type="button"
-                    className="button-secondary"
-                    onClick={() => handleReplace(question.id)}
-                    disabled={locked || isBusy}
-                  >
-                    {s.replace}
-                  </button>
-                  <button
-                    type="button"
-                    className="button-quiet"
-                    onClick={() => handleRemove(question.id)}
-                    disabled={
-                      locked || isBusy || review.length === 1
-                    }
-                  >
-                    {s.remove}
-                  </button>
+                <div className="review-question-actions icon-actions">
+                  <IconButton icon={locked ? 'lock' : 'unlock'} label={s.lockQ(index + 1)} pressed={locked}
+                    onClick={() => handleLock(question.id)} disabled={isBusy} />
+                  <IconButton icon="replace" label={s.replaceQ(index + 1)}
+                    onClick={() => handleReplace(question.id)} disabled={locked || isBusy} />
+                  <IconButton icon="delete" label={s.removeQ(index + 1)}
+                    onClick={() => handleRemove(question.id)} disabled={locked || isBusy || review.length === 1} />
                 </div>
               </>
             }}
@@ -917,18 +897,8 @@ export default function ExamBuilder({
                         —{' '}
                         {outcome.status === 'failed' ? s.blocked : s.requested}
                       </span>
-                      <button
-                        type="button"
-                        className={documentsReady ? undefined : 'button-secondary'}
-                        onClick={() =>
-                          void handleIndividualDownload(
-                            preparedDocument.kind,
-                          )
-                        }
-                        disabled={isBusy}
-                      >
-                        {preparedDocument.kind === 'exam' ? s.downloadExam : s.downloadKey}
-                      </button>
+                      <IconButton icon="download" label={preparedDocument.kind === 'exam' ? s.downloadExam : s.downloadKey}
+                        onClick={() => void handleIndividualDownload(preparedDocument.kind)} disabled={isBusy} />
                     </li>
                   )
                 })}
@@ -936,10 +906,11 @@ export default function ExamBuilder({
               {downloadResult.hasFailures && (
                 <button
                   type="button"
+                  className="button-with-icon"
                   onClick={() => void handleRetryFailedDownloads()}
                   disabled={isBusy}
                 >
-                  {s.retry}
+                  <Icon name="reload" />{s.retry}
                 </button>
               )}
             </section>

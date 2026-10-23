@@ -14,7 +14,8 @@ export function HelpTip({ topic, children }: { topic: string; children: ReactNod
   // Radix tooltips ignore touch by design, so a tap toggles the tip here; mouse and keyboard keep Radix behaviour.
   // Only the tap itself is handled here; afterwards Escape and a tap elsewhere close the tip as usual.
   const tap = useRef({ active: false, wasOpen: false })
-  return <Tooltip.Root open={open} onOpenChange={(next) => { if (!tap.current.active) setOpen(next) }}>
+  // Its own provider keeps the tip usable where no app-wide provider is mounted (tests, isolated views).
+  return <Tooltip.Provider delayDuration={300}><Tooltip.Root open={open} onOpenChange={(next) => { if (!tap.current.active) setOpen(next) }}>
     <Tooltip.Trigger asChild>
       <button type="button" className="help-tip" aria-label={language === 'ar' ? `المزيد عن ${topic}` : `More about ${topic}`}
         onPointerDown={(event) => { tap.current = { active: event.pointerType === 'touch', wasOpen: open } }}
@@ -34,7 +35,7 @@ export function HelpTip({ topic, children }: { topic: string; children: ReactNod
         <Tooltip.Arrow className="help-tip-arrow" width={10} height={5} />
       </Tooltip.Content>
     </Tooltip.Portal>
-  </Tooltip.Root>
+  </Tooltip.Root></Tooltip.Provider>
 }
 
 /** One provider for the app so tooltips share their open delay. */

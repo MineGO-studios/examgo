@@ -253,8 +253,15 @@
   position: relative;
 }
 
+.paper-plan-title {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--eg-space-1);
+}
+
 .paper-plan-summary {
   display: flex;
+  align-items: center;
   justify-content: space-between;
   gap: var(--eg-space-4);
   margin: 0 0 var(--eg-space-1);

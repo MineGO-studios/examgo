@@ -9,6 +9,8 @@ import {prepareExamQuestions,prepareReviewedExamDocuments} from '../lib/generate
 import {createQuestionReview,replaceQuestionInReview,toggleQuestionLock,type ReviewedQuestion} from '../lib/reviewQuestions'
 import {downloadPreparedDocument,requestBrowserDownload,type PreparedExamDocumentPair} from '../lib/documentDelivery'
 import WordFilePreview from './WordFilePreview'
+import { IconButton } from './controls'
+import { Icon } from './icons'
 import {DEFAULT_EXAM_SETTINGS,DEFAULT_EXAM_QUESTION_FILTERS,SIMPLE_QUESTION_TYPES,type ExamSettings} from '../types/exam'
 import GroupedPresetExams from './GroupedPresetExams'
 import SourceReference from './SourceReference'
@@ -91,7 +93,7 @@ export default function SimplePresetExams({ownerId,section}:{ownerId:string;sect
       </div>
       <button type="button" disabled={!pool.length} onClick={preview}>{s.previewPreset}</button>
     </fieldset>
-    {review&&<><h3>{s.reviewSelected}</h3><ol>{review.map(({question,locked})=>{
+    {review&&<><h3>{s.reviewSelected}</h3><ol>{review.map(({question,locked},index)=>{
       const source=pool.find(p=>p.question.id===question.id)!
       return <li key={question.id}><p dir="auto">{question.prompt}</p>
         <p>{question.type==='multiple-choice'?question.options.map(o=>o.text).join(' / '):question.type==='binary'?question.labelMode:s.shortAnswer}</p>
@@ -103,10 +105,10 @@ export default function SimplePresetExams({ownerId,section}:{ownerId:string;sect
         </details>
         <label>{s.questionMarks}<input name={`preset-mark-${question.id}`} type="number" min={1} max={20} disabled={busy||!!saved} value={question.marks}
           onChange={e=>{setReview(review.map(item=>item.question.id===question.id?{...item,question:{...item.question,marks:Number(e.target.value)}}:item));resetCapture()}}/></label>
-        <button type="button" disabled={busy||!!saved} aria-pressed={locked} onClick={()=>{setReview(toggleQuestionLock(review,question.id));resetCapture()}}>{locked?s.unlockQuestion:s.lockQuestion}</button>
-        <button type="button" disabled={busy||locked||!!saved} onClick={()=>{try{
+        <span className="icon-actions"><IconButton icon={locked?'lock':'unlock'} label={`${s.lockQuestion} ${index+1}`} pressed={locked} disabled={busy||!!saved} onClick={()=>{setReview(toggleQuestionLock(review,question.id));resetCapture()}}/>
+        <IconButton icon="replace" label={`${s.replaceQuestion} ${index+1}`} disabled={busy||locked||!!saved} onClick={()=>{try{
           setReview(replaceQuestionInReview(review,question.id,pool.map(p=>({...p.question,selectionKeys:p.selectionKeys,marks:question.marks})),settings,DEFAULT_EXAM_QUESTION_FILTERS));resetCapture()
-        }catch(e){setError(errorText(e))}}}>{s.replaceQuestion}</button>
+        }catch(e){setError(errorText(e))}}}/></span>
       </li>
     })}</ol><p>{s.total(s.marks(review.reduce((n,i)=>n+i.question.marks,0)))}</p>
       <button type="button" disabled={busy||!!saved} onClick={()=>void finalize()}>{s.finalizePreset}</button></>}
@@ -116,7 +118,7 @@ export default function SimplePresetExams({ownerId,section}:{ownerId:string;sect
       {documents&&<WordFilePreview documents={documents}/>}
       {documents&&(['exam','answerKey'] as const).map(kind=><button key={kind} type="button" onClick={()=>void downloadPreparedDocument(documents[kind],requestBrowserDownload).then(result=>{
         if(result.status==='failed')setError(result.error??'Download failed. Retry this document.')
-      })}>{kind==='exam'?s.downloadStudentExam:s.downloadAnswerKey}</button>)}
+      })} className="button-with-icon"><Icon name="download"/>{kind==='exam'?s.downloadStudentExam:s.downloadAnswerKey}</button>)}
     </div>}
     {historyList}
     </section>

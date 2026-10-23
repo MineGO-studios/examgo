@@ -156,6 +156,12 @@ export async function syntheticSignIn(page: Page, navigate = true, email = user.
   await page.getByRole('textbox', { name: 'Email', exact: true }).fill(email)
   await page.getByLabel('Password', { exact: false }).fill('Synthetic-password-123')
   await page.getByRole('button', { name: 'Sign in', exact: true }).last().click()
-  await expect(page.getByRole('heading', { name: 'New paper', exact: true })).toBeVisible()
-  if (expectBuilder) await expect(page.getByRole('spinbutton', { name: /Short answer 2 available/ })).toBeEnabled()
+  if (expectBuilder) {
+    await expect(page.getByRole('heading', { name: 'New paper', exact: true })).toBeVisible()
+    await expect(page.getByRole('spinbutton', { name: /Short answer 2 available/ })).toBeEnabled()
+  } else {
+    // An account without banks is moved to Question banks as soon as its empty bank list loads, so New paper
+    // may never be visible; wait for the signed-in workspace instead.
+    await expect(page.getByRole('navigation', { name: 'Teacher workspace' })).toBeVisible()
+  }
 }

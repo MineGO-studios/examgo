@@ -4,6 +4,7 @@ import {
   Cross2Icon,
   DownloadIcon,
   ExclamationTriangleIcon,
+  GlobeIcon,
   ListBulletIcon,
   LockClosedIcon,
   LockOpen1Icon,
@@ -45,6 +46,7 @@ const ICONS = {
   expand: ChevronDownIcon,
   desk: ViewGridIcon,
   list: ListBulletIcon,
+  language: GlobeIcon,
 } satisfies Record<string, IconComponent>
 
 export type IconName = keyof typeof ICONS

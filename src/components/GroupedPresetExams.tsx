@@ -7,6 +7,7 @@ import {finalizePresetGroupExam,getEligiblePresetGroups,getPresetGroupExams,prep
 import {DEFAULT_EXAM_SETTINGS} from '../types/exam'
 import {downloadPreparedDocument,requestBrowserDownload,type PreparedExamDocumentPair} from '../lib/documentDelivery'
 import WordFilePreview from './WordFilePreview'
+import { Icon } from './icons'
 import SourceReference from './SourceReference'
 import { PaperStamp } from './CouponProgress'
 import { ChoiceChips, Stepper } from './controls'
@@ -61,7 +62,7 @@ export default function GroupedPresetExams({ownerId}:{ownerId:string}){
       {documents&&<WordFilePreview documents={documents}/>}
       {documents&&(['exam','answerKey'] as const).map(kind=><button key={kind} type="button" onClick={()=>void downloadPreparedDocument(documents[kind],requestBrowserDownload).then(result=>{
         if(result.status==='failed')setError(result.error??'Download failed. Retry this captured document.')
-      })}>{kind==='exam'?s.downloadExerciseStudent:s.downloadExerciseKey}</button>)}
+      })} className="button-with-icon"><Icon name="download"/>{kind==='exam'?s.downloadExerciseStudent:s.downloadExerciseKey}</button>)}
     </div>}
     <h4>{s.savedExercises}</h4>{!history.length&&<p className="field-help">{s.none}</p>}
     <ul className="saved-presets">{history.map(paper=><li key={paper.id}><button type="button" className="button-secondary" disabled={busy} onClick={()=>{setSaved(paper);setDocuments(null);setError('')}}><bdi>{paper.settings.examTitle}</bdi> — {s.marks(paper.totalMarks)}, <bdi>{paper.savedAt}</bdi></button></li>)}</ul>

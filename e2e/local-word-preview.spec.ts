@@ -15,7 +15,7 @@ for (const width of [390, 1280]) {
     const state = await syntheticBackend(page)
     await syntheticSignIn(page)
     await page.getByRole('button', { name: 'Preview questions', exact: true }).click()
-    await page.getByRole('button', { name: 'Generate Exam + Answer Key', exact: true }).click()
+    await page.getByRole('button', { name: 'Generate', exact: true }).click()
 
     const preview = page.getByRole('region', { name: 'Check the Word files' })
     await expect(preview).toBeVisible()
@@ -50,7 +50,7 @@ test('the Word preview reads in Arabic in dark mode, with the paper left to righ
   await syntheticSignIn(page)
   await page.getByRole('button', { name: 'العربية' }).click()
   await page.getByRole('button', { name: 'معاينة الأسئلة', exact: true }).click()
-  await page.getByRole('button', { name: 'إنشاء الورقة ومفتاح الإجابة', exact: true }).click()
+  await page.getByRole('button', { name: 'إنشاء', exact: true }).click()
   const preview = page.getByRole('region', { name: 'تحقّق من ملفات Word' })
   await expect(preview).toBeVisible()
   await expect(page.getByRole('heading', { name: 'تحقّق من ملفات Word' })).toBeFocused()

@@ -1,5 +1,6 @@
 import { useEffect, useId, useRef, useState, type ChangeEvent, type DragEvent, type ReactNode } from 'react'
-import { Icon } from './icons'
+import * as Tooltip from '@radix-ui/react-tooltip'
+import { Icon, type IconName } from './icons'
 import { useI18n } from '../lib/i18n'
 import { CONTROLS_STRINGS } from './controls.strings'
 
@@ -88,6 +89,28 @@ export function Stepper({ label, hint, value, min = 0, max, disabled, onChange }
 }
 
 /** A titled group inside a form, quieter than a card. */
+/**
+ * An icon-only action (owner decision, D6.5): the icon carries the meaning, `label` is its accessible name,
+ * and the same text appears as a tooltip on hover and keyboard focus. The button stays 44px.
+ * Pass `pressed` for an on/off action such as Lock; the name stays the same and the state is announced.
+ */
+export function IconButton({ icon, label, onClick, disabled, pressed, quiet, lang }: {
+  icon: IconName; label: string; onClick: () => void; disabled?: boolean; pressed?: boolean; quiet?: boolean; lang?: string
+}) {
+  // Its own provider keeps the button usable where no app-wide tooltip provider is mounted (tests, isolated views).
+  return <Tooltip.Provider delayDuration={300}><Tooltip.Root>
+    <Tooltip.Trigger asChild>
+      <button type="button" className={`icon-button${quiet ? ' is-quiet' : ''}`} aria-label={label} lang={lang}
+        aria-pressed={pressed} disabled={disabled} onClick={onClick}>
+        <Icon name={icon} />
+      </button>
+    </Tooltip.Trigger>
+    <Tooltip.Portal>
+      <Tooltip.Content className="icon-button-tip" side="top" sideOffset={4} collisionPadding={12} lang={lang}>{label}</Tooltip.Content>
+    </Tooltip.Portal>
+  </Tooltip.Root></Tooltip.Provider>
+}
+
 /**
  * A file chooser in the interface language. The browser's own file button names itself in the browser's
  * language, so the native input stays underneath (visually hidden) for keyboard, screen readers and tests,

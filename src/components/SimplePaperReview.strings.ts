@@ -4,6 +4,7 @@ import { defineStrings, plural } from '../lib/localize'
 export const PAPER_REVIEW_STRINGS = defineStrings({
   en: {
     plan: 'Paper plan',
+    planHelp: 'Each colour is a question type, and its width is its share of the marks. Select a colour to see which questions it comes from.',
     questions: (n: number) => plural('en', n, { one: '{n} question', other: '{n} questions' }),
     marks: (n: number) => plural('en', n, { one: '{n} mark', other: '{n} marks' }),
     fixMarks: 'Fix question marks',
@@ -33,6 +34,7 @@ export const PAPER_REVIEW_STRINGS = defineStrings({
   },
   ar: {
     plan: 'خطة الورقة',
+    planHelp: 'كل لون نوع من الأسئلة، وعرضه حصته من الدرجات. اختر لونًا لترى الأسئلة التي يأتي منها.',
     questions: (n: number) => plural('ar', n, { one: 'سؤال واحد', two: 'سؤالان', few: '{n} أسئلة', many: '{n} سؤالًا', other: '{n} سؤال' }),
     marks: (n: number) => plural('ar', n, { one: 'درجة واحدة', two: 'درجتان', few: '{n} درجات', other: '{n} درجة' }),
     fixMarks: 'صحّح درجات الأسئلة',

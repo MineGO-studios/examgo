@@ -18,5 +18,5 @@ it('applies the unit and text filters before rendering the shared list',()=>{
 })
 it('preserves authoring actions for personal banks only',()=>{
  const html=renderToStaticMarkup(<QuestionBankBrowser {...props} onAction={()=>{}} actionLabel={()=>'Edit'} />)
- expect(html).toContain('ready for new papers');expect(html).toContain('>Edit</button>')
+ expect(html).toContain('ready for new papers');expect(html).toMatch(/class="icon-button" aria-label="Edit: /)
 })

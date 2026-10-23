@@ -6,6 +6,7 @@ import { PaperStamp } from './CouponProgress'
 import { useI18n } from '../lib/i18n'
 import { PAPER_REVIEW_STRINGS } from './SimplePaperReview.strings'
 import PaperPlanBar from './PaperPlanBar'
+import { IconButton } from './controls'
 import { paperPlanGroups } from '../lib/paperPlan'
 
 const markLabel = (marks: number): string => `${marks} mark${marks === 1 ? '' : 's'}`
@@ -76,7 +77,7 @@ export default function SimplePaperReview({ questions, settings, totalMarks, ren
             ? <div className="question-tools">{renderControls(questions[index], index)}</div>
             : <div className="question-summary">
               <span className="unit-tag">{s.unit(questions[index].unit)}</span>
-              <button type="button" className="button-quiet" aria-label={s.editQuestion(question.Number)} onClick={() => focusQuestion(index)}>{s.edit}</button>
+              <IconButton icon="edit" quiet label={s.editQuestion(question.Number)} onClick={() => focusQuestion(index)} />
             </div>}
         </section>)}
       </> : <div className="blueprint-answer-table" role="region" aria-label={s.scrollable} tabIndex={0}><table>

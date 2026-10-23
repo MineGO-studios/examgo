@@ -72,6 +72,12 @@
   flex: 1 1 18rem;
 }
 
+.mp-filter select {
+  min-block-size: 2.75rem;
+  border-radius: 999px;
+  padding-inline-start: var(--eg-space-4);
+}
+
 .mp-meta,
 .mp-count {
   color: var(--eg-color-text-muted);
