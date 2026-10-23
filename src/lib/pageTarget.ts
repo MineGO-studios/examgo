@@ -9,6 +9,15 @@ export function estimateQuestionPages(questionCount: number): number {
   )
 }
 
+/** Papers are limited to two question pages, so there is no page choice to make. */
+export const PAPER_PAGE_LIMIT = 2
+
+export function getPaperLengthWarning(questionCount: number): string | null {
+  const estimatedPages = estimateQuestionPages(questionCount)
+  return estimatedPages <= PAPER_PAGE_LIMIT ? null
+    : `This selection is estimated at ${estimatedPages} question pages. Papers fit on ${PAPER_PAGE_LIMIT} pages, so choose fewer questions.`
+}
+
 export function getPageTargetWarning(
   questionCount: number,
   pageTarget: PageTarget,

@@ -212,7 +212,7 @@ for (const sameAccount of [true, false]) {
 test('grouped preset finalization survives a lost response, keeps source order and seals one paired snapshot', async ({ page }) => {
   const state = await syntheticBackend(page)
   await syntheticSignIn(page)
-  await page.getByRole('button', { name: 'Use an approved exercise', exact: true }).click()
+  await page.getByRole('button', { name: 'Use a preset exam paper made by MineGO', exact: true }).click()
   const exercise = page.getByRole('region', { name: 'Complete preset exercise' })
   await expect(exercise.getByRole('group', { name: 'Published exercise' }).getByRole('radio', { checked: true })).toHaveCount(1)
   await expect(page.getByRole('alert').filter({ hasText: 'Coverage overview unavailable' })).toBeVisible()

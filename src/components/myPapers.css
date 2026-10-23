@@ -445,7 +445,7 @@
 
 .tl-date {
   position: absolute;
-  top: calc(2.35rem + var(--row, 0) * 0.85rem);
+  top: 2.35rem;
   inset-inline-start: var(--x);
   color: var(--eg-color-text-muted);
   font: 0.6875rem/1.2 var(--eg-font-mono);
@@ -707,7 +707,8 @@
   stroke-width: 1.7;
 }
 
-.paper-stamp {
+/* Scoped to the thumbnail sheet: unscoped, its top offset stretched the builder's FINALIZED stamp down the paper. */
+.paper-sheet .paper-stamp {
   position: absolute;
   top: 33cqw;
   right: 6cqw;

@@ -11,8 +11,7 @@ interface StartOption {
 
 const TEACHER_STARTS: readonly StartOption[] = [
   { id: 'simple', title: 'Pick questions by type', description: 'Choose how many of each question type and set the marks.', preview: 'own', coverage: ['Unit 1'] },
-  { id: 'presets', title: 'Use an approved exercise', description: 'One complete MineGO exercise, kept in source order with its answer rule.', preview: 'approved', coverage: ['Unit 1'] },
-  { id: 'phase-nine', title: 'Iraqi exercises and writing', description: 'The fixed source-style excerpt Q3/A to Q5. This is an excerpt, not a full paper.', preview: 'exercise', coverage: ['Unit 1', 'Excerpt'] },
+  { id: 'presets', title: 'Use a preset exam paper made by MineGO', description: 'A ready-made MineGO paper, kept in source order with its answer key.', preview: 'approved', coverage: ['Unit 1'] },
 ]
 
 const DEVELOPMENT_STARTS: readonly StartOption[] = [

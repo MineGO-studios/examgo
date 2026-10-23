@@ -31,14 +31,19 @@ The current hosted paper workflows support Unit 1. Unit 2–4 bank browsing does
 Open **New paper** and choose what kind of paper to make:
 
 - **Pick questions by type** builds a paper from your banks with chosen counts of multiple-choice, true/false or yes/no, and short-answer questions. **Shared MineGO questions** appears here as a source. It shows as unavailable, with its reason, until approved standalone questions are published.
-- **Use an approved exercise** makes one complete MineGO exercise, kept in source order with its answer rule.
-- **Iraqi exercises and writing** makes the fixed source-style excerpt (Q3/A to Q5). It is an excerpt, not a full paper.
+- **Use a preset exam paper made by MineGO** makes a ready-made MineGO paper, kept in source order with its answer key.
+
+Iraqi exercises and writing is no longer offered as a new paper. Saved drafts of that kind still open from **My papers**.
 
 A kind of paper you cannot make yet stays visible with a short reason, for example a teacher without any bank sees "Add or import questions to a bank in Question banks first".
 
 Some structured tools are development-only. Do not assume a local development option is available in a hosted Alpha build.
 
 Enter school/test details and an optional teacher footer name. Choose supported banks, filters, quantities and marks. Displayed items and attempted items may differ; verify the attempted total.
+
+Papers fit on two pages, so there is no page choice. A short note appears if the chosen questions are estimated to need more than two pages.
+
+**Selection number:** when more questions fit than the paper needs, your selection number decides which are picked. Each account has its own number, so your papers differ from other teachers' papers built with the same settings. Keep it to get the same questions again. You can change it in **Settings › Question selection**; it is kept on that device for your account.
 
 ## Review
 

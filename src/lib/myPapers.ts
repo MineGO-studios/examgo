@@ -84,21 +84,45 @@ export interface DateLabel {
 }
 
 /**
- * Places date labels under their dots on up to `rows` rows; a label that would collide on every row,
- * or repeats a date already shown, is hidden (its dot's tooltip still carries the date).
+ * Places date labels on one row under their dots. Labels that would overlap are nudged apart to sit
+ * side by side, kept inside the axis; a repeated date is shown once, and when the row cannot hold every
+ * label, the most crowded ones are hidden (their dots' tooltips still carry the date).
+ * Returns each label's centre, or null when hidden.
  */
-export function layoutDateLabels(labels: DateLabel[], rows = 2, margin = 8): Map<string, number | null> {
-  const ends = Array.from({ length: rows }, () => -Infinity)
-  const shown = new Set<string>()
+export function layoutDateLabels(labels: DateLabel[], width: number, margin = 8, keep?: (label: DateLabel) => boolean): Map<string, number | null> {
   const placed = new Map<string, number | null>()
+  const shown: DateLabel[] = []
+  const seen = new Set<string>()
   for (const label of [...labels].sort((a, b) => a.center - b.center)) {
-    if (shown.has(label.text)) { placed.set(label.key, null); continue }
-    const row = ends.findIndex(end => label.center - label.width / 2 >= end + margin)
-    if (row < 0) { placed.set(label.key, null); continue }
-    ends[row] = label.center + label.width / 2
-    shown.add(label.text)
-    placed.set(label.key, row)
+    if (seen.has(label.text)) { placed.set(label.key, null); continue }
+    seen.add(label.text)
+    shown.push(label)
   }
+  const needed = () => shown.reduce((sum, label) => sum + label.width, 0) + margin * Math.max(0, shown.length - 1)
+  while (shown.length > 1 && needed() > width) {
+    // Hide the label closest to its left neighbour, sparing a kept one (Today) when possible.
+    let drop = -1
+    let closest = Infinity
+    for (let i = 1; i < shown.length; i++) {
+      const gap = shown[i].center - shown[i - 1].center
+      const candidate = keep?.(shown[i]) && !keep?.(shown[i - 1]) ? i - 1 : i
+      if (gap < closest && !(keep?.(shown[candidate]))) { closest = gap; drop = candidate }
+    }
+    if (drop < 0) drop = shown.length - 1
+    placed.set(shown[drop].key, null)
+    shown.splice(drop, 1)
+  }
+  const x = shown.map(label => label.center)
+  const half = (i: number) => shown[i].width / 2
+  const pushRight = () => {
+    for (let i = 0; i < x.length; i++) x[i] = Math.max(x[i], i === 0 ? half(0) : x[i - 1] + half(i - 1) + margin + half(i))
+  }
+  pushRight()
+  for (let i = x.length - 1; i >= 0; i--) {
+    x[i] = Math.min(x[i], i === x.length - 1 ? width - half(i) : x[i + 1] - half(i + 1) - margin - half(i))
+  }
+  pushRight()
+  shown.forEach((label, i) => placed.set(label.key, x[i]))
   return placed
 }
 

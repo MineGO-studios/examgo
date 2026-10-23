@@ -13,6 +13,8 @@ Notable ExamGO changes are recorded here. Version labels identify development ch
 
 ### Added
 
+- Move the selection number to **Settings › Question selection**. Each account starts with its own number, so teachers with the same settings get different papers; the number is kept on the device for that account until account settings exist (MIN-261). The per-paper field is removed.
+- Rename **Use an approved exercise** to **Use a preset exam paper made by MineGO**, and remove **Iraqi exercises and writing** from New paper (saved drafts still open from My papers). Remove the question-pages choice; papers fit on two pages, and a note appears only past that.
 - Add the Arabic interface foundation: per-screen string files checked for completeness, Arabic plural forms (for example "سؤالان" and "11 سؤالًا" on My papers), Iraqi month names with Western digits, and display-time translation of application messages that keeps support references. The sign-in password hint now uses Western digits (MIN-268, part of MIN-56).
 - Show one error summary when the New paper setup has problems: it takes focus, links to each field and keeps the teacher's input. Field messages are linked to their fields instead of being separate announcements (D9.6, MIN-258).
 - Rename Account to **Settings**, with one section per scope: the account (sign out, sign out of all devices), interface language and appearance on this device, the My papers default view on this device, and the reviewer tools entry. Device choices apply at once and confirm "Saved on this device", or say when the browser cannot remember them. Saved paper defaults wait for account storage (D9.3, MIN-253).
@@ -23,6 +25,9 @@ Notable ExamGO changes are recorded here. Version labels identify development ch
 
 ### Fixed
 
+- Keep the finalized/ready stamp its own size on the paper: a My papers style stretched it down the sheet after My papers had been opened (MIN-275).
+- Keep the paper progress steps on one row at narrow widths; below 40rem they show numbers, with the current step named.
+- Place close timeline dates side by side on one row instead of stacking them.
 - Apply shared paper-format rules to every new export and matching content preview: swap grade/school header placement and omit individual student point marks while preserving totals and answer-key scoring. Candidate verification and Word-review limits are recorded separately; not deployed.
 - Integrate official preset banks into the same Active bank selector as personal banks, with the existing unit overview, search, filters and question list.
 - Keep published passage context read-only while preserving personal-bank authoring and existing paper-generation limits.

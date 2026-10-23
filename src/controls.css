@@ -789,3 +789,9 @@ textarea:hover:not(:disabled) {
   outline: 3px solid var(--eg-color-focus);
   outline-offset: 3px;
 }
+
+.settings-seed {
+  display: grid;
+  gap: var(--eg-space-3);
+  max-width: 22rem;
+}

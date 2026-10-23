@@ -61,10 +61,10 @@ export function PaperTimeline({ items, matching, language, strings, onJump }: {
     if (mark.firstDay === mark.lastDay) return mark.firstDay === today ? strings.today : short.format(fromDay(mark.firstDay))
     return `${short.format(fromDay(mark.firstDay))}–${short.format(fromDay(mark.lastDay))}`
   }
-  const rows = layoutDateLabels(marks.map(mark => {
+  const labelX = layoutDateLabels(marks.map(mark => {
     const text = dateText(mark)
     return { key: mark.key, text, center: mark.x, width: estimateLabelWidth(text) }
-  }))
+  }), width, 8, label => label.text === strings.today)
   const when = (item: PaperItem) => `${item.state === 'final' ? strings.finalizedOn : strings.edited} ${full.format(new Date(item.date))}`
 
   // Close the pinned name or the cluster window on Escape or a click elsewhere.
@@ -138,13 +138,13 @@ export function PaperTimeline({ items, matching, language, strings, onJump }: {
         </button>
       })}
       {marks.map((mark, order) => {
-        const row = rows.get(mark.key)
-        if (row === null || row === undefined) return null
+        const x = labelX.get(mark.key)
+        if (x === null || x === undefined) return null
         const isToday = mark.firstDay === today && mark.lastDay === today
         return <span key={mark.key} aria-hidden="true"
           className={`tl-date${isToday ? ' is-today' : ''}${lit === mark.key || openCluster === mark.key ? ' is-lit' : ''}`}
           data-dim={mark.items.some(item => matching.has(item.key)) ? undefined : ''}
-          style={{ '--x': `${mark.x}px`, '--row': row, '--n': order } as CSSProperties}>
+          style={{ '--x': `${x}px`, '--n': order } as CSSProperties}>
           {dateText(mark)}
         </span>
       })}
