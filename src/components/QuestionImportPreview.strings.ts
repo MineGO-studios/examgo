@@ -2,9 +2,9 @@ import { defineStrings, plural } from '../lib/localize'
 
 export const IMPORT_STRINGS = defineStrings({
   en: {
-    formatLegacy: 'ExamGO multiple-choice CSV (legacy template)',
-    formatPapers: 'Papers master catalogue CSV',
-    formatExamgo: 'ExamGO versioned question file (JSON)',
+    formatLegacy: 'Older ExamGO choice questions (CSV)',
+    formatPapers: 'MineGO question catalogue (CSV)',
+    formatExamgo: 'ExamGO question file (JSON)',
     formatTeacher: 'Other CSV: confirm which column holds each field',
     fieldId: 'Which column contains each question ID?',
     fieldUnit: 'Which column contains the unit (or unit tags such as 1,2)?',
@@ -116,9 +116,9 @@ export const IMPORT_STRINGS = defineStrings({
     templateChanged: 'Template changed. Preview again before saving.',
   },
   ar: {
-    formatLegacy: 'ملف CSV للاختيار من متعدد من ExamGO (القالب القديم)',
-    formatPapers: 'ملف CSV للفهرس الرئيسي للأوراق',
-    formatExamgo: 'ملف أسئلة ExamGO بإصدار محدد (JSON)',
+    formatLegacy: 'أسئلة اختيار من ExamGO بصيغة قديمة (CSV)',
+    formatPapers: 'فهرس أسئلة MineGO (CSV)',
+    formatExamgo: 'ملف أسئلة ExamGO (JSON)',
     formatTeacher: 'ملف CSV آخر: أكّد العمود الذي يحتوي كل حقل',
     fieldId: 'أي عمود يحتوي معرّف كل سؤال؟',
     fieldUnit: 'أي عمود يحتوي الوحدة (أو أرقام الوحدات مثل 1,2)؟',
