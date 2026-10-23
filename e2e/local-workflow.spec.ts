@@ -150,7 +150,7 @@ test('preset review loads a large bank one searched page at a time', async ({ pa
   const picker = page.getByRole('combobox', { name: 'Evidence applies to' })
   await picker.selectOption({ index: 2 })
   await expect(page.getByRole('heading', { name: 'Exact source revision' })).toBeVisible()
-  await expect(page.getByText('Synthetic apple question 51?', { exact: true })).toBeVisible()
+  await expect(page.getByRole('paragraph').filter({ hasText: /^Synthetic apple question 51\?$/ })).toBeVisible()
   expect(state.curationRequests.at(-1)).toMatchObject({ p_search: 'APPLE', p_revision_id: '90000000-0000-4000-8000-000000000051' })
   await expect(picker).toHaveValue('90000000-0000-4000-8000-000000000051')
   expect(state.unhandled).toEqual([])

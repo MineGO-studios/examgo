@@ -2,16 +2,20 @@ import {useEffect,useState,type ChangeEvent} from 'react'
 import {listStagedImportsForBank,type StagedImportSummary} from '../lib/questionImportRepository'
 import {readBackPresetProvenance} from '../lib/presetCurationRepository'
 import {supabase} from '../lib/supabase'
+import { localizeAppMessage } from '../lib/appMessages'
+import { useI18n } from '../lib/i18n'
 import { teacherErrorMessage } from '../lib/safeErrorDetails'
 import {packPresetProvenanceBatches,prepareCataloguePresetProvenance,previewPresetProvenanceImport,stagePresetProvenanceBatch,
   verifyPresetProvenanceReadback,type PresetImportPreview} from '../lib/presetProvenanceImport'
-const errorText=(e:unknown)=>teacherErrorMessage(e, 'Governed intake failed. Reopen before retrying.')
+import { PRESET_REVIEW_STRINGS } from './PresetReview.strings'
+const errorText=(e:unknown)=>teacherErrorMessage(e, PRESET_REVIEW_STRINGS.en.intake.failed)
 function download(value:unknown,name:string){
   const url=URL.createObjectURL(new Blob([JSON.stringify(value,null,2)],{type:'application/json'}))
   const anchor=document.createElement('a');anchor.href=url;anchor.download=name;anchor.click()
   window.setTimeout(()=>URL.revokeObjectURL(url),1000)
 }
 export default function PresetProvenanceImport({bankId,onStaged}:{bankId:string;onStaged:()=>void}){
+  const { language } = useI18n(), s = PRESET_REVIEW_STRINGS[language].intake
   const [imports,setImports]=useState<StagedImportSummary[]>([]),[selected,setSelected]=useState('')
   const [preview,setPreview]=useState<PresetImportPreview|null>(null),[busy,setBusy]=useState(false),[error,setError]=useState('')
   const [reason,setReason]=useState(''),[report,setReport]=useState<unknown>(null)
@@ -44,28 +48,28 @@ export default function PresetProvenanceImport({bankId,onStaged}:{bankId:string;
     }catch(e){setError(errorText(e));setReport({completedBatches:results,status:'Partial; retry the same batch identities. No approval or publication performed.'})}
     finally{setBusy(false)}
   }
-  return <details><summary>Governed catalogue provenance intake</summary>
-    <p>Reuses original private staging and exact canonical conversion receipts. Source review flags remain evidence. This intake records draft provenance; approval and publication require separate reviewer decisions.</p>
-    {error&&<p role="alert">{error}</p>}{busy&&<p role="status">Preparing or staging governed provenance…</p>}
-    <fieldset disabled={busy}><legend>Prepare exact saved release</legend>
-      <label>Source import<select name="preset-source-import" value={selected} onChange={e=>{setSelected(e.target.value);setPreview(null)}}>
-        {imports.map(i=><option key={i.id} value={i.id}>{i.sourceNamespace} — {i.stagedRows}/{i.expectedRows} source rows</option>)}</select></label>
-      <button type="button" disabled={!selected} onClick={()=>void prepare()}>Prepare catalogue provenance template</button>
-      <label>Versioned provenance JSON<input name="preset-provenance-file" type="file" accept=".json,application/json" onChange={e=>void file(e)}/></label>
+  return <details><summary>{s.summary}</summary>
+    <p>{s.intro}</p>
+    {error&&<p role="alert">{localizeAppMessage(language, error)}</p>}{busy&&<p role="status">{s.busy}</p>}
+    <fieldset disabled={busy}><legend>{s.prepareLegend}</legend>
+      <label>{s.sourceImport}<select name="preset-source-import" value={selected} onChange={e=>{setSelected(e.target.value);setPreview(null)}}>
+        {imports.map(i=><option key={i.id} value={i.id}>{s.importOption(i.sourceNamespace,i.stagedRows,i.expectedRows)}</option>)}</select></label>
+      <button type="button" disabled={!selected} onClick={()=>void prepare()}>{s.prepare}</button>
+      <label>{s.file}<input name="preset-provenance-file" type="file" accept=".json,application/json" onChange={e=>void file(e)}/></label>
     </fieldset>
-    {preview&&<><p>{preview.document.entries.length} valid exact revisions; {preview.duplicates.length} duplicate rows; {preview.rejected.length} rejected rows; {preview.incomplete.length} rows with missing educational evidence.</p>
-      <p>Release SHA-256: {preview.document.sourceSha256}. Source import: {preview.document.importId}.</p>
-      <button type="button" onClick={()=>download(preview.document,'examgo-preset-provenance-template.json')}>Download editable provenance template</button>
-      <button type="button" onClick={()=>download(preview,'examgo-preset-provenance-preview.json')}>Download full preview report</button>
-      <details><summary>View versioned provenance JSON</summary>
-        <label>Editable template contents<textarea name="preset-template-contents" readOnly value={JSON.stringify(preview.document,null,2)}/></label>
+    {preview&&<><p>{s.totals(preview.document.entries.length,preview.duplicates.length,preview.rejected.length,preview.incomplete.length)}</p>
+      <p>{s.releaseHash} <bdi>{preview.document.sourceSha256}</bdi>. {s.sourceImportId} <bdi>{preview.document.importId}</bdi>.</p>
+      <button type="button" onClick={()=>download(preview.document,'examgo-preset-provenance-template.json')}>{s.downloadTemplate}</button>
+      <button type="button" onClick={()=>download(preview,'examgo-preset-provenance-preview.json')}>{s.downloadPreview}</button>
+      <details><summary>{s.viewJson}</summary>
+        <label>{s.templateContents}<textarea name="preset-template-contents" readOnly dir="ltr" value={JSON.stringify(preview.document,null,2)}/></label>
       </details>
-      <label>Draft intake reason<textarea name="preset-intake-reason" maxLength={2000} value={reason} onChange={e=>setReason(e.target.value)}/></label>
+      <label>{s.reason}<textarea name="preset-intake-reason" maxLength={2000} dir="auto" value={reason} onChange={e=>setReason(e.target.value)}/></label>
       <button type="button" disabled={busy||!reason.trim()||preview.rejected.length>0||preview.duplicates.length>0}
-        onClick={()=>void stage()}>Stage draft provenance</button>
+        onClick={()=>void stage()}>{s.stage}</button>
     </>}
-    {report!==null&&<><p role="status">Governed intake report is available. Inspect totals and batch readback.</p>
-      <button type="button" onClick={()=>download(report,'examgo-governed-intake-report.json')}>Download governed intake report</button>
-      <details><summary>Inspect governed intake report</summary><pre style={{whiteSpace:'pre-wrap',overflowWrap:'anywhere'}}>{JSON.stringify(report,null,2)}</pre></details></>}
+    {report!==null&&<><p role="status">{s.reportReady}</p>
+      <button type="button" onClick={()=>download(report,'examgo-governed-intake-report.json')}>{s.downloadReport}</button>
+      <details><summary>{s.inspectReport}</summary><pre dir="ltr" lang="en" style={{whiteSpace:'pre-wrap',overflowWrap:'anywhere'}}>{JSON.stringify(report,null,2)}</pre></details></>}
   </details>
 }
