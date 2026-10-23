@@ -57,14 +57,19 @@ Common to all papers:
 
 ExamGO should keep these as choices, not pick one form and present it as the ministry's.
 
+## Owner decisions (23 October 2026)
+
+- **Marks are never fixed.** The ministerial 100-mark shape describes the evidence; it is not imposed. Every paper asks for each question's marks and shows the total. Teachers can set their own default marks in Settings.
+- **Bilingual note on by default.** The "Answer all the questions" note prints in English and Arabic unless the teacher turns it off.
+
 ## Specification for ExamGO papers
 
 These rules extend the approved layout catalogue and [the paper format rules](../reference/paper-format-rules.md) (MIN-267). Where the two touch, the format rules win.
 
 1. **Identity.** Keep the current three-cell header: Grade | Test title | School name. Never print the issuing authority, an emblem, a seal or a logo box, and never imply ministry endorsement.
-2. **General note.** Offer the bilingual "Answer all the questions" note as the default for exam-length papers. Teachers can turn it off for monthly tests.
-3. **Parts.** Number main questions Q1–Q5, with parts A and B. Each part heading is one row: the English instruction, an optional Arabic instruction, then the part total `(10 M.)` at the end. Item numbers restart inside each part.
-4. **Marks.** Print each part total only. Never print per-item marks on the student paper (format rules). The paper total is the sum of the part totals.
+2. **General note.** Print the bilingual "Answer all the questions" note by default on every paper; the teacher can turn it off.
+3. **Parts.** Number main questions Q1–Q5, with parts A and B. Each part heading is one row: the English instruction, an optional Arabic instruction, then the part total, such as `(10 M.)`, at the end. Item numbers restart inside each part.
+4. **Marks.** The teacher sets each question's marks on every paper, starting from their defaults in Settings, and sees the total as they go. No total or part value is fixed; the ministerial 10/20/100 values are an example, not a rule. Print each part total only, never per-item marks on the student paper (format rules). The paper total is the sum of the part totals.
 5. **Attempt rules.** Store and print shown items, required answers and marks separately. Print the rule with the instruction, in both languages when Arabic is shown, for example "(5 only)".
 6. **Passage.** Print the passage once as a block, followed by its numbered questions. Never repeat or split it.
 7. **Choice.** Print short choices inline in brackets. Use separate lettered options only when a choice is too long for one line.
@@ -88,8 +93,6 @@ These rules extend the approved layout catalogue and [the paper format rules](..
 ## Hand-offs
 
 - **MIN-263:** a bilingual general note and part-row instructions in New paper output, and parity for compound papers.
-- **MIN-251 (D8.1):** a composition model with parts, shown and answered counts, and part totals.
-- **Owner:**
-  - confirm the default 100-mark exam topology and the monthly variation;
-  - choose whether the bilingual note is on by default;
-  - review any regenerated pair in Word.
+- **MIN-251 (D8.1):** a composition model with parts, shown and answered counts, and per-question marks the teacher sets on each paper, with a running total.
+- **MIN-261:** teacher default marks in Settings, used as each new paper's starting values, and the bilingual note setting.
+- **Owner:** review any regenerated pair in Word.
