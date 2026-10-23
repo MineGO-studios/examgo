@@ -667,6 +667,39 @@
   margin-top: var(--eg-space-5);
 }
 
+/* Change links on the paper (D8.3): a quiet pen beside the part it changes. */
+.sheet-edit-row {
+  display: flex;
+  justify-content: flex-end;
+  margin-block: calc(var(--eg-space-2) * -1) var(--eg-space-1);
+}
+
+.sheet-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--eg-space-3);
+}
+
+.key-question-link {
+  min-block-size: 2.75rem;
+  min-inline-size: 2.75rem;
+  border: 0;
+  border-radius: var(--eg-radius-sm);
+  background: transparent;
+  color: var(--eg-paper-ink);
+  font: inherit;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.key-question-link:hover:not(:disabled) {
+  border: 0;
+  background: var(--eg-color-primary-soft);
+  color: var(--eg-paper-ink);
+}
+
 /* ---- Format chooser ---- */
 .format-chooser {
   display: grid;

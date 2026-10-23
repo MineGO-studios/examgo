@@ -47,7 +47,7 @@ Papers fit on two pages, so there is no page choice. A short note appears if the
 
 ## Review
 
-On each question of the paper, the lock, circular arrow and bin buttons lock, replace and remove it, and the pen jumps to it for editing. Hover over or focus any of them to see its name. The globe button at the top switches the interface between English and Arabic. In My papers, the Unit and Paper type filters appear once your papers differ in them.
+On each question of the paper, the lock, circular arrow and bin buttons lock, replace and remove it, and the pen jumps to it for editing. Hover over or focus any of them to see its name. The pen above the paper's header and the pen beside "Teacher:" take you to the field that changes them, and in the answer key each question number opens that question on the student paper. The globe button at the top switches the interface between English and Arabic. In My papers, the Unit and Paper type filters appear once your papers differ in them.
 
 The paper plan above the paper is one bar, coloured by question type and sized by marks. Hover or select a colour to see its marks, items and share of the paper, and the questions they come from; select a question to jump to it on the paper. Hatched space means requested questions are missing.
 
