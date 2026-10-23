@@ -1,22 +1,12 @@
 import { useState, type ReactNode } from 'react'
 import { buildAnswerKeyData, buildExamData } from '../lib/generateExam'
 import type { ExamSettings } from '../types/exam'
-import type { ExamQuestion, SimpleQuestionType } from '../types/question'
+import type { ExamQuestion } from '../types/question'
 import { PaperStamp } from './CouponProgress'
 import { useI18n } from '../lib/i18n'
-import { questionTypeLabel } from '../lib/questionTypeLabels'
 import { PAPER_REVIEW_STRINGS } from './SimplePaperReview.strings'
-
-const TYPE_SHORT: Record<SimpleQuestionType, string> = {
-  'multiple-choice': 'Choice',
-  binary: 'T/F',
-  'short-answer': 'Short',
-}
-const TYPE_SHORT_AR: Record<SimpleQuestionType, string> = {
-  'multiple-choice': 'اختيار',
-  binary: 'صح/خطأ',
-  'short-answer': 'قصيرة',
-}
+import PaperPlanBar from './PaperPlanBar'
+import { paperPlanGroups } from '../lib/paperPlan'
 
 const markLabel = (marks: number): string => `${marks} mark${marks === 1 ? '' : 's'}`
 
@@ -53,29 +43,9 @@ export default function SimplePaperReview({ questions, settings, totalMarks, ren
     requestAnimationFrame(() => document.getElementById(`paper-question-${index + 1}`)?.focus())
   }
   return <div className="paper-review">
-    <section className="paper-plan" aria-label={s.plan}>
-      <p className="paper-plan-summary">
-        <span>{s.plan} · {s.questions(questions.length)}</span>
-        <span>{totalMarks === null ? s.fixMarks : s.marks(totalMarks)}</span>
-      </p>
-      <ol className="paper-plan-strip" dir="ltr">
-        {questions.map((question, index) => {
-          const marks = Number.isSafeInteger(question.marks) ? question.marks : 0
-          return <li key={question.id} style={{ flexGrow: Math.max(marks, 1), ['--plan-unit' as string]: unitMarker(question.unit) }}
-            className={`paper-plan-block${question.unit === 2 ? ' is-light' : ''}${index === focused ? ' is-focused' : ''}${marks ? '' : ' is-gap'}`}>
-            <button type="button" onClick={() => focusQuestion(index)}
-              aria-label={s.goTo(index + 1, question.unit, marks ? s.marks(marks) : s.marksNeeded)} title={questionTypeLabel(question.type, language)}>
-              <span>Q{index + 1} {(language === 'ar' ? TYPE_SHORT_AR : TYPE_SHORT)[question.type]}</span>
-              <span className="paper-plan-marks">{marks || '—'}</span>
-            </button>
-          </li>
-        })}
-        {Array.from({ length: emptySlots }, (_, gap) => <li key={`gap-${gap}`} className="paper-plan-block is-gap is-empty">
-          <span className="paper-plan-gap">{s.empty}<span className="visually-hidden">{s.emptyHint}</span></span>
-        </li>)}
-      </ol>
-      {emptySlots > 0 && <p className="field-help">{s.missing(emptySlots)}</p>}
-    </section>
+    <PaperPlanBar groups={paperPlanGroups(questions.map((question, index) => ({ label: `Q${index + 1}`, question: index, type: question.type,
+      items: 1, marks: Number.isSafeInteger(question.marks) ? question.marks : 0 })))}
+      questionCount={questions.length} totalMarks={totalMarks} emptySlots={emptySlots} onGoTo={focusQuestion} />
 
     <div className="paper-toolbar">
       <div className="segmented" role="group" aria-label={s.view}>

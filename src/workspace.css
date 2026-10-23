@@ -249,69 +249,195 @@
   padding: var(--eg-space-3) var(--eg-space-4);
 }
 
+.paper-plan-body {
+  position: relative;
+}
+
 .paper-plan-summary {
   display: flex;
   justify-content: space-between;
   gap: var(--eg-space-4);
-  margin: 0 0 var(--eg-space-2);
+  margin: 0 0 var(--eg-space-1);
   color: var(--eg-color-text-muted);
   font: 650 var(--eg-font-size-sm) / 1.2 var(--eg-font-display);
   font-variant-numeric: tabular-nums;
 }
 
-.paper-plan-strip {
+/* One connected bar: each segment is a 44px target around a 14px band, with 2px of surface between types. */
+.paper-plan-bar,
+.paper-plan-names {
   display: flex;
-  gap: 4px;
+}
+
+.paper-plan-seg {
+  all: unset;
+  position: relative;
+  flex: 0 1 0;
+  min-width: 8px;
+  height: 44px;
+  cursor: pointer;
+}
+
+.paper-plan-seg::before {
+  position: absolute;
+  inset-inline: 0;
+  top: 15px;
+  height: 14px;
+  background: var(--seg);
+  content: "";
+  transition: top 160ms var(--eg-ease), height 160ms var(--eg-ease), filter 160ms;
+}
+
+.paper-plan-seg + .paper-plan-seg::before {
+  inset-inline-start: 2px;
+}
+
+.paper-plan-seg:first-child::before {
+  border-start-start-radius: 7px;
+  border-end-start-radius: 7px;
+}
+
+.paper-plan-seg:last-child::before {
+  border-start-end-radius: 7px;
+  border-end-end-radius: 7px;
+}
+
+.paper-plan-seg:hover:not(:disabled),
+.paper-plan-seg:active:not(:disabled) {
+  border: 0;
+  background: transparent;
+  transform: none;
+}
+
+.paper-plan-seg:hover::before,
+.paper-plan-seg[aria-expanded="true"]::before {
+  filter: brightness(1.12);
+}
+
+.paper-plan-seg[aria-expanded="true"]::before {
+  top: 13px;
+  height: 18px;
+}
+
+.paper-plan-seg:focus-visible {
+  border-radius: 8px;
+  outline: 3px solid var(--eg-color-focus);
+  outline-offset: -3px;
+}
+
+/* Requested questions the paper no longer has: hatched, not a button. */
+.paper-plan-seg.is-gap {
+  cursor: default;
+}
+
+.paper-plan-seg.is-gap::before {
+  border: 1.5px dashed var(--eg-color-error-text);
+  background: repeating-linear-gradient(135deg, var(--eg-color-error-bg) 0 6px, var(--eg-color-surface) 6px 12px);
+}
+
+.paper-plan-names {
+  margin-top: -6px;
+  color: var(--eg-color-text-muted);
+  font-size: var(--eg-font-size-xs);
+}
+
+.paper-plan-names span {
+  display: flex;
+  flex: 0 1 0;
+  align-items: center;
+  gap: 0.35rem;
+  min-width: 8px;
+  overflow: hidden;
+  padding-inline-end: var(--eg-space-2);
+  white-space: nowrap;
+}
+
+.paper-plan-names i,
+.paper-plan-pop h4 i {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  background: var(--seg);
+}
+
+.paper-plan-names .is-gap i {
+  border: 1px dashed var(--eg-color-error-text);
+  background: var(--eg-color-error-bg);
+}
+
+.paper-plan-names b {
+  color: var(--eg-color-text);
+  font: 500 var(--eg-font-size-xs) var(--eg-font-mono);
+}
+
+.paper-plan-pop {
+  position: absolute;
+  z-index: 5;
+  top: calc(100% + var(--eg-space-1));
+  min-width: 15rem;
+  max-width: min(22rem, 100%);
+  border: 1px solid var(--eg-color-border);
+  border-radius: var(--eg-radius-lg);
+  background: var(--eg-color-surface);
+  box-shadow: 0 12px 30px rgb(29 23 18 / 18%);
+  padding: var(--eg-space-3);
+}
+
+.paper-plan-pop h4 {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
   margin: 0;
-  padding: 0 0 2px;
-  overflow-x: auto;
-  list-style: none;
+  font-size: var(--eg-font-size-md);
 }
 
-.paper-plan-block {
-  display: flex;
-  flex-basis: 3.75rem;
-  min-width: 3.75rem;
+.paper-plan-pop h4 i {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
 }
 
-.paper-plan-block button {
-  display: flex;
-  flex: 1;
-  flex-direction: column;
-  align-items: flex-start;
-  justify-content: space-between;
-  min-block-size: 3.25rem;
-  border: 0;
-  border-radius: var(--eg-radius-sm);
-  background: var(--plan-unit);
-  color: #ffffff;
-  font: 700 var(--eg-font-size-sm) / 1.15 var(--eg-font-display);
-  padding: 0.4rem 0.55rem;
-  text-align: start;
+.paper-plan-pop-sum {
+  margin: 0.1rem 0 var(--eg-space-2);
+  color: var(--eg-color-text-muted);
+  font: 500 var(--eg-font-size-xs) var(--eg-font-mono);
 }
 
-.paper-plan-block.is-light button {
-  color: var(--eg-unit-2-text);
-}
-
-.paper-plan-block.is-focused button {
-  box-shadow: 0 0 0 2px var(--eg-color-surface), 0 0 0 4px var(--eg-color-text);
-}
-
-.paper-plan-block button:hover:not(:disabled) {
-  border: 0;
-  background: var(--plan-unit);
-  filter: brightness(0.9);
-}
-
-.paper-plan-marks {
+.paper-plan-pop table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--eg-font-size-sm);
   font-variant-numeric: tabular-nums;
 }
 
-.paper-plan-legend {
-  margin: var(--eg-space-2) 0 0;
+.paper-plan-pop th {
   color: var(--eg-color-text-muted);
-  font-size: var(--eg-font-size-xs);
+  font-weight: 500;
+  padding-bottom: var(--eg-space-1);
+  text-align: start;
+}
+
+.paper-plan-pop td {
+  border-top: 1px solid var(--eg-color-border);
+  padding: 0.15rem 0;
+}
+
+.paper-plan-pop th:not(:first-child),
+.paper-plan-pop td:not(:first-child) {
+  text-align: end;
+}
+
+.paper-plan-pop td .button-quiet {
+  min-block-size: 2.25rem;
+  font-weight: 600;
+  padding-inline: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .paper-plan-seg::before {
+    transition: none;
+  }
 }
 
 .paper-toolbar {
@@ -763,26 +889,3 @@
   align-items: center;
 }
 
-/* Gaps in the plan: hatched where the paper cannot yet be what was asked for. */
-.paper-plan-block.is-gap button,
-.paper-plan-gap {
-  border: 1.5px dashed var(--eg-color-error-text);
-  background: repeating-linear-gradient(135deg, var(--eg-color-error-bg) 0 6px, var(--eg-color-surface) 6px 12px);
-  color: var(--eg-color-error-text);
-}
-
-.paper-plan-block.is-gap button:hover:not(:disabled) {
-  border: 1.5px dashed var(--eg-color-error-text);
-  background: repeating-linear-gradient(135deg, var(--eg-color-error-bg) 0 6px, var(--eg-color-surface) 6px 12px);
-  filter: none;
-}
-
-.paper-plan-gap {
-  display: flex;
-  flex: 1;
-  align-items: center;
-  min-block-size: 3.25rem;
-  border-radius: var(--eg-radius-sm);
-  font: 700 var(--eg-font-size-sm) / 1.15 var(--eg-font-display);
-  padding: 0.4rem 0.55rem;
-}
