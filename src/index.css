@@ -38,6 +38,11 @@
   --eg-unit-3: #694630;
   --eg-unit-4: #2f4f7a;
   --eg-unit-none: #c9b8ac;
+  /* Question types in the paper plan; validated for colour-blind separation (dataviz). */
+  --eg-type-1: #1a7f50;
+  --eg-type-2: #3a6cb5;
+  --eg-type-3: #c27c00;
+  --eg-type-4: #b3566f;
   /* Ministry sheet: black rules and the teacher's red pen. */
   --eg-paper-ink: #111111;
   --eg-paper-rule: #111111;
@@ -142,6 +147,10 @@
     --eg-color-toast-bg: #f6f1ee;
     --eg-color-toast-text: #110c08;
     --eg-unit-none: #6e5a4c;
+    --eg-type-1: #2f9a66;
+    --eg-type-2: #5a8bd6;
+    --eg-type-3: #b8841a;
+    --eg-type-4: #cc6a86;
     --eg-shadow-rgb: 0 0 0;
     --eg-shadow-surface: 0 1px 2px rgb(0 0 0 / 30%), 0 8px 24px rgb(0 0 0 / 25%);
     --eg-shadow-paper: 0 2px 4px rgb(0 0 0 / 30%), 0 18px 40px rgb(0 0 0 / 35%);
@@ -171,7 +180,7 @@
   text-align: right;
 }
 
-:root:lang(ar) :where(.ministry-sheet, .ministry-sheet *, .paper-plan-strip *) {
+:root:lang(ar) :where(.ministry-sheet, .ministry-sheet *) {
   text-align: revert-layer;
 }
 

@@ -47,6 +47,8 @@ Papers fit on two pages, so there is no page choice. A short note appears if the
 
 ## Review
 
+The paper plan above the paper is one bar, coloured by question type and sized by marks. Hover or select a colour to see its marks, items and share of the paper, and the questions they come from; select a question to jump to it on the paper. Hatched space means requested questions are missing.
+
 Check wording, answers, numbering, complete passages/groups, options, instructions, marks and attempt rules. Use only the controls supported by the selected format. A locked item remains protected from supported replacement operations.
 
 After a configuration or content change, review the updated selection. Do not use a stale preview as confirmation of the new settings. If no valid replacement exists, adjust the request explicitly; do not substitute unrelated content.

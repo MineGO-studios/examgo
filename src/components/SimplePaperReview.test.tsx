@@ -13,5 +13,5 @@ it('matches shared header/mark rules on the student sheet while retaining teache
  expect(sheet).not.toContain('class="ministry-mark"')
  expect(sheet).toContain('3 marks')
  expect(sheet).toContain('Adjust question marks')
- expect(html).toContain('paper-plan-marks')
+ expect(html).toContain('class="paper-plan-seg"')
 })
