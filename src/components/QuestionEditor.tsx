@@ -471,6 +471,7 @@ export default function QuestionEditor({ ownerId, onUsePresets }: { ownerId: str
             {s.createBank}
           </button>
         </form>
+        {banks.length === 0 && <button type="button" className="button-secondary" onClick={onUsePresets}>{s.startWithPresets}</button>}
 
         {banks.length > 0 && <details className="create-bank">
           <summary>{s.combine}</summary>
@@ -491,7 +492,6 @@ export default function QuestionEditor({ ownerId, onUsePresets }: { ownerId: str
           </form>
         </details>}
 
-        <p className="field-help">{s.reviewerNote}</p>
       </section>}
 
       {!isPresetBank && view === 'import' && <section className="bank-focus" aria-label={s.importFile}>

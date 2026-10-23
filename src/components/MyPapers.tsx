@@ -209,9 +209,10 @@ export default function MyPapers(props: MyPapersProps) {
         <h2 id="my-papers-title" className="mp-title">{s.title}</h2>
         {loaded && items.length > 0 && <p className="mp-lede">{s.lede(items.filter(i => i.state === 'draft').length, items.filter(i => i.state === 'final').length)}</p>}
       </div>
-      <button type="button" className="mp-new" onClick={props.onCreateExam}>
+      {/* An empty desk has one action, in the empty state below. */}
+      {!(loaded && items.length === 0 && !loaded.failed) && <button type="button" className="mp-new" onClick={props.onCreateExam}>
         <Icon name="add" />{s.newPaper}
-      </button>
+      </button>}
     </header>
 
     {!loaded && <p role="status" className="mp-loading">{s.loading}</p>}
@@ -226,7 +227,7 @@ export default function MyPapers(props: MyPapersProps) {
     {loaded && items.length === 0 && !loaded.failed && <div className="empty-state mp-empty">
       <h3>{s.emptyTitle}</h3>
       <p>{s.empty}</p>
-      <button type="button" onClick={props.onCreateExam}>{s.create}</button>
+      <button type="button" onClick={props.onCreateExam}><Icon name="add" />{s.newPaper}</button>
     </div>}
 
     {items.length > 0 && <>

@@ -13,6 +13,7 @@ Notable ExamGO changes are recorded here. Version labels identify development ch
 
 ### Added
 
+- Simplify first use and teacher wording (D9.5): an empty Question banks screen offers MineGO's preset papers as a way to start, the reviewer note no longer shows to teachers, an empty My papers has one New paper action, and system terms (eligible, snapshot, intake, immutable, exception) are replaced with plain wording in English and Arabic (MIN-257).
 - Add the D8.1 paper structure design (`docs/design/d8-1-paper-structure.md`) with an interactive prototype for owner review: questions made of parts, each keeping its type, items shown, answers required and teacher-set marks together, with a running total and supply corrections. Not wired; the data contract is filed as MIN-295 (MIN-251).
 - Add the D8.2 ministerial-style paper specification (`docs/design/d8-2-paper-specification.md`). It compares 23 ministerial papers from 2019–2026 with teacher papers, records the stable 100-mark Q1–Q5 topology and what varies, and lists today's gaps for MIN-263 and D8.1 (MIN-256).
 - Translate the finalized and structured paper viewer into Arabic: layout status, preparation and download messages, and the paper view controls. The paper and answer table stay in English, left to right (part of MIN-56).
