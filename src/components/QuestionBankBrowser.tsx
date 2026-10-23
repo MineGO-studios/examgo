@@ -1,11 +1,10 @@
 import type { CSSProperties } from 'react'
-import type { QuestionInput } from '../lib/questions'
 import { bankQuestionCounts, browseBankQuestions, type BankQuestionFilters, type BankBrowserQuestion } from '../lib/questionBankBrowse'
 import { questionAnswerPreview, questionTypeMark, unitCounts } from '../lib/questionCards'
 import { ChoiceChips } from './controls'
-import { QUESTION_TYPE_LABELS_EN } from '../lib/questionTypeLabels'
-
-const questionTypeLabels: Record<QuestionInput['questionType'], string> = QUESTION_TYPE_LABELS_EN
+import { questionTypeLabel } from '../lib/questionTypeLabels'
+import { useI18n } from '../lib/i18n'
+import { QUESTION_BANK_STRINGS } from './QuestionBanks.strings'
 
 /** Same unit overview, filters, cards and paging for personal and published banks. */
 export default function QuestionBankBrowser<T extends BankBrowserQuestion>({ questions, linkedIds, filters, setFilters, page, setPage, readOnly=false, isBusy=false, onAction, actionLabel, onAdd, onImport }: {
@@ -14,26 +13,29 @@ export default function QuestionBankBrowser<T extends BankBrowserQuestion>({ que
   readOnly?:boolean; isBusy?:boolean; onAction?:(question:T)=>void; actionLabel?:(question:T)=>string;
   onAdd?:()=>void; onImport?:()=>void;
 }) {
+        const { language } = useI18n()
+        const s = QUESTION_BANK_STRINGS[language]
+        const difficulty = (value: string) => value === 'easy' || value === 'medium' || value === 'hard' ? s[value] : value
         const counts = bankQuestionCounts(questions, linkedIds)
         const result = browseBankQuestions(questions, filters, linkedIds, page)
         const types = [...new Set(questions.map((question) => question.question_type))].sort()
         const setFilter = (patch: Partial<BankQuestionFilters>) => { setFilters({ ...filters, ...patch }); setPage(1) }
-        const typeOptions = [{ value: '', label: 'All types' }, ...types.map((type) => ({ value: type, label: questionTypeLabels[type as QuestionInput['questionType']] ?? type }))]
+        const typeOptions = [{ value: '', label: s.allTypes }, ...types.map((type) => ({ value: type, label: questionTypeLabel(type, language) }))]
         const units = unitCounts(questions)
         const largest = Math.max(1, ...units.map((entry) => entry.total))
         return <section className="question-browser" aria-labelledby="saved-questions-title">
           {units.length > 0 && <section className="qb-units" aria-labelledby="qb-units-title">
             <div className="qb-units-head">
-              <h3 id="qb-units-title">Questions by unit</h3>
-              {filters.unit !== undefined && filters.unit !== '' && <button type="button" className="button-quiet" onClick={() => setFilter({ unit: '' })}>Show every unit</button>}
+              <h3 id="qb-units-title">{s.byUnit}</h3>
+              {filters.unit !== undefined && filters.unit !== '' && <button type="button" className="button-quiet" onClick={() => setFilter({ unit: '' })}>{s.everyUnit}</button>}
             </div>
             <ul>
               {units.map((entry, order) => <li key={entry.unit}>
                 <button type="button" aria-pressed={filters.unit === entry.unit}
-                  aria-label={`Unit ${entry.unit}, ${entry.total} question${entry.total === 1 ? '' : 's'}, ${entry.usable} ${readOnly ? 'published' : 'ready'}`}
+                  aria-label={s.unitButton(entry.unit, entry.total, entry.usable, readOnly)}
                   style={{ '--unit': `var(--eg-unit-${entry.unit >= 1 && entry.unit <= 4 ? entry.unit : 'none'})`, '--share': entry.total / largest, '--ready': entry.total ? entry.usable / entry.total : 0, '--n': order } as CSSProperties}
                   onClick={() => setFilter({ unit: filters.unit === entry.unit ? '' : entry.unit })}>
-                  <span className="qb-unit-name">Unit {entry.unit}</span>
+                  <span className="qb-unit-name">{s.unitName(entry.unit)}</span>
                   <span className="qb-unit-bar" aria-hidden="true"><i /></span>
                   <span className="qb-unit-count">{entry.total}</span>
                 </button>
@@ -41,37 +43,37 @@ export default function QuestionBankBrowser<T extends BankBrowserQuestion>({ que
             </ul>
           </section>}
           <div className="question-browser-header">
-            <h3 id="saved-questions-title">Questions</h3>
+            <h3 id="saved-questions-title">{s.questions}</h3>
             <p className="field-help">
-              {counts.total} question{counts.total === 1 ? '' : 's'} · {counts.usable} {readOnly ? 'published' : 'ready for new papers'}
-              {counts.inactive > 0 && ` · ${counts.inactive} switched off`}
+              {s.countLine(counts.total, counts.usable, readOnly)}
+              {counts.inactive > 0 && s.switchedOffCount(counts.inactive)}
             </p>
           </div>
-          <div className="question-filters" role="search" aria-label="Find questions">
+          <div className="question-filters" role="search" aria-label={s.find}>
             <label className="search-field">
-              <span className="visually-hidden">Search questions</span>
-              <input type="search" value={filters.search} placeholder="Search questions, units or lessons"
+              <span className="visually-hidden">{s.search}</span>
+              <input type="search" value={filters.search} placeholder={s.searchPlaceholder}
                 onChange={(event) => setFilter({ search: event.target.value })} />
             </label>
-            {types.length > 1 && <ChoiceChips legend="Type" value={filters.type} options={typeOptions}
+            {types.length > 1 && <ChoiceChips legend={s.type} value={filters.type} options={typeOptions}
               onChange={(type) => setFilter({ type })} />}
-            {counts.inactive > 0 && <ChoiceChips legend="Show" value={filters.status}
-              options={[{ value: 'all', label: 'All' }, { value: 'usable', label: 'Ready' }, { value: 'inactive', label: 'Switched off' }] as { value: BankQuestionFilters['status']; label: string }[]}
+            {counts.inactive > 0 && <ChoiceChips legend={s.show} value={filters.status}
+              options={[{ value: 'all', label: s.all }, { value: 'usable', label: s.ready }, { value: 'inactive', label: s.switchedOff }] as { value: BankQuestionFilters['status']; label: string }[]}
               onChange={(status) => setFilter({ status })} />}
-            {linkedIds && (counts.linked ?? 0) > 0 && <ChoiceChips legend="Context" value={filters.linked}
-              options={[{ value: 'all', label: 'All' }, { value: 'standalone', label: 'On their own' }, { value: 'linked', label: 'In passages and exercises' }] as { value: BankQuestionFilters['linked']; label: string }[]}
+            {linkedIds && (counts.linked ?? 0) > 0 && <ChoiceChips legend={s.context} value={filters.linked}
+              options={[{ value: 'all', label: s.all }, { value: 'standalone', label: s.onOwn }, { value: 'linked', label: s.inPassages }] as { value: BankQuestionFilters['linked']; label: string }[]}
               onChange={(linked) => setFilter({ linked })} />}
           </div>
           {questions.length === 0 ? (
             <div className="empty-state">
-              <p>{readOnly ? 'No published questions are available in this preset bank.' : 'This bank has no questions yet. Add the first one, or import a file.'}</p>
+              <p>{readOnly ? s.noPublished : s.noQuestions}</p>
               {!readOnly && <div className="recovery-actions">
-                <button type="button" onClick={onAdd}>Add question</button>
-                <button type="button" className="button-secondary" onClick={onImport}>Import file</button>
+                <button type="button" onClick={onAdd}>{s.addQuestion}</button>
+                <button type="button" className="button-secondary" onClick={onImport}>{s.importFile}</button>
               </div>}
             </div>
-          ) : result.matching === 0 ? <p role="status" className="empty-state">No questions match. Try another search or filter.</p> : <>
-            <p role="status" className="visually-hidden">{`Showing ${result.first} to ${result.last} of ${result.matching} questions.`}</p>
+          ) : result.matching === 0 ? <p role="status" className="empty-state">{s.noMatch}</p> : <>
+            <p role="status" className="visually-hidden">{s.showing(result.first, result.last, result.matching)}</p>
             <ul className="question-rows">
               {result.rows.map((question) => (
                 <li className="question-row" key={question.id}>
@@ -82,22 +84,22 @@ export default function QuestionBankBrowser<T extends BankBrowserQuestion>({ que
                     </span>
                   </span>
                   <div className="question-row-text">
-                    <p className="question-row-prompt">{question.prompt}</p>
+                    <p className="question-row-prompt" dir="auto">{question.prompt}</p>
                     <p className="question-row-meta">
-                      {questionTypeLabels[question.question_type as QuestionInput['questionType']] ?? question.question_type} · Unit {question.unit} · Lesson {question.lesson} · {question.difficulty}
-                      {!question.is_active && <span className="status-chip status-chip-warning">Switched off</span>}
-                      {linkedIds?.has(question.id) && <span className="status-chip">In a passage or exercise</span>}
+                      {s.meta(questionTypeLabel(question.question_type, language), question.unit, question.lesson, difficulty(question.difficulty))}
+                      {!question.is_active && <span className="status-chip status-chip-warning">{s.switchedOff}</span>}
+                      {linkedIds?.has(question.id) && <span className="status-chip">{s.inGroup}</span>}
                     </p>
                   </div>
-                  {!readOnly && onAction && <button type="button" className="button-secondary" disabled={isBusy} onClick={() => onAction(question)}>{actionLabel?.(question)??'Edit'}</button>}
+                  {!readOnly && onAction && <button type="button" className="button-secondary" disabled={isBusy} onClick={() => onAction(question)}>{actionLabel?.(question)??s.edit}</button>}
                 </li>
               ))}
             </ul>
           </>}
-          {result.pages > 1 && <div className="pager" aria-label="Question pages">
-            <button type="button" className="button-secondary" disabled={result.page <= 1} onClick={() => setPage(result.page - 1)}>Previous</button>
-            <span>Page {result.page} of {result.pages}</span>
-            <button type="button" className="button-secondary" disabled={result.page >= result.pages} onClick={() => setPage(result.page + 1)}>Next</button>
+          {result.pages > 1 && <div className="pager" aria-label={s.pages}>
+            <button type="button" className="button-secondary" disabled={result.page <= 1} onClick={() => setPage(result.page - 1)}>{s.previous}</button>
+            <span>{s.pageOf(result.page, result.pages)}</span>
+            <button type="button" className="button-secondary" disabled={result.page >= result.pages} onClick={() => setPage(result.page + 1)}>{s.next}</button>
           </div>}
         </section>
 

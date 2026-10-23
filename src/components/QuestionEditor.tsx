@@ -1,6 +1,9 @@
 import { ChoiceChips, Stepper } from './controls'
 import { Icon } from './icons'
-import { QUESTION_TYPE_GROUPS, QUESTION_TYPE_LABELS_EN, questionTypeUse } from '../lib/questionTypeLabels'
+import { QUESTION_TYPE_GROUPS, questionTypeLabel, questionTypeUse } from '../lib/questionTypeLabels'
+import { useI18n } from '../lib/i18n'
+import { localizeAppMessage } from '../lib/appMessages'
+import { QUESTION_BANK_STRINGS } from './QuestionBanks.strings'
 import QuestionBankBrowser from './QuestionBankBrowser'
 import { presetBankViews, presetUnitContent } from '../lib/presetBankViews'
 import PublishedPresetGroups from './PublishedPresetGroups'
@@ -44,6 +47,9 @@ import {
 import { teacherErrorMessage } from '../lib/safeErrorDetails'
 
 type EditorStatus = 'idle' | 'loading' | 'saving' | 'error'
+type Strings = (typeof QUESTION_BANK_STRINGS)['en']
+/** Messages resolve at render time so a language switch translates the current one. */
+type Message = (s: Strings) => string
 /** The bank opens to its question list; authoring, import, linked groups and bank management are focused views. */
 type BankView = 'list' | 'question' | 'import' | 'groups' | 'manage'
 
@@ -63,6 +69,10 @@ function splitNonEmptyLines(value: string): string[] {
 }
 
 export default function QuestionEditor({ ownerId, onUsePresets }: { ownerId: string; onUsePresets: () => void }) {
+  const { language } = useI18n()
+  const s = QUESTION_BANK_STRINGS[language]
+  const tm = (text: string | undefined): string => text ? localizeAppMessage(language, text) : ''
+  const typeName = (type: string) => questionTypeLabel(type, language)
   const [banks, setBanks] = useState<QuestionBank[]>([])
   const [selectedBankId, setSelectedBankId] = useState('')
   const [presetBanks,setPresetBanks]=useState<PresetBank[]>([])
@@ -78,7 +88,7 @@ export default function QuestionEditor({ ownerId, onUsePresets }: { ownerId: str
   const allBanks = [...banks.map(bank => ({value:bank.id,label:bank.name})), ...presetViews]
   useEffect(()=>{let active=true
     void getPresetBanks().then(value=>{if(active){setPresetBanks(value);setPresetError('');setSelectedBankId(current=>current|| (value[0]?'preset:'+value[0].id:''))}})
-      .catch(()=>{if(active)setPresetError('Preset banks could not be loaded. Retry loading presets.')})
+      .catch(()=>{if(active)setPresetError('failed')})
     return()=>{active=false}
   },[presetReload])
   const [questions, setQuestions] = useState<Question[]>([])
@@ -94,9 +104,9 @@ export default function QuestionEditor({ ownerId, onUsePresets }: { ownerId: str
   const [combinedBankName, setCombinedBankName] = useState('')
   const [sourceBankIds, setSourceBankIds] = useState<string[]>([])
   const [status, setStatus] = useState<EditorStatus>('loading')
-  const [message, setMessage] = useState(
-    'Loading your question banks…',
-  )
+  const [message, setMessage] = useState<Message>(() => (t: Strings) => t.loadingBanks)
+  const say = (next: Message): void => setMessage(() => next)
+  const sayText = (text: string): void => setMessage(() => () => text)
   const [view, setView] = useState<BankView>('list')
   const [filters, setFilters] = useState<BankQuestionFilters>(EMPTY_BANK_FILTERS)
   const [page, setPage] = useState(1)
@@ -117,9 +127,7 @@ export default function QuestionEditor({ ownerId, onUsePresets }: { ownerId: str
 
         if (loadedBanks.length === 0) {
           setStatus('idle')
-          setMessage(
-            'Create your first question bank to start adding approved questions.',
-          )
+          say((t) => t.firstBank)
           return
         }
 
@@ -129,14 +137,14 @@ export default function QuestionEditor({ ownerId, onUsePresets }: { ownerId: str
         setDraft(createEmptyQuestionInput(initialBankId))
         setValidationErrors({})
         setStatus('loading')
-        setMessage('Loading questions…')
+        say((t) => t.loadingQuestions)
       } catch (error) {
         if (!active) {
           return
         }
 
         setStatus('error')
-        setMessage(getErrorMessage(error))
+        sayText(getErrorMessage(error))
       }
     }
 
@@ -163,7 +171,7 @@ export default function QuestionEditor({ ownerId, onUsePresets }: { ownerId: str
           if(!active)return
           setPresetQuestions(result.questions);setPresetGroups(result.groups)
           setLinkedIds(new Set(result.questions.filter(q=>q.linked).map(q=>q.id)))
-          setStatus('idle');setMessage('');return
+          setStatus('idle');sayText('');return
         }
         const loadedQuestions = await getQuestionsForBanks([selectedBankId])
 
@@ -178,14 +186,14 @@ export default function QuestionEditor({ ownerId, onUsePresets }: { ownerId: str
         }).catch(() => { if (active) setLinkedIds(null) })
         setStatus('idle')
         // The list header carries the counts; the message line stays for saves and errors.
-        setMessage('')
+        sayText('')
       } catch (error) {
         if (!active) {
           return
         }
 
         setStatus('error')
-        setMessage(getErrorMessage(error))
+        sayText(getErrorMessage(error))
       }
     }
 
@@ -226,7 +234,7 @@ export default function QuestionEditor({ ownerId, onUsePresets }: { ownerId: str
     setDraft(createEmptyQuestionInput(bankId))
     setValidationErrors({})
     setStatus('loading')
-    setMessage('Loading questions…')
+    say((t) => t.loadingQuestions)
   }
 
   const handleCreateBank = async (
@@ -234,7 +242,7 @@ export default function QuestionEditor({ ownerId, onUsePresets }: { ownerId: str
   ): Promise<void> => {
     event.preventDefault()
     setStatus('saving')
-    setMessage('Creating question bank…')
+    say((t) => t.creatingBank)
 
     try {
       const bank = await createQuestionBank(newBankName)
@@ -247,7 +255,7 @@ export default function QuestionEditor({ ownerId, onUsePresets }: { ownerId: str
       selectBank(bank.id)
     } catch (error) {
       setStatus('error')
-      setMessage(getErrorMessage(error))
+      sayText(getErrorMessage(error))
     }
   }
 
@@ -262,16 +270,12 @@ export default function QuestionEditor({ ownerId, onUsePresets }: { ownerId: str
     if (firstError) {
       setValidationErrors(nextErrors)
       setStatus('error')
-      setMessage(firstError)
+      sayText(firstError)
       return
     }
 
     setStatus('saving')
-    setMessage(
-      editingQuestionId
-        ? 'Updating question…'
-        : 'Saving question…',
-    )
+    say((t) => editingQuestionId ? t.updating : t.savingQuestion)
 
     try {
       const savedQuestion = editingQuestionId
@@ -289,21 +293,17 @@ export default function QuestionEditor({ ownerId, onUsePresets }: { ownerId: str
       resetDraft()
       setView('list')
       setStatus('idle')
-      setMessage(
-        editingQuestionId
-          ? 'Question updated successfully.'
-          : 'Question saved successfully.',
-      )
+      say((t) => editingQuestionId ? t.updated : t.saved)
     } catch (error) {
       setStatus('error')
-      setMessage(getErrorMessage(error))
+      sayText(getErrorMessage(error))
     }
   }
 
   const handleComposeBank = async (event: FormEvent<HTMLFormElement>): Promise<void> => {
     event.preventDefault()
     setStatus('saving')
-    setMessage('Creating combined bank…')
+    say((t) => t.creatingCombined)
     try {
       const bank = await createQuestionBankFromBanks(combinedBankName, sourceBankIds)
       setBanks((current) => [...current, bank].sort((a, b) => a.name.localeCompare(b.name)))
@@ -312,7 +312,7 @@ export default function QuestionEditor({ ownerId, onUsePresets }: { ownerId: str
       selectBank(bank.id)
     } catch (error) {
       setStatus('error')
-      setMessage(getErrorMessage(error))
+      sayText(getErrorMessage(error))
     }
   }
 
@@ -323,10 +323,10 @@ export default function QuestionEditor({ ownerId, onUsePresets }: { ownerId: str
       setValidationErrors({})
       setView('question')
       setStatus('idle')
-      setMessage('Editing the selected question.')
+      say((t) => t.editing)
     } catch (error) {
       setStatus('error')
-      setMessage(getErrorMessage(error))
+      sayText(getErrorMessage(error))
     }
   }
 
@@ -372,7 +372,7 @@ export default function QuestionEditor({ ownerId, onUsePresets }: { ownerId: str
     resetDraft()
     setView('list')
     setStatus('idle')
-    setMessage('')
+    sayText('')
   }
 
   const addMatchingPair = () => {
@@ -409,37 +409,37 @@ export default function QuestionEditor({ ownerId, onUsePresets }: { ownerId: str
     >
       <header className="qb-head">
         <div>
-          <h2 id="question-editor-title" className="qb-title">Question banks</h2>
+          <h2 id="question-editor-title" className="qb-title">{s.title}</h2>
           <p className="qb-lede">{selectedBankId && allBanks.length > 0
-            ? `${(isPresetBank?presetContent.questions:questions).length} questions in ${selectedPreset?.label.replace(' (Preset)', '') ?? banks.find((bank) => bank.id === selectedBankId)?.name ?? 'this bank'}`
-            : 'Your questions, ready to use in papers.'}</p>
+            ? <>{s.inBank((isPresetBank?presetContent.questions:questions).length)} <bdi>{selectedPreset?.label.replace(' (Preset)', '') ?? banks.find((bank) => bank.id === selectedBankId)?.name ?? s.thisBank}</bdi></>
+            : s.lede}</p>
         </div>
         {!isPresetBank && banks.length > 0 && selectedBankId && <button type="button" className="qb-add" disabled={isBusy} onClick={() => { resetDraft(); setView('question') }}>
-          <Icon name="add" />Add question
+          <Icon name="add" />{s.addQuestion}
         </button>}
       </header>
 
-      {presetError && <div role="alert"><p>{presetError}</p><button type="button" className="button-secondary" onClick={()=>setPresetReload(n=>n+1)}>Retry loading presets</button></div>}
-      {allBanks.length > 0 && <ChoiceChips legend="Active bank" value={selectedBankId} disabled={isBusy} maxInlineOptions={6}
+      {presetError && <div role="alert"><p>{s.presetFailed}</p><button type="button" className="button-secondary" onClick={()=>setPresetReload(n=>n+1)}>{s.retryPresets}</button></div>}
+      {allBanks.length > 0 && <ChoiceChips legend={s.activeBank} value={selectedBankId} disabled={isBusy} maxInlineOptions={6}
         onChange={(bankId) => selectBank(bankId)}
         options={allBanks} />}
 
-      {isPresetBank && <div className="field-help"><p>Official preset bank · read-only. Choose a unit below to browse its published questions.</p>
-        <div className="recovery-actions"><button type="button" className="button-secondary" onClick={onUsePresets}>Create from approved presets</button>
-        <button type="button" className="button-secondary" disabled={isBusy} onClick={()=>{setPresetQuestions([]);setPresetGroups([]);setStatus('loading');setQuestionReload(n=>n+1)}}>Reload bank</button></div></div>}
+      {isPresetBank && <div className="field-help"><p>{s.presetNote}</p>
+        <div className="recovery-actions"><button type="button" className="button-secondary" onClick={onUsePresets}>{s.createFromPresets}</button>
+        <button type="button" className="button-secondary" disabled={isBusy} onClick={()=>{setPresetQuestions([]);setPresetGroups([]);setStatus('loading');setQuestionReload(n=>n+1)}}>{s.reloadBank}</button></div></div>}
 
       {allBanks.length > 0 && selectedBankId && (() => {
-        const sections = [['list', 'Questions'], ['import', 'Import file'], ['groups', 'Passages'], ['manage', 'Manage banks']] as const
+        const sections = [['list', s.questionsSection], ['import', s.importSection], ['groups', s.passagesSection], ['manage', s.manageSection]] as const
         const open = (key: typeof sections[number][0]) => key === 'list' ? showList() : setView(key)
         return <div className="qb-sections">
-          <div className="eg-seg qb-seg" role="group" aria-label="Question bank sections">
+          <div className="eg-seg qb-seg" role="group" aria-label={s.sections}>
             {sections.map(([key, label]) => <button key={key} type="button" aria-pressed={view === key} disabled={isBusy || (isPresetBank && (key==='import' || key==='manage'))} onClick={() => open(key)}>{label}</button>)}
           </div>
           <label className="eg-select qb-section-select">
-            <span className="visually-hidden">Question bank section</span>
+            <span className="visually-hidden">{s.section}</span>
             <select value={sections.some(([key]) => key === view) ? view : ''} disabled={isBusy}
               onChange={(event) => open(event.target.value as typeof sections[number][0])}>
-              {!sections.some(([key]) => key === view) && <option value="" disabled>{editingQuestionId ? 'Editing a question' : 'Adding a question'}</option>}
+              {!sections.some(([key]) => key === view) && <option value="" disabled>{editingQuestionId ? s.editingQuestion : s.addingQuestion}</option>}
               {sections.map(([key, label]) => <option key={key} value={key} disabled={isPresetBank && (key==='import' || key==='manage')}>{label}</option>)}
             </select>
           </label>
@@ -451,35 +451,35 @@ export default function QuestionEditor({ ownerId, onUsePresets }: { ownerId: str
         role={status === 'error' ? 'alert' : 'status'}
         aria-live="polite"
       >
-        {message}
+        {tm(message(s))}
       </p>
 
-      {!isPresetBank && (banks.length === 0 || view === 'manage') && <section className="bank-focus" aria-label="Manage banks">
+      {!isPresetBank && (banks.length === 0 || view === 'manage') && <section className="bank-focus" aria-label={s.manage}>
         <form className="create-bank" onSubmit={handleCreateBank}>
           <label>
-            New Grade 6 English bank
+            {s.newBank}
             <input
               type="text"
               value={newBankName}
               maxLength={100}
               required
-              placeholder="e.g. Unit 1 approved questions"
+              placeholder={s.newBankPlaceholder}
               onChange={(event) => setNewBankName(event.target.value)}
             />
           </label>
           <button type="submit" disabled={isBusy}>
-            Create bank
+            {s.createBank}
           </button>
         </form>
 
         {banks.length > 0 && <details className="create-bank">
-          <summary>Create bank from existing banks</summary>
-          <p>The new bank shares the questions currently in your selected banks. Editing a source question updates every bank that shares it; later source additions are not added automatically. Removing a question from this collection keeps the source question. Inactive questions and archived banks are excluded from new papers; finalized papers keep their captured questions.</p>
+          <summary>{s.combine}</summary>
+          <p>{s.combineNote}</p>
           <form onSubmit={(event) => void handleComposeBank(event)}>
-            <label>New bank name<input type="text" value={combinedBankName} maxLength={100} required
+            <label>{s.combinedName}<input type="text" value={combinedBankName} maxLength={100} required
               onChange={(event) => setCombinedBankName(event.target.value)} /></label>
             <fieldset disabled={isBusy}>
-              <legend>Source banks</legend>
+              <legend>{s.sourceBanks}</legend>
               {banks.map((bank) => <label key={bank.id} className="checkbox-field">
                 <input type="checkbox" checked={sourceBankIds.includes(bank.id)}
                   onChange={(event) => setSourceBankIds((current) => event.target.checked
@@ -487,15 +487,15 @@ export default function QuestionEditor({ ownerId, onUsePresets }: { ownerId: str
                 {bank.name}
               </label>)}
             </fieldset>
-            <button type="submit" disabled={isBusy || sourceBankIds.length === 0}>Create combined bank</button>
+            <button type="submit" disabled={isBusy || sourceBankIds.length === 0}>{s.createCombined}</button>
           </form>
         </details>}
 
-        <p className="field-help">Preset review and publication for MineGO reviewers is under Account.</p>
+        <p className="field-help">{s.reviewerNote}</p>
       </section>}
 
-      {!isPresetBank && view === 'import' && <section className="bank-focus" aria-label="Import file">
-        {selectedBankId && <Suspense fallback={<p role="status">Loading intake preview…</p>}>
+      {!isPresetBank && view === 'import' && <section className="bank-focus" aria-label={s.importFile}>
+        {selectedBankId && <Suspense fallback={<p role="status">{s.loadingImport}</p>}>
           <QuestionImportPreview key={selectedBankId} bankId={selectedBankId}
             onCommitted={() => setQuestionReload((current) => current + 1)}
             bankName={banks.find((bank) => bank.id === selectedBankId)?.name ?? ''} />
@@ -511,9 +511,7 @@ export default function QuestionEditor({ ownerId, onUsePresets }: { ownerId: str
           >
             <div className="form-title-row">
               <h3>
-                {editingQuestionId
-                  ? 'Edit question'
-                  : 'Add question'}
+                {editingQuestionId ? s.editTitle : s.addTitle}
               </h3>
               <button
                 type="button"
@@ -521,26 +519,26 @@ export default function QuestionEditor({ ownerId, onUsePresets }: { ownerId: str
                 onClick={showList}
                 disabled={isBusy}
               >
-                {editingQuestionId ? 'Cancel edit' : 'Back to questions'}
+                {editingQuestionId ? s.cancelEdit : s.backToQuestions}
               </button>
             </div>
 
             <label className="text-field eg-select question-type-chooser">
-              Question type
+              {s.questionType}
               <select value={draft.questionType} aria-describedby="question-type-use"
                 onChange={(event) => updateDraft('questionType', event.target.value as QuestionInput['questionType'])}>
-                {QUESTION_TYPE_GROUPS.map((group) => <optgroup key={group.id} label={group.label.en}>
-                  {group.types.map((type) => <option key={type} value={type}>{QUESTION_TYPE_LABELS_EN[type]}</option>)}
+                {QUESTION_TYPE_GROUPS.map((group) => <optgroup key={group.id} label={group.label[language]}>
+                  {group.types.map((type) => <option key={type} value={type}>{typeName(type)}</option>)}
                 </optgroup>)}
               </select>
-              <small id="question-type-use" className="field-help">{questionTypeUse(draft.questionType)}</small>
+              <small id="question-type-use" className="field-help">{questionTypeUse(draft.questionType, language)}</small>
             </label>
 
             <div className="question-placement">
-              <Stepper label="Unit" value={draft.unit} min={1} max={20} onChange={(unit) => updateDraft('unit', unit)} />
-              {validationErrors.unit && <small className="field-error">{validationErrors.unit}</small>}
+              <Stepper label={s.unit} value={draft.unit} min={1} max={20} onChange={(unit) => updateDraft('unit', unit)} />
+              {validationErrors.unit && <small className="field-error">{tm(validationErrors.unit)}</small>}
               <label className="text-field">
-                Lesson
+                {s.lesson}
                 <input
                   type="text"
                   value={draft.lesson}
@@ -548,16 +546,16 @@ export default function QuestionEditor({ ownerId, onUsePresets }: { ownerId: str
                   aria-invalid={Boolean(validationErrors.lesson)}
                   onChange={(event) => updateDraft('lesson', event.target.value)}
                 />
-                {validationErrors.lesson && <small className="field-error">{validationErrors.lesson}</small>}
+                {validationErrors.lesson && <small className="field-error">{tm(validationErrors.lesson)}</small>}
               </label>
             </div>
 
-            <ChoiceChips legend="Difficulty" value={draft.difficulty}
+            <ChoiceChips legend={s.difficulty} value={draft.difficulty}
               onChange={(difficulty) => updateDraft('difficulty', difficulty)}
-              options={[{ value: 'easy', label: 'Easy' }, { value: 'medium', label: 'Medium' }, { value: 'hard', label: 'Hard' }] as { value: QuestionInput['difficulty']; label: string }[]} />
+              options={[{ value: 'easy', label: s.easy }, { value: 'medium', label: s.medium }, { value: 'hard', label: s.hard }] as { value: QuestionInput['difficulty']; label: string }[]} />
 
             <label>
-              Question text
+              {s.questionText}
               <textarea
                 value={draft.prompt}
                 maxLength={2000}
@@ -569,16 +567,16 @@ export default function QuestionEditor({ ownerId, onUsePresets }: { ownerId: str
               />
               {validationErrors.prompt && (
                 <small className="field-error">
-                  {validationErrors.prompt}
+                  {tm(validationErrors.prompt)}
                 </small>
               )}
             </label>
 
             {draft.questionType === 'multiple-choice' && (
             <fieldset className="options-fieldset">
-              <legend>Answer options</legend>
+              <legend>{s.answerOptions}</legend>
               <p className="field-hint">
-                Select the radio button beside the correct answer.
+                {s.optionsHint}
               </p>
               {draft.options.map((option, index) => (
                 <div className="option-row" key={index}>
@@ -589,7 +587,7 @@ export default function QuestionEditor({ ownerId, onUsePresets }: { ownerId: str
                     checked={
                       draft.correctOptionLabel === option.label
                     }
-                    aria-label={`Mark option ${index + 1} as correct`}
+                    aria-label={s.markCorrect(index + 1)}
                     onChange={() =>
                       updateDraft(
                         'correctOptionLabel',
@@ -602,7 +600,7 @@ export default function QuestionEditor({ ownerId, onUsePresets }: { ownerId: str
                     type="text"
                     value={option.label}
                     maxLength={10}
-                    aria-label={`Option ${index + 1} label`}
+                    aria-label={s.optionLabel(index + 1)}
                     onChange={(event) =>
                       updateOption(index, 'label', event.target.value)
                     }
@@ -610,7 +608,7 @@ export default function QuestionEditor({ ownerId, onUsePresets }: { ownerId: str
                   <input
                     type="text"
                     value={option.text}
-                    aria-label={`Option ${index + 1} answer text`}
+                    aria-label={s.optionText(index + 1)}
                     onChange={(event) =>
                       updateOption(index, 'text', event.target.value)
                     }
@@ -619,18 +617,18 @@ export default function QuestionEditor({ ownerId, onUsePresets }: { ownerId: str
                     type="button"
                     className="button-quiet"
                     disabled={draft.options.length <= 2}
-                    aria-label={`Remove option ${index + 1}`}
+                    aria-label={s.removeOption(index + 1)}
                     onClick={() => removeOption(index)}
                   >
-                    Remove
+                    {s.remove}
                   </button>
                 </div>
               ))}
               {(validationErrors.options ||
                 validationErrors.correctOptionLabel) && (
                 <small className="field-error">
-                  {validationErrors.options ??
-                    validationErrors.correctOptionLabel}
+                  {tm(validationErrors.options ??
+                    validationErrors.correctOptionLabel)}
                 </small>
               )}
               <button
@@ -644,16 +642,16 @@ export default function QuestionEditor({ ownerId, onUsePresets }: { ownerId: str
                   )
                 }
               >
-                Add option
+                {s.addOption}
               </button>
             </fieldset>
             )}
 
             {draft.questionType === 'binary' && (
               <fieldset className="options-fieldset">
-                <legend>Binary answer</legend>
+                <legend>{s.binaryAnswer}</legend>
                 <label>
-                  Student labels
+                  {s.studentLabels}
                   <select
                     value={draft.binaryLabelMode}
                     onChange={(event) =>
@@ -663,12 +661,12 @@ export default function QuestionEditor({ ownerId, onUsePresets }: { ownerId: str
                       )
                     }
                   >
-                    <option value="true-false">True / False</option>
-                    <option value="yes-no">Yes / No</option>
+                    <option value="true-false">{s.trueFalse}</option>
+                    <option value="yes-no">{s.yesNo}</option>
                   </select>
                 </label>
                 <label>
-                  Correct answer
+                  {s.correctAnswer}
                   <select
                     value={draft.binaryAnswer ? 'true' : 'false'}
                     onChange={(event) =>
@@ -688,9 +686,9 @@ export default function QuestionEditor({ ownerId, onUsePresets }: { ownerId: str
 
             {draft.questionType === 'short-answer' && (
               <fieldset className="options-fieldset">
-                <legend>Reference answer</legend>
+                <legend>{s.referenceAnswer}</legend>
                 <label>
-                  Correct answer
+                  {s.correctAnswer}
                   <textarea
                     value={draft.canonicalAnswer}
                     rows={3}
@@ -701,11 +699,11 @@ export default function QuestionEditor({ ownerId, onUsePresets }: { ownerId: str
                     }
                   />
                   {validationErrors.canonicalAnswer && (
-                    <small className="field-error">{validationErrors.canonicalAnswer}</small>
+                    <small className="field-error">{tm(validationErrors.canonicalAnswer)}</small>
                   )}
                 </label>
                 <label>
-                  Other accepted answers (one per line)
+                  {s.otherAccepted}
                   <textarea
                     value={draft.approvedVariants.join('\n')}
                     rows={3}
@@ -714,11 +712,11 @@ export default function QuestionEditor({ ownerId, onUsePresets }: { ownerId: str
                     }
                   />
                   {validationErrors.approvedVariants && (
-                    <small className="field-error">{validationErrors.approvedVariants}</small>
+                    <small className="field-error">{tm(validationErrors.approvedVariants)}</small>
                   )}
                 </label>
                 <label>
-                  Answer lines
+                  {s.answerLines}
                   <input
                     type="number"
                     min="1"
@@ -738,16 +736,16 @@ export default function QuestionEditor({ ownerId, onUsePresets }: { ownerId: str
                       updateDraft('caseSensitive', event.target.checked)
                     }
                   />
-                  Accepted answers require the same capital letters
+                  {s.caseSensitive}
                 </label>
               </fieldset>
             )}
 
             {draft.questionType === 'completion' && (
               <fieldset className="options-fieldset">
-                <legend>{QUESTION_TYPE_LABELS_EN['completion']}</legend>
+                <legend>{typeName('completion')}</legend>
                 <label>
-                  Ordered completion items
+                  {s.completionItems}
                   <textarea
                     value={draft.completionText ?? ''}
                     rows={6}
@@ -782,17 +780,16 @@ export default function QuestionEditor({ ownerId, onUsePresets }: { ownerId: str
                     }}
                   />
                   <small className="field-hint">
-                    One source-approved item per line, in the exact displayed order.
-                    Preserve its visible blank and punctuation.
+                    {s.completionHint}
                   </small>
                   {validationErrors.completionText && (
                     <small className="field-error">
-                      {validationErrors.completionText}
+                      {tm(validationErrors.completionText)}
                     </small>
                   )}
                 </label>
                 <label>
-                  Word bank (one supplied word per line)
+                  {s.wordBank}
                   <textarea
                     value={(draft.completionWordBank ?? []).join('\n')}
                     rows={4}
@@ -806,12 +803,12 @@ export default function QuestionEditor({ ownerId, onUsePresets }: { ownerId: str
                   />
                   {validationErrors.completionWordBank && (
                     <small className="field-error">
-                      {validationErrors.completionWordBank}
+                      {tm(validationErrors.completionWordBank)}
                     </small>
                   )}
                 </label>
                 <label>
-                  Supplied word-bank order
+                  {s.wordBankOrder}
                   <select
                     value={draft.completionWordBankOrder ?? 'unordered'}
                     onChange={(event) =>
@@ -821,8 +818,8 @@ export default function QuestionEditor({ ownerId, onUsePresets }: { ownerId: str
                       )
                     }
                   >
-                    <option value="unordered">Unordered</option>
-                    <option value="ordered">Ordered</option>
+                    <option value="unordered">{s.unordered}</option>
+                    <option value="ordered">{s.ordered}</option>
                   </select>
                 </label>
                 <label className="checkbox-field">
@@ -836,7 +833,7 @@ export default function QuestionEditor({ ownerId, onUsePresets }: { ownerId: str
                       )
                     }
                   />
-                  The supplied exercise allows word reuse
+                  {s.allowReuse}
                 </label>
                 <label className="checkbox-field">
                   <input
@@ -849,12 +846,12 @@ export default function QuestionEditor({ ownerId, onUsePresets }: { ownerId: str
                       )
                     }
                   />
-                  The supplied instruction requires every bank word
+                  {s.requireAll}
                 </label>
                 <div className="form-grid">
                   {(draft.completionBlankIds ?? []).map((id, index) => (
                     <label key={id}>
-                      Correct answer for item {index + 1}
+                      {s.correctForItem(index + 1)}
                       <input
                         type="text"
                         value={draft.completionAnswers?.[id] ?? ''}
@@ -871,8 +868,8 @@ export default function QuestionEditor({ ownerId, onUsePresets }: { ownerId: str
                 {(validationErrors.completionBlankIds ||
                   validationErrors.completionAnswers) && (
                   <small className="field-error">
-                    {validationErrors.completionBlankIds ??
-                      validationErrors.completionAnswers}
+                    {tm(validationErrors.completionBlankIds ??
+                      validationErrors.completionAnswers)}
                   </small>
                 )}
               </fieldset>
@@ -880,31 +877,31 @@ export default function QuestionEditor({ ownerId, onUsePresets }: { ownerId: str
 
             {draft.questionType === 'matching' && (
               <fieldset className="options-fieldset">
-                <legend>List A / List B matching</legend>
-                <p className="field-hint">Each List A item must have one unique List B answer. List B is printed in its own order and can be shuffled reproducibly when a paper is generated.</p>
+                <legend>{s.matchingLegend}</legend>
+                <p className="field-hint">{s.matchingHint}</p>
                 {(draft.matchingLeft ?? []).map((left, index) => <div className="form-grid" key={left.id}>
-                  <label>List A {index + 1}<input value={left.text} maxLength={1000} onChange={(event) => updateDraft('matchingLeft', (draft.matchingLeft ?? []).map((item) => item.id === left.id ? { ...item, text: event.target.value } : item))} /></label>
-                  <label>Correct List B item<select value={draft.matchingPairs?.find((pair) => pair.leftId === left.id)?.rightId ?? ''} onChange={(event) => setMatchingTarget(left.id, event.target.value)}>
-                    {(draft.matchingRight ?? []).map((right, rightIndex) => <option key={right.id} value={right.id}>{String.fromCharCode(97 + rightIndex)}. {right.text || '(empty)'}</option>)}
+                  <label>{s.listA(index + 1)}<input value={left.text} maxLength={1000} onChange={(event) => updateDraft('matchingLeft', (draft.matchingLeft ?? []).map((item) => item.id === left.id ? { ...item, text: event.target.value } : item))} /></label>
+                  <label>{s.correctListB}<select value={draft.matchingPairs?.find((pair) => pair.leftId === left.id)?.rightId ?? ''} onChange={(event) => setMatchingTarget(left.id, event.target.value)}>
+                    {(draft.matchingRight ?? []).map((right, rightIndex) => <option key={right.id} value={right.id}>{String.fromCharCode(97 + rightIndex)}. {right.text || s.empty}</option>)}
                   </select></label>
-                  <button type="button" className="button-secondary" disabled={(draft.matchingLeft?.length ?? 0) <= 2} onClick={() => removeMatchingPair(left.id)}>Remove pair {index + 1}</button>
+                  <button type="button" className="button-secondary" disabled={(draft.matchingLeft?.length ?? 0) <= 2} onClick={() => removeMatchingPair(left.id)}>{s.removePair(index + 1)}</button>
                 </div>)}
-                <h4>List B display order</h4>
+                <h4>{s.listBOrder}</h4>
                 {(draft.matchingRight ?? []).map((right, index) => <div className="form-grid" key={right.id}>
-                  <label>List B {String.fromCharCode(97 + index)}<input value={right.text} maxLength={1000} onChange={(event) => updateDraft('matchingRight', (draft.matchingRight ?? []).map((item) => item.id === right.id ? { ...item, text: event.target.value } : item))} /></label>
-                  <button type="button" className="button-secondary" disabled={index === 0} onClick={() => { const next = [...(draft.matchingRight ?? [])]; [next[index - 1], next[index]] = [next[index], next[index - 1]]; updateDraft('matchingRight', next) }}>Move up</button>
-                  <button type="button" className="button-secondary" disabled={index === (draft.matchingRight?.length ?? 0) - 1} onClick={() => { const next = [...(draft.matchingRight ?? [])]; [next[index], next[index + 1]] = [next[index + 1], next[index]]; updateDraft('matchingRight', next) }}>Move down</button>
+                  <label>{s.listB(String.fromCharCode(97 + index))}<input value={right.text} maxLength={1000} onChange={(event) => updateDraft('matchingRight', (draft.matchingRight ?? []).map((item) => item.id === right.id ? { ...item, text: event.target.value } : item))} /></label>
+                  <button type="button" className="button-secondary" disabled={index === 0} onClick={() => { const next = [...(draft.matchingRight ?? [])]; [next[index - 1], next[index]] = [next[index], next[index - 1]]; updateDraft('matchingRight', next) }}>{s.moveUp}</button>
+                  <button type="button" className="button-secondary" disabled={index === (draft.matchingRight?.length ?? 0) - 1} onClick={() => { const next = [...(draft.matchingRight ?? [])]; [next[index], next[index + 1]] = [next[index + 1], next[index]]; updateDraft('matchingRight', next) }}>{s.moveDown}</button>
                 </div>)}
-                <button type="button" className="button-secondary" disabled={(draft.matchingLeft?.length ?? 0) >= 20} onClick={addMatchingPair}>Add pair</button>
-                {(validationErrors.matchingLeft || validationErrors.matchingRight || validationErrors.matchingPairs) && <small className="field-error">{validationErrors.matchingLeft ?? validationErrors.matchingRight ?? validationErrors.matchingPairs}</small>}
+                <button type="button" className="button-secondary" disabled={(draft.matchingLeft?.length ?? 0) >= 20} onClick={addMatchingPair}>{s.addPair}</button>
+                {(validationErrors.matchingLeft || validationErrors.matchingRight || validationErrors.matchingPairs) && <small className="field-error">{tm(validationErrors.matchingLeft ?? validationErrors.matchingRight ?? validationErrors.matchingPairs)}</small>}
               </fieldset>
             )}
 
             {draft.questionType === 'odd-word' && (
               <fieldset className="options-fieldset">
-                <legend>{QUESTION_TYPE_LABELS_EN['odd-word']}</legend>
+                <legend>{typeName('odd-word')}</legend>
                 <label>
-                  Ordered word set (one supplied word per line)
+                  {s.oddWords}
                   <textarea
                     value={(draft.oddWords ?? []).join('\n')}
                     rows={5}
@@ -918,12 +915,12 @@ export default function QuestionEditor({ ownerId, onUsePresets }: { ownerId: str
                   />
                   {validationErrors.oddWords && (
                     <small className="field-error">
-                      {validationErrors.oddWords}
+                      {tm(validationErrors.oddWords)}
                     </small>
                   )}
                 </label>
                 <label>
-                  Correct odd word
+                  {s.correctOdd}
                   <input
                     type="text"
                     value={draft.oddWordAnswer ?? ''}
@@ -934,7 +931,7 @@ export default function QuestionEditor({ ownerId, onUsePresets }: { ownerId: str
                   />
                   {validationErrors.oddWordAnswer && (
                     <small className="field-error">
-                      {validationErrors.oddWordAnswer}
+                      {tm(validationErrors.oddWordAnswer)}
                     </small>
                   )}
                 </label>
@@ -943,15 +940,14 @@ export default function QuestionEditor({ ownerId, onUsePresets }: { ownerId: str
 
             {draft.questionType === 'word-relationship' && (
               <fieldset className="options-fieldset">
-                <legend>{QUESTION_TYPE_LABELS_EN['word-relationship']}</legend>
+                <legend>{typeName('word-relationship')}</legend>
                 <p className="field-hint">
-                  Keep the exact incomplete target pair and punctuation in the
-                  question text above.
+                  {s.relationshipHint}
                 </p>
                 <div className="form-grid">
                   {[0, 1].map((index) => (
                     <label key={index}>
-                      Demonstrated pair — form {index + 1}
+                      {s.demonstrated(index + 1)}
                       <input
                         type="text"
                         value={draft.relationshipWords?.[index] ?? ''}
@@ -968,11 +964,11 @@ export default function QuestionEditor({ ownerId, onUsePresets }: { ownerId: str
                 </div>
                 {validationErrors.relationshipWords && (
                   <small className="field-error">
-                    {validationErrors.relationshipWords}
+                    {tm(validationErrors.relationshipWords)}
                   </small>
                 )}
                 <label>
-                  Correct missing form
+                  {s.correctMissing}
                   <input
                     type="text"
                     value={draft.relationshipAcceptedAnswers?.[0] ?? ''}
@@ -988,7 +984,7 @@ export default function QuestionEditor({ ownerId, onUsePresets }: { ownerId: str
                   />
                   {validationErrors.relationshipAcceptedAnswers && (
                     <small className="field-error">
-                      {validationErrors.relationshipAcceptedAnswers}
+                      {tm(validationErrors.relationshipAcceptedAnswers)}
                     </small>
                   )}
                 </label>
@@ -997,12 +993,12 @@ export default function QuestionEditor({ ownerId, onUsePresets }: { ownerId: str
 
             {draft.questionType === 'rewrite' && (
               <fieldset className="options-fieldset">
-                <legend>Punctuation / capitalization rewrite</legend>
+                <legend>{s.rewriteLegend}</legend>
                 <p className="field-hint">
-                  Keep the exact original text in the question text field above.
+                  {s.rewriteHint}
                 </p>
                 <label>
-                  Supplied rewrite instruction
+                  {s.rewriteInstruction}
                   <textarea
                     value={draft.rewriteInstruction ?? ''}
                     rows={2}
@@ -1013,12 +1009,12 @@ export default function QuestionEditor({ ownerId, onUsePresets }: { ownerId: str
                   />
                   {validationErrors.rewriteInstruction && (
                     <small className="field-error">
-                      {validationErrors.rewriteInstruction}
+                      {tm(validationErrors.rewriteInstruction)}
                     </small>
                   )}
                 </label>
                 <label>
-                  Correct rewritten sentence
+                  {s.correctRewrite}
                   <textarea
                     value={draft.rewriteAcceptedAnswers?.[0] ?? ''}
                     rows={2}
@@ -1034,7 +1030,7 @@ export default function QuestionEditor({ ownerId, onUsePresets }: { ownerId: str
                   />
                   {validationErrors.rewriteAcceptedAnswers && (
                     <small className="field-error">
-                      {validationErrors.rewriteAcceptedAnswers}
+                      {tm(validationErrors.rewriteAcceptedAnswers)}
                     </small>
                   )}
                 </label>
@@ -1043,15 +1039,13 @@ export default function QuestionEditor({ ownerId, onUsePresets }: { ownerId: str
 
             {draft.questionType === 'extended-writing' && (
               <fieldset className="options-fieldset">
-                <legend>{QUESTION_TYPE_LABELS_EN['extended-writing']}</legend>
+                <legend>{typeName('extended-writing')}</legend>
                 <p className="field-hint">
-                  The question text above is one supplied writing prompt. A-or-B
-                  choice is represented by the paper structure, not inside this
-                  question payload.
+                  {s.writingHint}
                 </p>
                 <div className="form-grid">
                   <label>
-                    Minimum words (only when supplied)
+                    {s.minWords}
                     <input
                       type="number"
                       min="1"
@@ -1066,7 +1060,7 @@ export default function QuestionEditor({ ownerId, onUsePresets }: { ownerId: str
                     />
                   </label>
                   <label>
-                    Maximum words (only when supplied)
+                    {s.maxWords}
                     <input
                       type="number"
                       min="1"
@@ -1084,8 +1078,8 @@ export default function QuestionEditor({ ownerId, onUsePresets }: { ownerId: str
                 {(validationErrors.writingMinimumWords ||
                   validationErrors.writingMaximumWords) && (
                   <small className="field-error">
-                    {validationErrors.writingMinimumWords ??
-                      validationErrors.writingMaximumWords}
+                    {tm(validationErrors.writingMinimumWords ??
+                      validationErrors.writingMaximumWords)}
                   </small>
                 )}
                 <label className="checkbox-field">
@@ -1103,16 +1097,16 @@ export default function QuestionEditor({ ownerId, onUsePresets }: { ownerId: str
                       updateDraft('writingGuidance', guidance)
                     }}
                   />
-                  No approved model or rubric is supplied
+                  {s.manualOnly}
                 </label>
                 {(draft.writingGuidance?.manualOnly ?? true) ? (
                   <p className="field-hint">
-                    Answer key: {MANUAL_MARKING_NOTE}
+                    {s.answerKeyNote} <bdi>{MANUAL_MARKING_NOTE}</bdi>
                   </p>
                 ) : (
                   <>
                     <label>
-                      Teacher-approved model answer (optional)
+                      {s.modelAnswer}
                       <textarea
                         value={draft.writingGuidance?.modelAnswer ?? ''}
                         rows={5}
@@ -1127,7 +1121,7 @@ export default function QuestionEditor({ ownerId, onUsePresets }: { ownerId: str
                       />
                     </label>
                     <label>
-                      Teacher-approved rubric criteria (one per line, optional)
+                      {s.rubric}
                       <textarea
                         value={(
                           draft.writingGuidance?.rubricCriteria ?? []
@@ -1149,7 +1143,7 @@ export default function QuestionEditor({ ownerId, onUsePresets }: { ownerId: str
                 )}
                 {validationErrors.writingGuidance && (
                   <small className="field-error">
-                    {validationErrors.writingGuidance}
+                    {tm(validationErrors.writingGuidance)}
                   </small>
                 )}
               </fieldset>
@@ -1163,30 +1157,26 @@ export default function QuestionEditor({ ownerId, onUsePresets }: { ownerId: str
                 onChange={(event) => updateDraft('isActive', event.target.checked)}
               />
               <span className="switch-track" aria-hidden="true" />
-              <span>Use in new papers</span>
+              <span>{s.useInPapers}</span>
             </label>
 
             <button type="submit" disabled={isBusy}>
-              {status === 'saving'
-                ? 'Saving…'
-                : editingQuestionId
-                  ? 'Update question'
-                  : 'Save question'}
+              {status === 'saving' ? s.saving : editingQuestionId ? s.updateQuestion : s.saveQuestion}
             </button>
           </form>
 
         </div>
       )}
       {selectedBankId && view === 'list' && status === 'loading' && (isPresetBank?presetQuestions:questions).length === 0 &&
-        <div className="empty-state" aria-busy="true">Loading this bank's questions…</div>}
+        <div className="empty-state" aria-busy="true">{s.loadingBankQuestions}</div>}
       {selectedBankId && view === 'list' && !(status === 'loading' && (isPresetBank?presetQuestions:questions).length === 0) && <QuestionBankBrowser<Question | PresetBrowserQuestion>
         questions={isPresetBank ? presetContent.questions : questions} linkedIds={linkedIds} filters={filters} setFilters={setFilters}
         page={page} setPage={setPage} readOnly={isPresetBank} isBusy={isBusy}
         onAction={question => { const own=questions.find(row=>row.id===question.id); if(!isPresetBank && own) { if(own.bank_id===selectedBankId)editQuestion(own);else selectBank(own.bank_id) } }}
-        actionLabel={question => 'bank_id' in question && question.bank_id!==selectedBankId ? 'Open its bank' : 'Edit'}
+        actionLabel={question => 'bank_id' in question && question.bank_id!==selectedBankId ? s.openBank : s.edit}
         onAdd={()=>{resetDraft();setView('question')}} onImport={()=>setView('import')} />}
       {isPresetBank && view === 'groups' && <PublishedPresetGroups groups={presetContent.groups} questions={presetQuestions} />}
-      {!isPresetBank && selectedBankId && view === 'groups' && <Suspense fallback={<p role="status">Loading passage groups…</p>}>
+      {!isPresetBank && selectedBankId && view === 'groups' && <Suspense fallback={<p role="status">{s.loadingPassages}</p>}>
         <PassageGroupEditor key={`${selectedBankId}:${questions.map((question) => `${question.id}:${question.current_revision}`).join(',')}`}
           ownerId={ownerId} bankId={selectedBankId} onOpenSourceBank={selectBank} />
       </Suspense>}
