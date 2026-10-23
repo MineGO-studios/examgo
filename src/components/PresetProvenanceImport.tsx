@@ -8,6 +8,7 @@ import { teacherErrorMessage } from '../lib/safeErrorDetails'
 import {packPresetProvenanceBatches,prepareCataloguePresetProvenance,previewPresetProvenanceImport,stagePresetProvenanceBatch,
   verifyPresetProvenanceReadback,type PresetImportPreview} from '../lib/presetProvenanceImport'
 import { PRESET_REVIEW_STRINGS } from './PresetReview.strings'
+import { FilePicker } from './controls'
 const errorText=(e:unknown)=>teacherErrorMessage(e, PRESET_REVIEW_STRINGS.en.intake.failed)
 function download(value:unknown,name:string){
   const url=URL.createObjectURL(new Blob([JSON.stringify(value,null,2)],{type:'application/json'}))
@@ -55,7 +56,7 @@ export default function PresetProvenanceImport({bankId,onStaged}:{bankId:string;
       <label>{s.sourceImport}<select name="preset-source-import" value={selected} onChange={e=>{setSelected(e.target.value);setPreview(null)}}>
         {imports.map(i=><option key={i.id} value={i.id}>{s.importOption(i.sourceNamespace,i.stagedRows,i.expectedRows)}</option>)}</select></label>
       <button type="button" disabled={!selected} onClick={()=>void prepare()}>{s.prepare}</button>
-      <label>{s.file}<input name="preset-provenance-file" type="file" accept=".json,application/json" onChange={e=>void file(e)}/></label>
+      <FilePicker label={s.file} name="preset-provenance-file" accept=".json,application/json" onChange={e=>void file(e)}/>
     </fieldset>
     {preview&&<><p>{s.totals(preview.document.entries.length,preview.duplicates.length,preview.rejected.length,preview.incomplete.length)}</p>
       <p>{s.releaseHash} <bdi>{preview.document.sourceSha256}</bdi>. {s.sourceImportId} <bdi>{preview.document.importId}</bdi>.</p>

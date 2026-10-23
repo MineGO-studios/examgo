@@ -693,6 +693,74 @@ textarea:hover:not(:disabled) {
 
 @keyframes help-tip-in { from { opacity: 0; transform: translateY(0.2rem); } }
 
+/* ---- File picker: the native input stays underneath; the zone speaks the interface language ---- */
+.file-pick {
+  display: grid;
+  gap: var(--eg-space-2);
+}
+
+.file-pick-label {
+  color: var(--eg-color-text);
+  font-weight: var(--eg-weight-medium);
+}
+
+.file-pick-zone {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--eg-space-3);
+  border: 1px dashed var(--eg-color-border-control);
+  border-radius: var(--eg-radius-control);
+  background: var(--eg-color-surface);
+  cursor: pointer;
+  font-weight: 400;
+  padding: var(--eg-space-3);
+  transition: background-color 160ms ease-out, border-color 160ms ease-out;
+}
+
+.file-pick-zone:hover,
+.file-pick-zone.is-dragging {
+  border-color: var(--eg-color-primary);
+  background: var(--eg-color-primary-soft);
+}
+
+.file-pick-zone:has(input:focus-visible) {
+  outline: 3px solid var(--eg-color-focus);
+  outline-offset: 2px;
+}
+
+.file-pick-zone:has(input:disabled) {
+  border-style: solid;
+  background: var(--eg-color-disabled-bg);
+  color: var(--eg-color-disabled-text);
+  cursor: not-allowed;
+}
+
+.file-pick-button {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--eg-space-2);
+  border: 1px solid var(--eg-color-border-control);
+  border-radius: var(--eg-radius-md);
+  background: var(--eg-color-surface);
+  color: var(--eg-color-text);
+  font-weight: var(--eg-weight-medium);
+  min-height: 2.75rem;
+  padding: 0 var(--eg-space-4);
+}
+
+.file-pick-status {
+  min-width: 0;
+  color: var(--eg-color-text-muted);
+  font-size: var(--eg-font-size-sm);
+  overflow-wrap: anywhere;
+}
+
+.file-pick-status bdi {
+  color: var(--eg-color-text);
+  font-weight: var(--eg-weight-medium);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .help-tip-content {
     animation: none;

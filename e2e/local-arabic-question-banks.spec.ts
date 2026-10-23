@@ -41,3 +41,32 @@ for (const width of [390, 1280]) {
     expect(state.unhandled).toEqual([])
   })
 }
+
+test('the import file picker speaks Arabic and accepts a chosen or dropped file', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 900 })
+  const state = await syntheticBackend(page)
+  await syntheticSignIn(page)
+  await page.getByRole('button', { name: 'العربية' }).click()
+  await page.getByRole('navigation', { name: 'مساحة عمل المعلم' }).getByRole('button', { name: 'بنوك الأسئلة', exact: true }).click()
+  await page.getByRole('combobox', { name: 'قسم بنك الأسئلة' }).selectOption('import')
+  const picker = page.locator('.file-pick')
+  await expect(picker).toContainText('اختيار ملف')
+  await expect(picker).toContainText('أفلِت ملفًا هنا، أو اختر واحدًا.')
+  await page.screenshot({ path: 'output/rtl-audit/file-picker-empty.png' })
+  expect(await englishLeft(page)).toEqual([])
+
+  await page.getByLabel('ملف الأسئلة', { exact: true }).setInputFiles({ name: 'unit-1.csv', mimeType: 'text/csv', buffer: Buffer.from('prompt\nOne?\n') })
+  await expect(picker).toContainText('unit-1.csv')
+  await expect(picker).toContainText('اختيار ملف آخر')
+
+  // Dropping a file onto the zone goes through the same input.
+  await picker.locator('.file-pick-zone').evaluate((zone) => {
+    const data = new DataTransfer()
+    data.items.add(new File(['prompt\nTwo?\n'], 'dropped.csv', { type: 'text/csv' }))
+    zone.dispatchEvent(new DragEvent('drop', { dataTransfer: data, bubbles: true, cancelable: true }))
+  })
+  await expect(picker).toContainText('dropped.csv')
+  await page.screenshot({ path: 'output/rtl-audit/file-picker-chosen.png' })
+  await checkAccessibility(page)
+  expect(state.unhandled).toEqual([])
+})
