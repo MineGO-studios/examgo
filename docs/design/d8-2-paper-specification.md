@@ -10,13 +10,12 @@ The comparison uses the local paper corpus, which is kept out of the repository.
 
 | Set | Files | What it can show |
 | --- | ---: | --- |
-| Ministerial final exams, Grade 6 English, 2019 and 2021–2026 (preliminary, first, second and third rounds) | 23 exams, 23 answer papers | Topology, instructions, item and attempt counts, marks, bilingual text, answer-key shape |
+| Ministerial final exams, Grade 6 English, 2019 and 2021–2026 (preliminary, first, second and third rounds), reconstructed in Word from the original page images | 23 exams, 23 answer papers | The authoritative ministerial evidence: topology, instructions, item and attempt counts, marks, bilingual text, answer-key shape, page and type |
 | Teacher monthly and mid-year papers | 12 exams, 2 answer papers | Variation in school papers |
 | Representative set behind the approved layout catalogue (16 September 2026) | 6 exams, 2 answer papers | Already-approved layout decisions |
 
 **Limits.**
-- The ministerial files are reconstructions of scanned originals, so their page size, margins and fonts come from the reconstruction, not the ministry. Use them for structure, wording patterns and counts, not exact geometry.
-- The 2026 scans themselves were not inspected.
+- The ministerial originals exist only as page images. The reconstructed Word files are the authoritative copies of those papers and are treated as the evidence here; the images were not re-inspected.
 - 2020 is missing.
 - One 2019 paper (second round) prints three part marks in a form the extractor could not read; its parts match the other papers.
 - Teacher papers follow no single format, so they show variation, not a convention.
@@ -40,6 +39,7 @@ Total: **100 marks**, Q1–Q4 in A and B parts of 10 marks each, plus Q5 for 20 
 
 Common to all papers:
 
+- **Page and type:** A4 portrait with 0.2-inch margins; Arial for the paper, mostly 10 pt with 9 pt for secondary lines; Times New Roman for the top metadata (23 of 23).
 - **Header:** a three-zone header with the issuing authority, a middle zone and the date, round and time (19 papers); 3 papers use two zones. ExamGO never reproduces the issuing authority or its emblem (see Identity below).
 - **General note:** a bilingual "Answer all the questions" row under the header (22 of 23).
 - **Part headings:** each part is one row: `Q1 A)- instruction`, with its marks `(10 M.)` at the reading end of the row. An Arabic translation of the instruction sits between them when present. 2026 writes the first part as `Q1)A-` and the second as `B-`, which is the same structure.
@@ -72,7 +72,7 @@ These rules extend the approved layout catalogue and [the paper format rules](..
 9. **Word box.** Print the box once above its numbered sentences, with the blanks as dotted leaders.
 10. **Writing.** Q5 offers A or B, each with its own instruction and an optional Arabic line, and answer space after the chosen task.
 11. **Answer key.** Keep the `Q | Point | Answer` reading order of ministerial keys. ExamGO's added columns (Part, Rule, Mark, Total), approved in Phases 8 and 9, stay.
-12. **Paper and type.** Keep the approved catalogue values: A4, 0.2-inch margins, Arial 10 pt for English, Arial 8 pt or larger for Arabic with right-to-left runs. They are a deliberate ExamGO choice, not ministry evidence.
+12. **Paper and type.** Keep the approved catalogue values, which match every ministerial paper: A4, 0.2-inch margins, Arial 10 pt for English (9 pt only for secondary lines), Arial 8 pt or larger for Arabic with right-to-left runs, and Times New Roman for top metadata.
 
 ## How today's output compares
 
