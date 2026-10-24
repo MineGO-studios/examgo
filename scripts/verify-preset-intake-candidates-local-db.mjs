@@ -133,7 +133,9 @@ try {
   assert.deepEqual(all.candidates, expected(questionIds))
   assert.equal(all.candidates.filter(c => c.record).length, 40)
   const inactive = (await admin.query('select question_id id from public.question_revisions where id=$1', [revisionIds[59]])).rows[0].id
-  const some = [questionIds[3], questionIds[45], randomUUID(), inactive]
+  // Sample two active questions: ids are ordered by random revision UUIDs, so a fixed index could land on the inactive one.
+  const active = questionIds.filter(id => id !== inactive)
+  const some = [active[3], active[45], randomUUID(), inactive]
   assert.deepEqual((await intake(reviewer, some)).candidates, expected(some))
   assert.equal((await intake(reviewer, some)).candidates.length, 2)
   pass('candidates equal what preparation derived from the legacy readback, in the same order; unknown and inactive ids skipped')
