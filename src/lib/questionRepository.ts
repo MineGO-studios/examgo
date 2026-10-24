@@ -1,4 +1,5 @@
 import { supabase } from './supabase'
+import { accountLimitError } from './accountLimits'
 import {
   getFirstQuestionValidationError,
   normalizeQuestionInput,
@@ -6,6 +7,7 @@ import {
   type Question,
   type QuestionInput,
   isValidUuid,
+  questionInputPayload,
 } from './questions'
 import type {
   TablesInsert,
@@ -20,6 +22,9 @@ export type QuestionDataErrorCode =
   | 'read-failed'
   | 'not-found'
   | 'update-failed'
+
+const CONTENT_LIMIT_MESSAGE =
+  'This question has more text than ExamGO stores. Shorten its prompt, options or answer, then save again.'
 
 export class QuestionDataError extends Error {
   readonly code: QuestionDataErrorCode
@@ -59,9 +64,9 @@ function questionInputToRow(
     question_type: input.questionType,
     difficulty: input.difficulty,
     prompt: input.prompt,
-    options: input.options,
-    correct_option_label: input.correctOptionLabel,
     is_active: input.isActive,
+    marks: input.marks,
+    ...questionInputPayload(input),
   }
 }
 
@@ -84,11 +89,18 @@ export async function createQuestion(
       code: error.code,
     })
 
+    const limit = accountLimitError(error)
+    if (limit) throw limit
+
     if (error.code === '23505') {
       throw new QuestionDataError(
         'duplicate',
         'A question with this ID already exists in this bank.',
       )
+    }
+
+    if (error.code === '23514') {
+      throw new QuestionDataError('validation', CONTENT_LIMIT_MESSAGE)
     }
 
     if (error.code === '42501') {
@@ -137,11 +149,18 @@ export async function createQuestions(
       code: error.code,
     })
 
+    const limit = accountLimitError(error)
+    if (limit) throw limit
+
     if (error.code === '23505') {
       throw new QuestionDataError(
         'duplicate',
         'One or more question IDs already exist in this bank.',
       )
+    }
+
+    if (error.code === '23514') {
+      throw new QuestionDataError('validation', CONTENT_LIMIT_MESSAGE)
     }
 
     if (error.code === '42501') {
@@ -239,9 +258,9 @@ export async function updateQuestion(
     question_type: normalized.questionType,
     difficulty: normalized.difficulty,
     prompt: normalized.prompt,
-    options: normalized.options,
-    correct_option_label: normalized.correctOptionLabel,
     is_active: normalized.isActive,
+    marks: normalized.marks,
+    ...questionInputPayload(normalized),
   }
 
   const { data, error } = await supabase
@@ -262,6 +281,10 @@ export async function updateQuestion(
         'duplicate',
         'A question with this ID already exists in this bank.',
       )
+    }
+
+    if (error.code === '23514') {
+      throw new QuestionDataError('validation', CONTENT_LIMIT_MESSAGE)
     }
 
     if (error.code === '42501') {

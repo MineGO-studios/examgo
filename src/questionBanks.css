@@ -1,0 +1,289 @@
+/* Question banks in the examgo-design direction: a card file. One main action, a unit coverage
+   strip as the anchor, and index cards that flip to their answer side. */
+
+.question-editor {
+  max-width: 68rem;
+}
+
+.qb-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  justify-content: space-between;
+  gap: var(--eg-space-4) var(--eg-space-6);
+  margin-bottom: var(--eg-space-5);
+}
+
+.qb-title {
+  margin: 0;
+  font-size: var(--eg-font-size-display);
+  font-weight: 700;
+  letter-spacing: -0.035em;
+  line-height: 1.05;
+}
+
+.qb-lede {
+  margin: 0.4rem 0 0;
+}
+
+.qb-add svg {
+  width: 1.1rem;
+  height: 1.1rem;
+}
+
+.qb-sections {
+  margin-block: var(--eg-space-4) var(--eg-space-2);
+}
+
+.qb-section-select {
+  display: none;
+}
+
+/* ---- Unit coverage: bars grow in, one per unit, in the unit's colour ---- */
+.qb-units {
+  border: 1px solid var(--eg-color-border);
+  border-radius: var(--eg-radius-card);
+  background: var(--eg-color-surface);
+  padding: 0.8rem 1.1rem 0.6rem;
+}
+
+.qb-units-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--eg-space-3);
+  min-block-size: 2rem;
+}
+
+.qb-units-head h3 {
+  margin: 0;
+  font-size: var(--eg-font-size-md);
+  font-weight: 600;
+}
+
+.qb-units ul {
+  display: grid;
+  gap: 0.15rem;
+  margin: 0.35rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.qb-units button[aria-pressed]:not(:disabled),
+.qb-units button[aria-pressed]:hover:not(:disabled),
+.qb-units button[aria-pressed]:active:not(:disabled) {
+  display: grid;
+  grid-template-columns: 4.5rem minmax(0, 1fr) 2.5rem;
+  align-items: center;
+  gap: var(--eg-space-3);
+  width: 100%;
+  min-block-size: 2.25rem;
+  border: 0;
+  border-radius: var(--eg-radius-md);
+  background: transparent;
+  color: var(--eg-color-text);
+  font-weight: 500;
+  padding: 0 0.4rem;
+  transform: none;
+}
+
+.qb-units button[aria-pressed]:hover:not(:disabled) {
+  background: var(--eg-color-fill);
+}
+
+.qb-units button[aria-pressed='true']:not(:disabled) {
+  background: var(--eg-color-primary-soft);
+}
+
+.qb-unit-name {
+  text-align: start;
+}
+
+.qb-unit-bar {
+  position: relative;
+  height: 0.6rem;
+  overflow: hidden;
+  border-radius: var(--eg-radius-pill);
+  background: var(--eg-color-fill);
+}
+
+/* The solid part is ready for papers; the faint part is switched off. */
+.qb-unit-bar i {
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: 0;
+  width: calc(var(--share) * 100%);
+  border-radius: inherit;
+  background: linear-gradient(to right, var(--unit) calc(var(--ready) * 100%), color-mix(in srgb, var(--unit) 35%, transparent) 0);
+  transform-origin: left;
+  animation: qb-grow 700ms var(--eg-ease) backwards;
+  animation-delay: calc(120ms + var(--n) * 90ms);
+}
+
+:root[dir='rtl'] .qb-unit-bar i {
+  background: linear-gradient(to left, var(--unit) calc(var(--ready) * 100%), color-mix(in srgb, var(--unit) 35%, transparent) 0);
+  transform-origin: right;
+}
+
+.qb-unit-count {
+  color: var(--eg-color-text-muted);
+  font-family: var(--eg-font-mono);
+  font-size: var(--eg-font-size-sm);
+  text-align: end;
+}
+
+@keyframes qb-grow { from { transform: scaleX(0); } }
+
+/* ---- Question rows: an index card that flips to its answer ---- */
+.question-rows {
+  border: 0;
+  border-radius: var(--eg-radius-group);
+  box-shadow: 0 1px 2px rgb(var(--eg-shadow-rgb) / 6%), 0 10px 30px rgb(var(--eg-shadow-rgb) / 7%);
+}
+
+.question-row {
+  position: relative;
+}
+
+.question-row + .question-row {
+  border-top: 0;
+}
+
+.question-row + .question-row::before {
+  position: absolute;
+  top: 0;
+  inset-inline: 5.5rem 0;
+  border-top: 1px solid var(--eg-color-border);
+  content: "";
+}
+
+.question-row-meta {
+  font-family: var(--eg-font-mono);
+}
+
+.question-row-meta .status-chip {
+  font-family: var(--eg-font-sans);
+}
+
+.qcard {
+  flex: none;
+  width: 3.75rem;
+  height: 2.6rem;
+  perspective: 30rem;
+}
+
+.qcard-in {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+  transition: transform 520ms var(--eg-ease);
+}
+
+.qcard-front,
+.qcard-back {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border-radius: var(--eg-radius-xs);
+  background-color: var(--eg-paper-bg);
+  box-shadow: 0 1px 2px rgb(var(--eg-shadow-rgb) / 18%), 0 4px 10px rgb(var(--eg-shadow-rgb) / 10%);
+  backface-visibility: hidden;
+  color: var(--eg-paper-ink);
+}
+
+/* An index card: a red margin rule and faint blue lines. */
+.qcard-front {
+  background-image:
+    linear-gradient(var(--eg-paper-pen), var(--eg-paper-pen)),
+    repeating-linear-gradient(to bottom, transparent 0 7px, var(--eg-paper-card-line) 7px 8px);
+  background-position: 0 9px, 0 0;
+  background-repeat: no-repeat, repeat;
+  background-size: 100% 1px, 100% 100%;
+}
+
+.qcard-front b {
+  font: 700 var(--eg-font-size-2xs)/1 var(--eg-font-mono);
+}
+
+.qcard-back {
+  grid-template-rows: auto 1fr;
+  place-items: start;
+  gap: 0.1rem;
+  padding: 0.25rem 0.35rem;
+  transform: rotateY(180deg);
+}
+
+.qcard-back i {
+  color: var(--eg-color-primary);
+  font-size: var(--eg-font-size-2xs);
+  font-style: normal;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.qcard-back small {
+  display: -webkit-box;
+  overflow: hidden;
+  color: var(--eg-paper-ink);
+  font: 600 0.5625rem/1.2 var(--eg-font-sans);
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow-wrap: anywhere;
+}
+
+.question-row:hover .qcard-in,
+.question-row:focus-within .qcard-in {
+  transform: rotateY(180deg);
+}
+
+/* Rows deal in like cards on first load. */
+.question-rows .question-row {
+  animation: qb-deal 380ms var(--eg-ease) backwards;
+}
+
+.question-rows .question-row:nth-child(2) { animation-delay: 40ms; }
+.question-rows .question-row:nth-child(3) { animation-delay: 80ms; }
+.question-rows .question-row:nth-child(4) { animation-delay: 120ms; }
+.question-rows .question-row:nth-child(5) { animation-delay: 160ms; }
+.question-rows .question-row:nth-child(n + 6) { animation-delay: 200ms; }
+
+@keyframes qb-deal { from { transform: translateY(0.5rem); clip-path: inset(0 0 100% 0); } }
+
+@media (max-width: 40rem) {
+  .qb-seg {
+    display: none;
+  }
+
+  .qb-section-select {
+    display: grid;
+  }
+
+  .question-row + .question-row::before {
+    inset-inline-start: 0;
+  }
+
+  .qb-units button[aria-pressed]:not(:disabled) {
+    grid-template-columns: 3.75rem minmax(0, 1fr) 2rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .qb-unit-bar i,
+  .question-rows .question-row {
+    animation: none;
+  }
+
+  .qcard-in {
+    transition: none;
+  }
+}
+
+.qb-units-title {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--eg-space-1);
+}

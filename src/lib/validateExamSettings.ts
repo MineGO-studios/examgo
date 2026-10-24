@@ -14,6 +14,7 @@ export function validateExamSettings(
   const errors: ExamSettingsErrors = {}
   const schoolName = settings.schoolName.trim()
   const examTitle = settings.examTitle.trim()
+  const teacherName = settings.teacherName?.trim() ?? ''
 
   if (schoolName.length === 0) {
     errors.schoolName = 'School name is required.'
@@ -29,6 +30,10 @@ export function validateExamSettings(
     examTitle.length > EXAM_LIMITS.examTitleMaxLength
   ) {
     errors.examTitle = `Test title cannot exceed ${EXAM_LIMITS.examTitleMaxLength} characters.`
+  }
+
+  if (teacherName.length > EXAM_LIMITS.teacherNameMaxLength) {
+    errors.teacherName = `Teacher name cannot exceed ${EXAM_LIMITS.teacherNameMaxLength} characters.`
   }
 
   if (settings.grade !== 6) {

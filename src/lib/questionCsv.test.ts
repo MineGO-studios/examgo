@@ -22,12 +22,19 @@ describe('parseQuestionCsv', () => {
         questionType: 'multiple-choice',
         difficulty: 'easy',
         prompt: 'Choose the word, then answer.',
+        marks: null,
         options: [
           { label: 'A', text: 'Hello, Ali' },
           { label: 'B', text: 'Goodbye' },
           { label: 'C', text: 'Welcome' },
         ],
         correctOptionLabel: 'A',
+        binaryLabelMode: 'true-false',
+        binaryAnswer: true,
+        canonicalAnswer: '',
+        approvedVariants: [],
+        caseSensitive: false,
+        answerLines: 2,
         isActive: true,
       },
     ])
@@ -43,6 +50,19 @@ describe('parseQuestionCsv', () => {
         BANK_ID,
       ),
     ).toThrow('Row 2: unit must be a whole number.')
+  })
+
+  it('imports MCQ content without assigning bank marks', () => {
+    const rows = parseQuestionCsv([
+      'external_id,unit,lesson,difficulty,prompt,option_a,option_b,correct_option_label,marks',
+      'U2-Q001,2,5,medium,Choose the word,First,Second,B,2',
+      'U2-Q002,2,5,medium,Choose again,First,Second,A,',
+    ].join('\n'), BANK_ID)
+    expect(rows.map((row) => row.marks)).toEqual([null, null])
+    expect(parseQuestionCsv([
+      'external_id,unit,lesson,difficulty,prompt,option_a,option_b,correct_option_label,marks',
+      'U2-Q003,2,5,medium,Choose,First,Second,A,2.5',
+    ].join('\n'), BANK_ID)[0].marks).toBeNull()
   })
 
   it('rejects duplicate question IDs before import', () => {

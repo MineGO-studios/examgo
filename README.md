@@ -1,32 +1,45 @@
-# React + TypeScript + Vite
+# ExamGO
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+ExamGO by MineGO Studio helps Iraqi Grade 6 English teachers prepare student papers and matching editable Word answer keys from reusable question banks.
 
-Currently, two official plugins are available:
+**Current development version: 1.0.0-alpha.1 — Alpha 1.** This is an Alpha development checkpoint, not a stable release or proof that teacher testing has passed. Package metadata identifies this checkout; it does not identify an already deployed build.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Documentation
 
-## React Compiler
+Start with the [official documentation](docs/README.md).
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- [Teacher guide](docs/guides/teacher-guide.md)
+- [Development setup](docs/guides/development.md)
+- [System and compatibility reference](docs/reference/system-overview.md)
+- [Alpha limitations](docs/reference/alpha-limitations.md)
+- [Versioning and documentation policy](docs/maintenance/documentation-and-versioning.md)
+- [Change history](CHANGELOG.md)
 
-## Expanding the Oxlint configuration
+The [Linear project](https://linear.app/minego/project/examgo-496f93ecf2e7) owns work status, priorities and phase acceptance. Repository documentation owns product instructions and technical reference. Older design and phase records remain dated evidence.
 
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
+## Local development
 
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+Use Node.js 24, matching the current CI configuration, and npm.
+
+1. Run `npm ci`.
+2. Copy `.env.example` to `.env.local`.
+3. Set the authorized development project's `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY`.
+4. Run `npm run dev` and open the local address it prints.
+
+Use a browser-safe publishable key. Never put a service-role key or database password in client configuration. Local environment files stay outside version control. Installing dependencies and starting locally do not apply migrations or authorize access to another environment.
+
+## Project checks
+
+```text
+npm test
+npm run lint
+npm run build
+npm run typecheck:e2e
+npm run test:e2e
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+Run the checks relevant to the change. Browser tests need the configured browser runtime. Structural document checks and browser tests do not replace human inspection of changed documents in Word or LibreOffice.
+
+## Release path
+
+The planned progression is Alpha, Beta, optional release candidates, then the first stable `1.0.0`. Promotions require documented evidence and owner approval. Phase numbers and document-schema versions remain separate from product versions.

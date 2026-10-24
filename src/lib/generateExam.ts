@@ -1,6 +1,10 @@
+import { preparePaperTemplate } from './paperTemplateFormat'
 import type { ExamQuestion } from '../types/question'
+import { hasPrintedChoiceOptions } from './printedChoiceOptions'
 import {
   DEFAULT_EXAM_QUESTION_FILTERS,
+  getQuestionQuantities,
+  SIMPLE_QUESTION_TYPES,
   type ExamQuestionFilters,
   type ExamSettings,
 } from '../types/exam'
@@ -9,12 +13,51 @@ import {
   validateExamSettings,
 } from './validateExamSettings'
 import { getSafeErrorDetails } from './safeErrorDetails'
-import { selectQuestions } from './selectQuestions'
+import { validateDocumentText } from './documentText'
+import { selectMixedQuestions } from './selectQuestions'
+import {
+  downloadExamDocumentPair,
+  prepareExamDocumentPair,
+  type PairedDownloadResult,
+  type PreparedExamDocumentPair,
+} from './documentDelivery'
 
 const EXAM_TEMPLATE_PATH =
-  '/templates/iraqi-mainstream-exam-v1.docx'
+  '/templates/iraqi-mainstream-simple-types-exam-v2.docx'
 const ANSWER_KEY_TEMPLATE_PATH =
-  '/templates/iraqi-mainstream-answer-key-v1.docx'
+  '/templates/iraqi-mainstream-simple-types-answer-key-v2.docx'
+
+export type ValidatedSimpleExamSnapshot = {
+  selectionSeed: number
+  totalMarks: number
+  settings: ExamSettings
+  questions: readonly ExamQuestion[]
+}
+
+export function createValidatedSimpleExamSnapshot(
+  settings: ExamSettings,
+  questions: readonly ExamQuestion[],
+): ValidatedSimpleExamSnapshot {
+  if (questions.length < 1) throw new Error('A generated snapshot must contain at least one question.')
+  const ids = new Set<string>()
+  let totalMarks = 0
+  for (const question of questions) {
+    if (!question.id || ids.has(question.id)) throw new Error(`Generated snapshot contains duplicate question ID: ${question.id || '(missing)'}.`)
+    ids.add(question.id)
+    const marks = question.marks
+    if (!Number.isSafeInteger(marks) || marks < 1 || marks > 1000) throw new Error(`Question ${question.id} has invalid marks.`)
+    totalMarks += marks
+    if (question.type === 'multiple-choice' && !question.options.some((option) => option.label === question.correctAnswer.label && option.text === question.correctAnswer.text)) throw new Error(`Question ${question.id} has an invalid multiple-choice answer.`)
+    if (question.type === 'short-answer' && !question.canonicalAnswer.trim()) throw new Error(`Question ${question.id} has no reference answer.`)
+  }
+  if (totalMarks > 1000) throw new Error('The exam total cannot exceed 1000 marks.')
+  return {
+    selectionSeed: settings.selectionSeed,
+    totalMarks,
+    settings: structuredClone(settings),
+    questions: structuredClone(questions),
+  }
+}
 
 async function loadTemplate(
   path: string,
@@ -37,24 +80,53 @@ async function loadTemplate(
   return template
 }
 
-function downloadBlob(filename: string, blob: Blob): void {
-  const downloadUrl = URL.createObjectURL(blob)
-  const link = document.createElement('a')
-
-  link.href = downloadUrl
-  link.download = filename
-  link.style.display = 'none'
-
-  document.body.appendChild(link)
-  link.click()
-
-  window.setTimeout(() => {
-    link.remove()
-    URL.revokeObjectURL(downloadUrl)
-  }, 0)
+function getQuestionHeading(question: ExamQuestion, number: number): string {
+  switch (question.type) {
+    case 'multiple-choice':
+      return `Q${number})- Choose the correct answer between brackets.`
+    case 'binary':
+      return question.labelMode === 'yes-no'
+        ? `Q${number})- Answer the following with (Yes) or (No).`
+        : `Q${number})- Answer the following with (True) or (False).`
+    case 'short-answer':
+      return `Q${number})- Answer the following question.`
+  }
 }
 
-function buildExamData(
+function getStudentLine(question: ExamQuestion): string {
+  switch (question.type) {
+    case 'multiple-choice':
+      return hasPrintedChoiceOptions(question.prompt, question.options) ? question.prompt
+        : `${question.prompt} ( ${question.options.map((option) => option.text).join(' / ')} )`
+    case 'binary': {
+      const labels = question.labelMode === 'yes-no' ? ['Yes', 'No'] : ['True', 'False']
+      return `${question.prompt} ( ${labels.join(' / ')} )`
+    }
+    case 'short-answer':
+      return question.prompt
+  }
+}
+
+function getReferenceAnswer(question: ExamQuestion): string {
+  switch (question.type) {
+    case 'multiple-choice':
+      return `${question.correctAnswer.label}. ${question.correctAnswer.text}`
+    case 'binary':
+      return question.labelMode === 'yes-no'
+        ? question.isTrue ? 'Yes' : 'No'
+        : question.isTrue ? 'True' : 'False'
+    case 'short-answer': {
+      const answers = [question.canonicalAnswer, ...question.approvedVariants]
+      return answers.join(' / ')
+    }
+  }
+}
+
+function getTeacherFooter(settings: ExamSettings): string {
+  return settings.teacherName?.trim() || '____________________'
+}
+
+export function buildExamData(
   questions: readonly ExamQuestion[],
   settings: ExamSettings,
 ) {
@@ -62,24 +134,23 @@ function buildExamData(
     ExamTitle: settings.examTitle.trim(),
     SchoolName: settings.schoolName.trim(),
     Grade: String(settings.grade),
-    Instructions: 'Choose the correct answer.',
-    SectionMarks:
-      questions.length * settings.marksPerQuestion,
+    TeacherName: getTeacherFooter(settings),
+    Instructions: 'Answer all questions.',
+    SectionMarks: questions.reduce((total, question) => total + question.marks, 0),
 
     Questions: questions.map((question, index) => ({
       Number: index + 1,
-      Prompt: question.prompt,
-      Marks: settings.marksPerQuestion,
-
-      Options: question.options.map((option) => ({
-        Label: option.label,
-        Text: option.text,
-      })),
+      Heading: getQuestionHeading(question, index + 1),
+      StudentLine: getStudentLine(question),
+      Marks: question.marks,
+      AnswerSpace: question.type === 'short-answer'
+        ? Array.from({ length: question.answerLines }, () => '________________________________________________').join('\n')
+        : '',
     })),
   }
 }
 
-function buildAnswerKeyData(
+export function buildAnswerKeyData(
   questions: readonly ExamQuestion[],
   settings: ExamSettings,
 ) {
@@ -87,13 +158,13 @@ function buildAnswerKeyData(
     ExamTitle: settings.examTitle.trim(),
     SchoolName: settings.schoolName.trim(),
     Grade: String(settings.grade),
+    TeacherName: getTeacherFooter(settings),
 
-    Questions: questions.map((question, index) => ({
-      Number: index + 1,
-      Prompt: question.prompt,
-      Answer:
-        `${question.correctAnswer.label}. ` +
-        question.correctAnswer.text,
+    Answers: questions.map((question, index) => ({
+      Q: `Q${index + 1}`,
+      Point: 1,
+      Answer: getReferenceAnswer(question),
+      Marks: question.marks,
     })),
   }
 }
@@ -108,15 +179,20 @@ export async function createExamDocumentBlobs<
   examTemplate: T,
   answerKeyTemplate: T,
 ): Promise<{ exam: T; answerKey: T }> {
+  const snapshot = createValidatedSimpleExamSnapshot(settings, questions)
+  const examData = buildExamData(snapshot.questions, snapshot.settings)
+  const keyData = buildAnswerKeyData(snapshot.questions, snapshot.settings)
+  validateDocumentText(examData)
+  validateDocumentText(keyData)
   const { TemplateHandler } = await import('easy-template-x')
   const [exam, answerKey] = await Promise.all([
     new TemplateHandler().process(
-      examTemplate,
-      buildExamData(questions, settings),
+      await preparePaperTemplate(examTemplate, 'student'),
+      examData,
     ),
     new TemplateHandler().process(
-      answerKeyTemplate,
-      buildAnswerKeyData(questions, settings),
+      await preparePaperTemplate(answerKeyTemplate, 'key'),
+      keyData,
     ),
   ])
 
@@ -128,17 +204,14 @@ export function prepareExamQuestions(
   questions: readonly ExamQuestion[],
   filters: ExamQuestionFilters = DEFAULT_EXAM_QUESTION_FILTERS,
 ): ExamQuestion[] {
-  const eligibleQuestionCount = questions.filter(
-    (question) =>
-      question.unit === settings.unit &&
-      question.type === filters.questionType &&
-      (!filters.lesson || question.lesson === filters.lesson) &&
-      (!filters.difficulty ||
-        question.difficulty === filters.difficulty),
-  ).length
+  const quantities = getQuestionQuantities(settings)
+  const filteredQuestions = questions.filter(
+    (question) => question.unit === settings.unit && (!filters.lesson || question.lesson === filters.lesson) && (!filters.difficulty || question.difficulty === filters.difficulty),
+  )
+  const requestedCount = SIMPLE_QUESTION_TYPES.reduce((total, type) => total + quantities[type], 0)
   const errors = validateExamSettings(
-    settings,
-    eligibleQuestionCount,
+    { ...settings, questionCount: requestedCount },
+    filteredQuestions.length,
   )
   const validationMessage = getFirstValidationError(errors)
 
@@ -146,14 +219,21 @@ export function prepareExamQuestions(
     throw new Error(validationMessage)
   }
 
-  return selectQuestions(questions, {
+  for (const type of SIMPLE_QUESTION_TYPES) {
+    const count = quantities[type]
+    if (!Number.isSafeInteger(count) || count < 0) throw new Error(`${type} quantity must be a non-negative whole number.`)
+    const available = filteredQuestions.filter((question) => question.type === type).length
+    if (count > available) throw new Error(`Only ${available} eligible ${type} questions are available, but ${count} were requested.`)
+  }
+
+  return selectMixedQuestions(questions, SIMPLE_QUESTION_TYPES.map((type) => ({
     unit: settings.unit,
-    type: filters.questionType,
+    type,
     lesson: filters.lesson || undefined,
     difficulty: filters.difficulty || undefined,
-    count: settings.questionCount,
+    count: quantities[type],
     seed: settings.selectionSeed,
-  })
+  })))
 }
 
 export async function generateExamDocuments(
@@ -186,9 +266,22 @@ export async function generateExamDocuments(
 export async function generateReviewedExamDocuments(
   settings: ExamSettings,
   selectedQuestions: readonly ExamQuestion[],
-): Promise<void> {
+): Promise<{
+  documents: PreparedExamDocumentPair
+  delivery: PairedDownloadResult
+}> {
+  const documents = await prepareReviewedExamDocuments(settings, selectedQuestions)
+  const delivery = await downloadExamDocumentPair(documents)
+  return { documents, delivery }
+}
+
+/** Prepare one validated pair so persisted workflows can offer explicit downloads. */
+export async function prepareReviewedExamDocuments(
+  settings: ExamSettings,
+  selectedQuestions: readonly ExamQuestion[],
+): Promise<PreparedExamDocumentPair> {
   const validationMessage = getFirstValidationError(
-    validateExamSettings(settings, selectedQuestions.length),
+    validateExamSettings({ ...settings, questionCount: selectedQuestions.length }, selectedQuestions.length),
   )
 
   if (validationMessage) {
@@ -208,12 +301,9 @@ export async function generateReviewedExamDocuments(
       answerKeyTemplate,
     )
 
-  downloadBlob(
-    `ExamGO-Unit${settings.unit}-Exam.docx`,
+  return prepareExamDocumentPair(
+    settings.unit,
     generatedExam,
-  )
-  downloadBlob(
-    `ExamGO-Unit${settings.unit}-Answer-Key.docx`,
     generatedAnswerKey,
   )
 }

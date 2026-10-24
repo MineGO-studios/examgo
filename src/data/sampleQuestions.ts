@@ -13,6 +13,7 @@ export const sampleQuestions: ExamQuestion[] = [
     type: 'multiple-choice',
     difficulty: 'easy',
     prompt: 'My uncle is ___ engineer.',
+    marks: 1,
     options: [
       { label: 'A', text: 'a' },
       { label: 'B', text: 'an' },
@@ -27,6 +28,7 @@ export const sampleQuestions: ExamQuestion[] = [
     type: 'multiple-choice',
     difficulty: 'easy',
     prompt: '___ cousins does Sara have?',
+    marks: 1,
     options: [
       { label: 'A', text: 'How old' },
       { label: 'B', text: 'How many' },
@@ -41,6 +43,7 @@ export const sampleQuestions: ExamQuestion[] = [
     type: 'multiple-choice',
     difficulty: 'easy',
     prompt: 'A doctor works ___ a hospital.',
+    marks: 1,
     options: [
       { label: 'A', text: 'in' },
       { label: 'B', text: 'on' },
@@ -55,6 +58,7 @@ export const sampleQuestions: ExamQuestion[] = [
     type: 'multiple-choice',
     difficulty: 'medium',
     prompt: 'Huda ___ home at 7:00.',
+    marks: 1,
     options: [
       { label: 'A', text: 'leave' },
       { label: 'B', text: 'leaves' },
@@ -69,6 +73,7 @@ export const sampleQuestions: ExamQuestion[] = [
     type: 'multiple-choice',
     difficulty: 'easy',
     prompt: 'My father is a teacher. ___ works at a school.',
+    marks: 1,
     options: [
       { label: 'A', text: 'He' },
       { label: 'B', text: 'She' },

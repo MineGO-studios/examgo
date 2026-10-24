@@ -42,16 +42,24 @@ const INPUT: QuestionInput = {
   questionType: 'multiple-choice',
   difficulty: 'medium',
   prompt: ' Choose the correct answer. ',
+  marks: 1,
   options: [
     { label: ' a ', text: ' First answer ' },
     { label: ' b ', text: ' Second answer ' },
   ],
   correctOptionLabel: ' b ',
+  binaryLabelMode: 'true-false',
+  binaryAnswer: true,
+  canonicalAnswer: '',
+  approvedVariants: [],
+  caseSensitive: false,
+  answerLines: 2,
   isActive: true,
 }
 
 const QUESTION_ROW: Question = {
   id: '223e4567-e89b-42d3-a456-426614174000',
+  owner_id: '323e4567-e89b-42d3-a456-426614174000',
   bank_id: '123e4567-e89b-42d3-a456-426614174000',
   external_id: 'U1-Q001',
   unit: 1,
@@ -64,6 +72,22 @@ const QUESTION_ROW: Question = {
     { label: 'B', text: 'Second answer' },
   ],
   correct_option_label: 'B',
+  schema_version: 1,
+  marks: 1,
+  content: {
+    type: 'multiple-choice',
+    schemaVersion: 1,
+    options: [
+      { label: 'A', text: 'First answer' },
+      { label: 'B', text: 'Second answer' },
+    ],
+  },
+  answer: {
+    type: 'multiple-choice',
+    schemaVersion: 1,
+    correctOptionLabel: 'B',
+  },
+  current_revision: 1,
   is_active: true,
   created_at: '2026-09-09T12:00:00.000Z',
   updated_at: '2026-09-09T12:00:00.000Z',
@@ -122,12 +146,27 @@ describe('createQuestion', () => {
       question_type: 'multiple-choice',
       difficulty: 'medium',
       prompt: 'Choose the correct answer.',
+      marks: 1,
       options: [
         { label: 'A', text: 'First answer' },
         { label: 'B', text: 'Second answer' },
       ],
       correct_option_label: 'B',
       is_active: true,
+      schema_version: 1,
+      content: {
+        type: 'multiple-choice',
+        schemaVersion: 1,
+        options: [
+          { label: 'A', text: 'First answer' },
+          { label: 'B', text: 'Second answer' },
+        ],
+      },
+      answer: {
+        type: 'multiple-choice',
+        schemaVersion: 1,
+        correctOptionLabel: 'B',
+      },
     })
 
     const insertedRow = mocks.insert.mock.calls[0]?.[0]
@@ -178,6 +217,32 @@ describe('createQuestion', () => {
       code: 'duplicate',
       message:
         'A question with this ID already exists in this bank.',
+    })
+  })
+
+  it('converts content-limit check failures into a shorten-the-text error', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {})
+    mocks.single.mockResolvedValue({
+      data: null,
+      error: { code: '23514', message: 'new row violates check constraint "questions_content_limits"' },
+    })
+
+    const rejection = await createQuestion(INPUT).catch((error: unknown) => error)
+    expect(rejection).toMatchObject({ code: 'validation' })
+    expect((rejection as Error).message).toMatch(/^This question has more text than ExamGO stores\./)
+    expect((rejection as Error).message).not.toContain('questions_content_limits')
+  })
+
+  it('surfaces the account question limit instead of a retry message', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {})
+    mocks.single.mockResolvedValue({
+      data: null,
+      error: { code: '53400', message: 'Account limit reached.', hint: 'account-limit:questions:total' },
+    })
+
+    await expect(createQuestion(INPUT)).rejects.toMatchObject({
+      name: 'AccountLimitError',
+      message: expect.stringMatching(/^Your account has reached its limit of questions\./),
     })
   })
 
@@ -239,6 +304,21 @@ describe('createQuestions', () => {
         ],
         correct_option_label: 'B',
         is_active: true,
+        schema_version: 1,
+        marks: 1,
+        content: {
+          type: 'multiple-choice',
+          schemaVersion: 1,
+          options: [
+            { label: 'A', text: 'First answer' },
+            { label: 'B', text: 'Second answer' },
+          ],
+        },
+        answer: {
+          type: 'multiple-choice',
+          schemaVersion: 1,
+          correctOptionLabel: 'B',
+        },
       },
     ])
     expect(mocks.select).toHaveBeenCalledWith('*')
@@ -384,12 +464,27 @@ describe('updateQuestion', () => {
       question_type: 'multiple-choice',
       difficulty: 'medium',
       prompt: 'Choose the correct answer.',
+      marks: 1,
       options: [
         { label: 'A', text: 'First answer' },
         { label: 'B', text: 'Second answer' },
       ],
       correct_option_label: 'B',
       is_active: true,
+      schema_version: 1,
+      content: {
+        type: 'multiple-choice',
+        schemaVersion: 1,
+        options: [
+          { label: 'A', text: 'First answer' },
+          { label: 'B', text: 'Second answer' },
+        ],
+      },
+      answer: {
+        type: 'multiple-choice',
+        schemaVersion: 1,
+        correctOptionLabel: 'B',
+      },
     })
 
     expect(mocks.updateEq).toHaveBeenNthCalledWith(

@@ -41,3 +41,36 @@ export function getSafeErrorDetails(
     ...(status ? { status } : {}),
   }
 }
+
+/** Pass an application-owned message, never exception text or teacher content. */
+export function reportSafeError(error: unknown, message: string): string {
+  const reference = `EG-${crypto.randomUUID()}`
+  console.error('[ExamGO] operation failed', { reference, ...getSafeErrorDetails(error) })
+  return `${message} Reference: ${reference}`
+}
+
+/** Built-in and platform errors whose text comes from the runtime, not ExamGO. */
+const RUNTIME_ERROR_NAMES = new Set([
+  'TypeError', 'RangeError', 'SyntaxError', 'ReferenceError', 'EvalError', 'URIError',
+  'AggregateError', 'InternalError', 'DOMException', 'AbortError', 'NetworkError',
+  'TimeoutError', 'SecurityError', 'QuotaExceededError', 'NotAllowedError',
+])
+const PROVIDER_ERROR_PREFIXES = ['Auth', 'Postgrest', 'Functions', 'Storage', 'Realtime']
+
+/**
+ * Whether an error carries a message ExamGO wrote for teachers. Repositories
+ * translate database codes into such messages; runtime, network and raw
+ * provider errors do not qualify and may contain internals.
+ */
+export function isApplicationError(error: unknown): error is Error {
+  if (!(error instanceof Error) || typeof DOMException !== 'undefined' && error instanceof DOMException) return false
+  if (RUNTIME_ERROR_NAMES.has(error.name) || RUNTIME_ERROR_NAMES.has(error.constructor.name)) return false
+  if (PROVIDER_ERROR_PREFIXES.some((prefix) => error.name.startsWith(prefix))) return false
+  const candidate = error as { details?: unknown; hint?: unknown }
+  return candidate.details === undefined && candidate.hint === undefined && error.message.trim() !== ''
+}
+
+/** Show an application-owned message as-is; otherwise the fallback with a diagnostic reference. */
+export function teacherErrorMessage(error: unknown, fallback: string): string {
+  return isApplicationError(error) ? error.message : reportSafeError(error, fallback)
+}

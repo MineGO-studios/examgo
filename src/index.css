@@ -1,111 +1,380 @@
 :root {
-  --text: #6b6375;
-  --text-h: #08060d;
-  --bg: #fff;
-  --border: #e5e4e7;
-  --code-bg: #f4f3ec;
-  --accent: #aa3bff;
-  --accent-bg: rgba(170, 59, 255, 0.1);
-  --accent-border: rgba(170, 59, 255, 0.5);
-  --social-bg: rgba(244, 243, 236, 0.5);
-  --shadow:
-    rgba(0, 0, 0, 0.1) 0 10px 15px -3px, rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
+  color-scheme: light;
+  /* MineGO Draft 4 ground and ink; ExamGO's own colour is the MineGO logo green. */
+  --eg-color-canvas: #f6f1ee;
+  --eg-color-surface: #ffffff;
+  --eg-color-surface-subtle: #eee4dd;
+  --eg-color-text: #110c08;
+  --eg-color-text-muted: #694630;
+  --eg-color-primary: #0b6b40;
+  --eg-color-primary-hover: #085733;
+  --eg-color-primary-pressed: #064528;
+  --eg-color-primary-soft: #e3f0e8;
+  --eg-color-on-primary: #ffffff;
+  --eg-color-shell: #f6f1ee;
+  --eg-color-on-shell: #110c08;
+  --eg-color-on-shell-muted: #694630;
+  --eg-color-warning-bg: #fdf0d5;
+  --eg-color-warning-text: #604105;
+  --eg-color-success-bg: #e3f0e8;
+  --eg-color-success-text: #085e36;
+  --eg-color-error-bg: #fbe6e9;
+  --eg-color-error-text: #83162a;
+  --eg-color-info-bg: #eee4dd;
+  --eg-color-info-text: #110c08;
+  --eg-color-border: #e2d5cc;
+  --eg-color-border-control: #8f6f5a;
+  --eg-color-fill: #eee4dd;
+  --eg-color-pen-text: #a0172f;
+  --eg-color-toast-bg: #110c08;
+  --eg-color-toast-text: #f6f1ee;
+  --eg-color-focus: #0b6b40;
+  --eg-color-disabled-bg: #eee4dd;
+  --eg-color-disabled-text: #6e5a4c;
+  /* Unit marker codes from the MineGO family palette. */
+  --eg-unit-1: #0b6b40;
+  --eg-unit-2: #f1a210;
+  --eg-unit-2-text: #110c08;
+  --eg-unit-3: #694630;
+  --eg-unit-4: #2f4f7a;
+  --eg-unit-none: #c9b8ac;
+  /* Question types in the paper plan; validated for colour-blind separation (dataviz). */
+  --eg-type-1: #1a7f50;
+  --eg-type-2: #3a6cb5;
+  --eg-type-3: #c27c00;
+  --eg-type-4: #b3566f;
+  /* Ministry sheet: black rules and the teacher's red pen. */
+  --eg-paper-ink: #111111;
+  --eg-paper-rule: #111111;
+  --eg-paper-pen: #da2546;
+  --eg-paper-divider: #9a9a9a;
+  --eg-paper-answer-line: #6b6b6b;
+  --eg-paper-hover: #faf7f4;
+  --eg-paper-title-size: 1.125rem;
+  /* The teacher's blue ink: signature and typing caret on desk sheets. */
+  --eg-paper-ink-blue: #1d3f8f;
+  /* Faint blue ruling on question-bank index cards. */
+  --eg-paper-card-line: #c9d6ea;
+  /* ExamGO design: IBM Plex Sans (Plex Sans Arabic covers Arabic) with JetBrains Mono for figures and metadata. */
+  --eg-font-sans: "IBM Plex Sans Variable", "IBM Plex Sans Arabic", system-ui, "Segoe UI", sans-serif;
+  --eg-font-display: var(--eg-font-sans);
+  --eg-font-paper: "Times New Roman", Times, "IBM Plex Sans Arabic", serif;
+  --eg-font-mono: "JetBrains Mono Variable", "IBM Plex Sans Arabic", ui-monospace, Consolas, monospace;
+  /* Four-step scale; rank comes from weight, case and rule. */
+  --eg-font-size-xs: 0.8125rem;
+  --eg-font-size-sm: 0.8125rem;
+  --eg-font-size-md: 1rem;
+  --eg-font-size-lg: 1.25rem;
+  --eg-font-size-xl: 1.75rem;
+  --eg-font-size-2xl: 1.75rem;
+  /* examgo-design: page titles, small labels and tooltips. */
+  --eg-font-size-display: clamp(2rem, 5vw, 2.75rem);
+  --eg-font-size-2xs: 0.75rem;
+  --eg-line-tight: 1.2;
+  --eg-line-body: 1.55;
+  --eg-weight-regular: 400;
+  --eg-weight-medium: 600;
+  --eg-weight-bold: 700;
+  --eg-space-1: 0.25rem;
+  --eg-space-2: 0.5rem;
+  --eg-space-3: 0.75rem;
+  --eg-space-4: 1rem;
+  --eg-space-5: 1.5rem;
+  --eg-space-6: 2rem;
+  --eg-space-7: 3rem;
+  --eg-radius-xs: 0.125rem;
+  --eg-radius-sm: 0.25rem;
+  --eg-radius-md: 0.5rem;
+  --eg-radius-lg: 0.75rem;
+  --eg-radius-control: 0.625rem;
+  --eg-radius-card: 1rem;
+  --eg-radius-group: 0.875rem;
+  --eg-radius-pill: 999px;
+  --eg-ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+  --eg-shadow-rgb: 29 23 18;
+  --eg-paper-bg: #ffffff;
+  --eg-shadow-surface: 0 1px 2px rgb(17 12 8 / 5%), 0 8px 24px rgb(17 12 8 / 5%);
+  --eg-shadow-paper: 0 2px 4px rgb(17 12 8 / 6%), 0 18px 40px rgb(17 12 8 / 9%);
+  --eg-control-min-block-size: 2.75rem;
+  --eg-content-width: 90rem;
 
-  --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --heading: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --mono: ui-monospace, Consolas, monospace;
-
-  font: 18px/145% var(--sans);
-  letter-spacing: 0.18px;
-  color-scheme: light dark;
-  color: var(--text);
-  background: var(--bg);
+  font-family: var(--eg-font-sans);
+  font-size: var(--eg-font-size-md);
+  color: var(--eg-color-text);
+  background: var(--eg-color-canvas);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-
-  @media (max-width: 1024px) {
-    font-size: 16px;
-  }
+  accent-color: var(--eg-color-primary);
+  caret-color: var(--eg-color-primary);
+  scrollbar-color: #c9b8ac transparent;
 }
 
+/* Dark appearance follows the device. Paper stays white, because paper is paper. */
 @media (prefers-color-scheme: dark) {
   :root {
-    --text: #9ca3af;
-    --text-h: #f3f4f6;
-    --bg: #16171d;
-    --border: #2e303a;
-    --code-bg: #1f2028;
-    --accent: #c084fc;
-    --accent-bg: rgba(192, 132, 252, 0.15);
-    --accent-border: rgba(192, 132, 252, 0.5);
-    --social-bg: rgba(47, 48, 58, 0.5);
-    --shadow:
-      rgba(0, 0, 0, 0.4) 0 10px 15px -3px, rgba(0, 0, 0, 0.25) 0 4px 6px -2px;
+    color-scheme: dark;
+    --eg-color-canvas: #17110d;
+    --eg-color-surface: #221a15;
+    --eg-color-surface-subtle: #2d241e;
+    --eg-color-fill: #2d241e;
+    --eg-color-text: #f6f1ee;
+    --eg-color-text-muted: #c9b3a3;
+    /* A lighter green with dark ink keeps the accent readable as text and as a fill on the dark ground. */
+    --eg-color-primary: #3fae7a;
+    --eg-color-primary-hover: #52bf8a;
+    --eg-color-primary-pressed: #2f9a68;
+    --eg-color-on-primary: #0b1a12;
+    --eg-color-primary-soft: #183526;
+    --eg-color-shell: #17110d;
+    --eg-color-on-shell: #f6f1ee;
+    --eg-color-on-shell-muted: #c9b3a3;
+    --eg-color-warning-bg: #3a2c10;
+    --eg-color-warning-text: #f5d58f;
+    --eg-color-success-bg: #183526;
+    --eg-color-success-text: #9fdcbc;
+    --eg-color-error-bg: #3d1820;
+    --eg-color-error-text: #ff9fae;
+    --eg-color-info-bg: #2d241e;
+    --eg-color-info-text: #f6f1ee;
+    --eg-color-border: #3a2f28;
+    --eg-color-border-control: #8a7464;
+    --eg-color-focus: #3fae7a;
+    --eg-color-disabled-bg: #2d241e;
+    --eg-color-disabled-text: #a08a7a;
+    --eg-color-pen-text: #ff8a9c;
+    --eg-color-toast-bg: #f6f1ee;
+    --eg-color-toast-text: #110c08;
+    --eg-unit-none: #6e5a4c;
+    --eg-type-1: #2f9a66;
+    --eg-type-2: #5a8bd6;
+    --eg-type-3: #b8841a;
+    --eg-type-4: #cc6a86;
+    --eg-shadow-rgb: 0 0 0;
+    --eg-shadow-surface: 0 1px 2px rgb(0 0 0 / 30%), 0 8px 24px rgb(0 0 0 / 25%);
+    --eg-shadow-paper: 0 2px 4px rgb(0 0 0 / 30%), 0 18px 40px rgb(0 0 0 / 35%);
+    scrollbar-color: #5a4a3e transparent;
   }
 
-  #social .button-icon {
-    filter: invert(1) brightness(2);
+  /* Paper objects keep their light ink and rules. */
+  :where(.ministry-sheet, .mini-sheet, .paper-sheet, .paper-thumb) {
+    color-scheme: light;
+    --eg-color-surface: #ffffff;
+    --eg-color-surface-subtle: #eee4dd;
+    --eg-color-text: #110c08;
+    --eg-color-text-muted: #694630;
+    --eg-color-border: #e2d5cc;
+    --eg-color-border-control: #8f6f5a;
+    --eg-color-primary: #0b6b40;
+    --eg-color-primary-soft: #e3f0e8;
+    --eg-color-error-bg: #fbe6e9;
+    --eg-color-error-text: #83162a;
   }
 }
 
-#root {
-  width: 1126px;
-  max-width: 100%;
-  margin: 0 auto;
-  text-align: center;
-  border-inline: 1px solid var(--border);
-  min-height: 100svh;
-  display: flex;
-  flex-direction: column;
+:root:lang(ar) :where(p, small, label, legend, li, h2, h3, h4, summary, td, th, output, .status-chip, .start-card-title, .start-card-description):not(.paper-sheet *) {
+  /* A paragraph that holds English data (a bank name, a question) keeps its own word order,
+     while every line still aligns to the Arabic reading edge. Paper content opts out below. */
+  unicode-bidi: plaintext;
+  text-align: right;
+}
+
+:root:lang(ar) :where(.ministry-sheet, .ministry-sheet *) {
+  text-align: revert-layer;
+}
+
+::selection {
+  background: var(--eg-color-primary-soft);
+  color: var(--eg-color-text);
+}
+
+*,
+*::before,
+*::after {
   box-sizing: border-box;
 }
 
+html {
+  min-width: 20rem;
+  background: var(--eg-color-canvas);
+  font-size: 100%;
+  line-height: var(--eg-line-body);
+}
+
 body {
+  min-width: 20rem;
+  min-height: 100vh;
   margin: 0;
+  background: var(--eg-color-canvas);
+}
+
+#root {
+  min-height: 100vh;
 }
 
 h1,
-h2 {
-  font-family: var(--heading);
-  font-weight: 500;
-  color: var(--text-h);
+h2,
+h3,
+h4,
+p {
+  margin-block-start: 0;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  color: var(--eg-color-text);
+  font-family: var(--eg-font-display);
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  line-height: var(--eg-line-tight);
+  text-wrap: balance;
 }
 
 h1 {
-  font-size: 56px;
-  letter-spacing: -1.68px;
-  margin: 32px 0;
-  @media (max-width: 1024px) {
-    font-size: 36px;
-    margin: 20px 0;
-  }
+  margin-block-end: var(--eg-space-2);
+  font-size: var(--eg-font-size-xl);
+  font-weight: 700;
 }
+
 h2 {
-  font-size: 24px;
-  line-height: 118%;
-  letter-spacing: -0.24px;
-  margin: 0 0 8px;
-  @media (max-width: 1024px) {
-    font-size: 20px;
-  }
-}
-p {
-  margin: 0;
+  font-size: var(--eg-font-size-lg);
 }
 
-code,
-.counter {
-  font-family: var(--mono);
+h3,
+h4 {
+  font-size: var(--eg-font-size-md);
+}
+
+table,
+output,
+input[type='number'] {
+  font-variant-numeric: tabular-nums;
+}
+
+a {
+  color: var(--eg-color-primary);
+  text-underline-offset: 0.2em;
+}
+
+p,
+small {
+  color: var(--eg-color-text-muted);
+}
+
+button,
+input,
+select,
+textarea {
+  min-block-size: var(--eg-control-min-block-size);
+  font: inherit;
+}
+
+button {
   display: inline-flex;
-  border-radius: 4px;
-  color: var(--text-h);
+  align-items: center;
+  justify-content: center;
+  gap: var(--eg-space-2);
+  border: 1px solid var(--eg-color-primary);
+  border-radius: var(--eg-radius-control);
+  background: var(--eg-color-primary);
+  color: var(--eg-color-on-primary);
+  cursor: pointer;
+  font-weight: var(--eg-weight-medium);
+  padding: 0.625rem 1.1rem;
+  transition: transform 120ms;
 }
 
-code {
-  font-size: 15px;
-  line-height: 135%;
-  padding: 4px 8px;
-  background: var(--code-bg);
+button:hover:not(:disabled) {
+  border-color: var(--eg-color-primary-hover);
+  background: var(--eg-color-primary-hover);
+}
+
+button:active:not(:disabled) {
+  border-color: var(--eg-color-primary-pressed);
+  background: var(--eg-color-primary-pressed);
+  transform: scale(0.98);
+}
+
+button:disabled {
+  border-color: var(--eg-color-border);
+  background: var(--eg-color-disabled-bg);
+  color: var(--eg-color-disabled-text);
+  cursor: not-allowed;
+}
+
+input,
+select,
+textarea {
+  width: 100%;
+  border: 1px solid var(--eg-color-border-control);
+  border-radius: var(--eg-radius-control);
+  background: var(--eg-color-surface);
+  color: var(--eg-color-text);
+  padding: 0.625rem 0.75rem;
+}
+
+input[type='search'] {
+  border-color: var(--eg-color-border);
+  border-radius: var(--eg-radius-pill);
+  padding-inline: 1.1rem;
+}
+
+/* Figures and metadata read in JetBrains Mono. */
+.eg-mono,
+output,
+input[type='number'] {
+  font-family: var(--eg-font-mono);
+}
+
+textarea {
+  min-block-size: 7rem;
+  resize: vertical;
+}
+
+input[aria-invalid='true'],
+select[aria-invalid='true'],
+textarea[aria-invalid='true'] {
+  border-color: var(--eg-color-error-text);
+  background: var(--eg-color-error-bg);
+}
+
+label {
+  display: grid;
+  gap: var(--eg-space-2);
+  color: var(--eg-color-text);
+  font-weight: var(--eg-weight-medium);
+  text-align: start;
+}
+
+fieldset {
+  min-width: 0;
+  margin: 0;
+  border: 1px solid var(--eg-color-border);
+  border-radius: var(--eg-radius-md);
+  padding: var(--eg-space-3) var(--eg-space-4);
+}
+
+legend {
+  padding-inline: var(--eg-space-1);
+  font-weight: var(--eg-weight-medium);
+}
+
+:where(button, input, select, textarea, a, [tabindex]):focus-visible {
+  outline: 3px solid var(--eg-color-focus);
+  outline-offset: 3px;
+  box-shadow: 0 0 0 2px var(--eg-color-surface);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
