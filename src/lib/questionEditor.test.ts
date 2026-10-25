@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { Question } from './questions'
-import { questionToInput } from './questions'
+import { questionInputPayload, questionToInput, validateQuestionInput } from './questions'
 import {
   addQuestionOption,
   createEmptyQuestionInput,
@@ -10,6 +10,7 @@ import {
 
 const QUESTION: Question = {
   id: '223e4567-e89b-42d3-a456-426614174000',
+  owner_id: '323e4567-e89b-42d3-a456-426614174000',
   bank_id: '123e4567-e89b-42d3-a456-426614174000',
   external_id: 'U1-Q010',
   unit: 1,
@@ -22,12 +23,43 @@ const QUESTION: Question = {
     { label: 'B', text: 'Second' },
   ],
   correct_option_label: 'B',
+  schema_version: 1,
+  marks: 1,
+  content: {
+    type: 'multiple-choice',
+    schemaVersion: 1,
+    options: [
+      { label: 'A', text: 'First' },
+      { label: 'B', text: 'Second' },
+    ],
+  },
+  answer: {
+    type: 'multiple-choice',
+    schemaVersion: 1,
+    correctOptionLabel: 'B',
+  },
+  current_revision: 1,
   is_active: true,
   created_at: '2026-09-10T12:00:00.000Z',
   updated_at: '2026-09-10T12:00:00.000Z',
 }
 
 describe('question editor state', () => {
+  it('reopens matching item identities and one-to-one answers for editing', () => {
+    const matching: Question = { ...QUESTION, question_type: 'matching', prompt: 'Match List A and List B.',
+      options: null, correct_option_label: null,
+      content: { type: 'matching', schemaVersion: 1,
+        left: [{ id: 'l1', text: 'Can I help you?' }, { id: 'l2', text: "What's the matter?" }],
+        right: [{ id: 'r1', text: 'I have a headache' }, { id: 'r2', text: 'Yes, please' }] },
+      answer: { type: 'matching', schemaVersion: 1,
+        pairs: [{ leftId: 'l1', rightId: 'r2' }, { leftId: 'l2', rightId: 'r1' }] } }
+    const reopened = questionToInput(matching)
+    expect(reopened.matchingLeft?.map((item) => item.id)).toEqual(['l1', 'l2'])
+    expect(questionInputPayload(reopened).answer).toEqual(matching.answer)
+    expect(validateQuestionInput(reopened)).toEqual({})
+    const reused = { ...reopened, matchingPairs: [{ leftId: 'l1', rightId: 'r2' }, { leftId: 'l2', rightId: 'r2' }] }
+    expect(validateQuestionInput(reused).matchingPairs).toContain('one unique pair')
+  })
   it('creates a valid-shape blank draft for the selected bank', () => {
     const draft = createEmptyQuestionInput(QUESTION.bank_id)
 
@@ -40,6 +72,9 @@ describe('question editor state', () => {
       correctOptionLabel: 'A',
       isActive: true,
     })
+    expect(draft.externalId).toMatch(
+      /^Q-[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,
+    )
     expect(draft.options).toHaveLength(3)
   })
 
@@ -75,11 +110,18 @@ describe('question editor state', () => {
       questionType: 'multiple-choice',
       difficulty: 'medium',
       prompt: 'Choose the correct answer.',
+      marks: 1,
       options: [
         { label: 'A', text: 'First' },
         { label: 'B', text: 'Second' },
       ],
       correctOptionLabel: 'B',
+      binaryLabelMode: 'true-false',
+      binaryAnswer: true,
+      canonicalAnswer: '',
+      approvedVariants: [],
+      caseSensitive: false,
+      answerLines: 2,
       isActive: true,
     })
   })
@@ -89,6 +131,11 @@ describe('question editor state', () => {
       questionToInput({
         ...QUESTION,
         options: [{ label: 'A' }],
+        content: {
+          type: 'multiple-choice',
+          schemaVersion: 1,
+          options: [{ label: 'A' }],
+        },
       }),
     ).toThrow(
       'This question contains invalid saved data and cannot be used safely.',

@@ -1,6 +1,8 @@
 import { readFile } from 'node:fs/promises'
 import { performance } from 'node:perf_hooks'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi, afterEach } from 'vitest'
+import { DOMParser, XMLSerializer } from '@xmldom/xmldom'
+afterEach(() => vi.unstubAllGlobals())
 import type { ExamQuestion } from '../data/sampleQuestions'
 import type { ExamSettings } from '../types/exam'
 import { createExamDocumentBlobs } from './generateExam'
@@ -24,6 +26,7 @@ function createSyntheticQuestions(): ExamQuestion[] {
       type: 'multiple-choice',
       difficulty: 'medium',
       prompt: `Performance test question ${questionNumber}?`,
+      marks: 1,
       options: [
         { label: 'A', text: `Option A ${questionNumber}` },
         correctAnswer,
@@ -66,13 +69,15 @@ describe('50-question document generation', () => {
       const [examTemplate, answerKeyTemplate] =
         await Promise.all([
           loadTemplate(
-            '../../public/templates/iraqi-mainstream-exam-v1.docx',
+            '../../public/templates/iraqi-mainstream-simple-types-exam-v2.docx',
           ),
           loadTemplate(
-            '../../public/templates/iraqi-mainstream-answer-key-v1.docx',
+            '../../public/templates/iraqi-mainstream-simple-types-answer-key-v2.docx',
           ),
         ])
 
+      vi.stubGlobal('DOMParser', DOMParser)
+      vi.stubGlobal('XMLSerializer', XMLSerializer)
       const startedAt = performance.now()
 
       const selectedQuestions = selectQuestions(questions, {

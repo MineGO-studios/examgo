@@ -3,7 +3,7 @@ import type {
   ExamSettings,
 } from '../types/exam'
 import type { ExamQuestion } from '../types/question'
-import { selectQuestions } from './selectQuestions'
+import { conflictsWithSelection, selectQuestions } from './selectQuestions'
 
 export type ReviewedQuestion = {
   question: ExamQuestion
@@ -73,11 +73,11 @@ export function replaceQuestionInReview(
     review.map((item) => item.question.id),
   )
   const availableQuestions = questionPool.filter(
-    (question) => !selectedIds.has(question.id),
+    (question) => !selectedIds.has(question.id) && !conflictsWithSelection(question, review.map(item => item.question)),
   )
   const [replacement] = selectQuestions(availableQuestions, {
     unit: settings.unit,
-    type: filters.questionType,
+    type: review[targetIndex].question.type,
     lesson: filters.lesson || undefined,
     difficulty: filters.difficulty || undefined,
     count: 1,
@@ -86,7 +86,61 @@ export function replaceQuestionInReview(
 
   return review.map((item, index) =>
     index === targetIndex
-      ? { question: replacement, locked: false }
+      ? { question: { ...replacement, marks: item.question.marks }, locked: false }
+      : item,
+  )
+}
+
+/**
+ * Questions that could take this slot, under the same rules as automatic replacement:
+ * same unit and type, the current lesson and difficulty filters, not already on the paper,
+ * and no conflict with the questions already selected.
+ */
+export function replacementCandidates(
+  review: readonly ReviewedQuestion[],
+  questionId: string,
+  questionPool: readonly ExamQuestion[],
+  settings: ExamSettings,
+  filters: ExamQuestionFilters,
+): ExamQuestion[] {
+  const target = review.find((item) => item.question.id === questionId)
+  if (!target) return []
+  const selected = review.map((item) => item.question)
+  const selectedIds = new Set(selected.map((question) => question.id))
+  return questionPool.filter((question) =>
+    !selectedIds.has(question.id) &&
+    question.unit === settings.unit &&
+    question.type === target.question.type &&
+    (!filters.lesson || question.lesson === filters.lesson) &&
+    (!filters.difficulty || question.difficulty === filters.difficulty) &&
+    !conflictsWithSelection(question, selected),
+  )
+}
+
+/** Put the teacher's chosen candidate in this slot, keeping the slot's marks. */
+export function replaceQuestionWith(
+  review: readonly ReviewedQuestion[],
+  questionId: string,
+  replacementId: string,
+  questionPool: readonly ExamQuestion[],
+  settings: ExamSettings,
+  filters: ExamQuestionFilters,
+): ReviewedQuestion[] {
+  const targetIndex = review.findIndex((item) => item.question.id === questionId)
+  if (targetIndex < 0) {
+    throw new Error('The selected question is no longer in the preview.')
+  }
+  if (review[targetIndex].locked) {
+    throw new Error('Unlock this question before replacing it.')
+  }
+  const replacement = replacementCandidates(review, questionId, questionPool, settings, filters)
+    .find((question) => question.id === replacementId)
+  if (!replacement) {
+    throw new Error('That question can no longer replace this one. Preview again.')
+  }
+  return review.map((item, index) =>
+    index === targetIndex
+      ? { question: { ...replacement, marks: item.question.marks }, locked: false }
       : item,
   )
 }

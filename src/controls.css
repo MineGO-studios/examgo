@@ -1,0 +1,936 @@
+/* ExamGO controls and calm surfaces on the MineGO ground. */
+
+/* ---- Calm surfaces: hairlines on the warm ground, white only where work happens ---- */
+.card {
+  border: 1px solid var(--eg-color-border);
+  box-shadow: none;
+}
+
+.card.exam-builder {
+  border: 0;
+  background: transparent;
+  padding: 0;
+}
+
+.exam-builder {
+  max-width: 44rem;
+}
+
+.form-group {
+  display: grid;
+  gap: var(--eg-space-4);
+  border-top: 1px solid var(--eg-color-border);
+  padding-top: var(--eg-space-5);
+}
+
+.form-group-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--eg-space-3);
+}
+
+.form-group-header h3 {
+  margin: 0;
+  font-size: var(--eg-font-size-lg);
+}
+
+.form-group-aside {
+  color: var(--eg-color-text-muted);
+  font-size: var(--eg-font-size-sm);
+  font-weight: 650;
+}
+
+.text-field small,
+.field-error {
+  font-size: var(--eg-font-size-sm);
+  font-weight: 500;
+}
+
+.field-error {
+  color: var(--eg-color-error-text);
+}
+
+input:hover:not(:disabled),
+textarea:hover:not(:disabled) {
+  border-color: var(--eg-color-text-muted);
+}
+
+/* ---- Chips: choices and toggles as pills ---- */
+.chip-group,
+.stepper-group {
+  display: grid;
+  gap: var(--eg-space-2);
+  min-width: 0;
+  margin: 0;
+  border: 0;
+  padding: 0;
+}
+
+.chip-group > legend,
+.stepper-group > legend {
+  margin-bottom: var(--eg-space-2);
+  padding: 0;
+  font-weight: var(--eg-weight-medium);
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--eg-space-2);
+}
+
+.chip {
+  position: relative;
+  display: inline-flex;
+  font-weight: 600;
+}
+
+.chip input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  min-block-size: 0;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.chip span {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--eg-space-2);
+  min-block-size: var(--eg-control-min-block-size);
+  border: 1px solid var(--eg-color-border-control);
+  border-radius: 999px;
+  background: var(--eg-color-surface);
+  color: var(--eg-color-text);
+  padding-inline: var(--eg-space-4);
+}
+
+.chip:hover span {
+  border-color: var(--eg-color-text-muted);
+}
+
+.chip input:checked + span {
+  border-color: var(--eg-color-primary);
+  background: var(--eg-color-primary-soft);
+  color: var(--eg-color-primary);
+}
+
+.chip-toggle input:checked + span::before {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background: currentColor;
+  content: "";
+}
+
+.chip input:focus-visible + span {
+  outline: 3px solid var(--eg-color-focus);
+  outline-offset: 2px;
+}
+
+.chip input:disabled + span {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* ---- Stepper ---- */
+.stepper {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--eg-space-3);
+  border-bottom: 1px solid var(--eg-color-border);
+  padding-block: var(--eg-space-2);
+}
+
+.stepper:last-of-type {
+  border-bottom: 0;
+}
+
+.stepper-label {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 4.5rem;
+  flex: 1;
+  align-items: center;
+  column-gap: var(--eg-space-3);
+}
+
+.stepper-label > span {
+  font-weight: 650;
+}
+
+.stepper-label > small {
+  grid-row: 2;
+  color: var(--eg-color-text-muted);
+  font-weight: 500;
+}
+
+.stepper-label > input {
+  grid-row: 1 / span 2;
+  grid-column: 2;
+  text-align: center;
+}
+
+.stepper-buttons {
+  display: flex;
+  gap: var(--eg-space-1);
+}
+
+.stepper-buttons button {
+  width: var(--eg-control-min-block-size);
+  padding: 0;
+  font-size: 1.25rem;
+}
+
+/* ---- Disclosures ---- */
+.more-options {
+  border-top: 1px solid var(--eg-color-border);
+  padding-top: var(--eg-space-4);
+}
+
+.more-options > summary,
+.reviewer-tools > summary {
+  display: flex;
+  align-items: center;
+  gap: var(--eg-space-3);
+  min-block-size: var(--eg-control-min-block-size);
+  cursor: pointer;
+  font-weight: 700;
+  list-style: none;
+}
+
+.more-options > summary::-webkit-details-marker,
+.reviewer-tools > summary::-webkit-details-marker {
+  display: none;
+}
+
+.more-options > summary::after,
+.reviewer-tools > summary::after {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-inline-end: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  content: "";
+  transform: rotate(45deg) translateY(-2px);
+  transition: transform 160ms ease-out;
+}
+
+.more-options[open] > summary::after,
+.reviewer-tools[open] > summary::after {
+  transform: rotate(-135deg) translateY(-2px);
+}
+
+.more-options > .text-field {
+  margin-top: var(--eg-space-3);
+}
+
+.setup-total {
+  display: flex;
+  justify-content: space-between;
+  margin: 0;
+  border-top: 1px solid var(--eg-color-border);
+  color: var(--eg-color-text);
+  font-weight: 650;
+  padding-top: var(--eg-space-4);
+}
+
+/* ---- Start cards with a miniature of the sheet they make ---- */
+.paper-starts {
+  display: grid;
+  gap: var(--eg-space-3);
+}
+
+.paper-starts h2 {
+  margin: 0;
+  font-size: var(--eg-font-size-lg);
+}
+
+.start-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+  gap: var(--eg-space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.start-card,
+.start-card[aria-pressed="false"]:not(:disabled) {
+  display: grid;
+  align-content: start;
+  justify-items: start;
+  gap: var(--eg-space-1);
+  width: 100%;
+  height: 100%;
+  border: 1px solid var(--eg-color-border);
+  border-radius: var(--eg-radius-lg);
+  background: var(--eg-color-surface);
+  color: var(--eg-color-text);
+  padding: var(--eg-space-3);
+  text-align: start;
+}
+
+.start-card:hover:not(:disabled),
+.start-card[aria-pressed="false"]:hover:not(:disabled) {
+  border-color: var(--eg-color-text-muted);
+  background: var(--eg-color-surface);
+}
+
+.start-card[aria-pressed="true"],
+.start-card[aria-pressed="true"]:hover:not(:disabled) {
+  border-color: var(--eg-color-primary);
+  background: var(--eg-color-primary-soft);
+  box-shadow: inset 0 0 0 1px var(--eg-color-primary);
+  color: var(--eg-color-text);
+}
+
+.start-card-title {
+  font-weight: 750;
+}
+
+.start-card-description {
+  color: var(--eg-color-text-muted);
+  font-size: var(--eg-font-size-sm);
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.mini-sheet {
+  position: relative;
+  display: grid;
+  gap: 5px;
+  width: 100%;
+  margin-bottom: var(--eg-space-2);
+  border-radius: var(--eg-radius-xs);
+  background: var(--eg-paper-bg);
+  box-shadow: 0 1px 2px rgb(17 12 8 / 10%), 0 6px 14px rgb(17 12 8 / 8%);
+  padding: 9px 11px 11px;
+}
+
+.mini-sheet-header {
+  display: grid;
+  grid-template-columns: 1fr 1.4fr 1fr;
+  height: 12px;
+  border: 1.5px solid #111111;
+}
+
+.mini-sheet-header i + i {
+  border-inline-start: 1.5px solid #111111;
+}
+
+.mini-sheet-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.mini-sheet-row i {
+  flex: 1;
+  height: 4px;
+  border-radius: var(--eg-radius-xs);
+  background: #b9aca3;
+}
+
+.mini-sheet-row b {
+  width: 9px;
+  height: 9px;
+  border: 1.5px solid var(--eg-paper-pen);
+  border-radius: 50%;
+}
+
+.mini-sheet-passage {
+  height: 18px;
+  border-radius: var(--eg-radius-xs);
+  background: repeating-linear-gradient(#d8ccc4 0 3px, transparent 3px 6px);
+}
+
+.mini-sheet-seal {
+  position: absolute;
+  inset-inline-end: 8px;
+  bottom: 8px;
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--eg-color-primary);
+  border-radius: 50%;
+  background: var(--eg-color-primary-soft);
+}
+
+.development-starts {
+  display: grid;
+  gap: var(--eg-space-2);
+}
+
+/* ---- Sign in on the MineGO ground ---- */
+.auth-brand {
+  background: var(--eg-color-surface-subtle);
+  color: var(--eg-color-text);
+}
+
+.auth-brand h1 {
+  color: var(--eg-color-text);
+}
+
+.auth-brand p {
+  color: var(--eg-color-text-muted);
+}
+
+.auth-brand .auth-tagline {
+  color: var(--eg-color-primary);
+}
+
+.auth-brand .shell-symbol img {
+  width: 3rem;
+}
+
+.auth-brand :focus-visible {
+  outline-color: var(--eg-color-focus);
+}
+
+@media (min-width: 64rem) {
+  .card.exam-builder.has-review {
+    max-width: none;
+  }
+}
+
+/* ---- examgo-design: pill search with a leading magnifier ---- */
+.eg-search {
+  position: relative;
+  display: block;
+  min-width: 0;
+}
+
+.eg-search svg {
+  position: absolute;
+  top: 50%;
+  inset-inline-start: 1rem;
+  width: 1.1rem;
+  height: 1.1rem;
+  color: var(--eg-color-text-muted);
+  pointer-events: none;
+  translate: 0 -50%;
+}
+
+.eg-search input {
+  border-color: var(--eg-color-border);
+  border-radius: var(--eg-radius-pill);
+  background: var(--eg-color-surface);
+  padding-inline: 2.7rem 1.1rem;
+}
+
+.eg-search input:hover:not(:disabled) {
+  border-color: var(--eg-color-border-control);
+}
+
+.eg-search input::placeholder {
+  color: var(--eg-color-text-muted);
+  opacity: 1;
+}
+
+/* ---- examgo-design: segmented control (a pill track; the chosen segment is raised) ---- */
+.eg-seg {
+  display: inline-flex;
+  border-radius: var(--eg-radius-pill);
+  background: var(--eg-color-fill);
+  padding: 0.2rem;
+}
+
+.eg-seg > button[aria-pressed]:not(:disabled) {
+  flex: 1 1 auto;
+  gap: 0.35rem;
+  min-block-size: 2.35rem;
+  border: 0;
+  border-radius: var(--eg-radius-pill);
+  background: transparent;
+  color: var(--eg-color-text-muted);
+  padding: 0 0.95rem;
+}
+
+.eg-seg > button[aria-pressed]:hover:not(:disabled) {
+  border: 0;
+  background: transparent;
+  color: var(--eg-color-text);
+}
+
+.eg-seg > button[aria-pressed='true']:not(:disabled),
+.eg-seg > button[aria-pressed='true']:hover:not(:disabled) {
+  background: var(--eg-color-surface);
+  box-shadow: 0 1px 3px rgb(var(--eg-shadow-rgb) / 14%);
+  color: var(--eg-color-text);
+}
+
+.eg-seg svg {
+  width: 1rem;
+  height: 1rem;
+}
+
+/* ---- examgo-design: more than five options become a dropdown ---- */
+.eg-select select {
+  appearance: none;
+  border-color: var(--eg-color-border-control);
+  background-color: var(--eg-color-surface);
+  background-image: linear-gradient(45deg, transparent 50%, var(--eg-color-text-muted) 50%), linear-gradient(-45deg, transparent 50%, var(--eg-color-text-muted) 50%);
+  background-position: calc(100% - 1.15rem) 55%, calc(100% - 0.8rem) 55%;
+  background-repeat: no-repeat;
+  background-size: 0.35rem 0.35rem;
+  cursor: pointer;
+  padding-inline-end: 2.4rem;
+}
+
+:root[dir='rtl'] .eg-select select {
+  background-position: 1.15rem 55%, 0.8rem 55%;
+}
+
+.eg-multi {
+  position: relative;
+  display: grid;
+  gap: var(--eg-space-2);
+}
+
+.eg-multi-legend {
+  color: var(--eg-color-text);
+  font-weight: var(--eg-weight-medium);
+}
+
+.eg-multi-button:not(:disabled),
+.eg-multi-button:hover:not(:disabled),
+.eg-multi-button:active:not(:disabled) {
+  justify-content: space-between;
+  width: 100%;
+  border-color: var(--eg-color-border-control);
+  background: var(--eg-color-surface);
+  color: var(--eg-color-text);
+  font-weight: 500;
+  transform: none;
+}
+
+.eg-multi-button:hover:not(:disabled) {
+  border-color: var(--eg-color-text);
+}
+
+.eg-multi-button span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.eg-multi-button svg {
+  flex: none;
+  width: 1rem;
+  height: 1rem;
+  transition: transform 160ms var(--eg-ease);
+}
+
+.eg-multi-button[aria-expanded='true'] svg {
+  transform: rotate(180deg);
+}
+
+.eg-multi-panel {
+  position: absolute;
+  top: calc(100% + 0.35rem);
+  inset-inline: 0;
+  z-index: 6;
+  display: grid;
+  max-height: 16rem;
+  overflow-y: auto;
+  border: 1px solid var(--eg-color-border);
+  border-radius: var(--eg-radius-control);
+  background: var(--eg-color-surface);
+  box-shadow: 0 2px 4px rgb(var(--eg-shadow-rgb) / 10%), 0 18px 40px -12px rgb(var(--eg-shadow-rgb) / 35%);
+  padding: 0.35rem 0.75rem;
+  animation: eg-drop 200ms var(--eg-ease);
+}
+
+.eg-multi-panel .checkbox-field {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  min-block-size: 2.75rem;
+  font-weight: 500;
+}
+
+.eg-multi-panel input[type='checkbox'] {
+  width: 1.125rem;
+  height: 1.125rem;
+  min-block-size: 0;
+  flex: none;
+  padding: 0;
+}
+
+@keyframes eg-drop { from { opacity: 0; transform: translateY(-0.35rem); } }
+
+/* ---- D6.2 New paper: honest coverage tags, unavailable shapes and sources ---- */
+.start-card-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--eg-space-1);
+  margin-top: var(--eg-space-1);
+}
+
+.start-card-tag {
+  border-radius: var(--eg-radius-pill);
+  background: var(--eg-color-fill);
+  color: var(--eg-color-text-muted);
+  font: 500 var(--eg-font-size-2xs)/1.6 var(--eg-font-mono);
+  padding: 0 0.5rem;
+}
+
+.start-card.is-unavailable,
+.start-card.is-unavailable:hover:not(:disabled) {
+  border-style: dashed;
+  background: var(--eg-color-fill);
+  cursor: not-allowed;
+}
+
+.start-card.is-unavailable .mini-sheet {
+  filter: grayscale(1);
+  opacity: 0.6;
+}
+
+.start-card-reason {
+  margin-top: var(--eg-space-1);
+  border-radius: var(--eg-radius-md);
+  background: var(--eg-color-warning-bg);
+  color: var(--eg-color-warning-text);
+  font-size: var(--eg-font-size-sm);
+  font-weight: 500;
+  line-height: 1.4;
+  padding: var(--eg-space-2) var(--eg-space-3);
+}
+
+.source-unavailable {
+  display: grid;
+  gap: var(--eg-space-1);
+  border: 1px dashed var(--eg-color-border-control);
+  border-radius: var(--eg-radius-group);
+  color: var(--eg-color-text-muted);
+  font-size: var(--eg-font-size-sm);
+  padding: var(--eg-space-3) var(--eg-space-4);
+}
+
+.source-unavailable-title {
+  color: var(--eg-color-text);
+  font-size: var(--eg-font-size-md);
+  font-weight: 600;
+}
+
+/* Long shape descriptions wrap inside the card instead of widening the setup column. */
+.exam-settings > *,
+.start-cards > li {
+  min-width: 0;
+}
+
+.start-card,
+.start-card[aria-pressed]:not(:disabled) {
+  min-width: 0;
+  white-space: normal;
+}
+
+.start-card-description,
+.start-card-reason {
+  overflow-wrap: anywhere;
+}
+
+/* ---- D6.3 icons and contextual help ---- */
+.eg-icon {
+  flex: none;
+  width: 1rem;
+  height: 1rem;
+}
+
+/* The 15px glyph sits inside a 44px target. */
+.help-tip,
+.help-tip:hover:not(:disabled),
+.help-tip:active:not(:disabled) {
+  display: inline-grid;
+  place-items: center;
+  width: var(--eg-control-min-block-size);
+  min-block-size: var(--eg-control-min-block-size);
+  height: var(--eg-control-min-block-size);
+  margin-block: calc((var(--eg-control-min-block-size) - 1.2em) / -2);
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--eg-color-text-muted);
+  padding: 0;
+  transform: none;
+  vertical-align: middle;
+}
+
+.help-tip:hover:not(:disabled),
+.help-tip[data-state='delayed-open'],
+.help-tip[data-state='instant-open'] {
+  color: var(--eg-color-primary);
+}
+
+.help-tip .eg-icon {
+  width: 15px;
+  height: 15px;
+}
+
+.help-tip-content {
+  z-index: 20;
+  max-width: min(18rem, calc(100vw - 2rem));
+  border-radius: var(--eg-radius-md);
+  background: var(--eg-color-text);
+  box-shadow: 0 10px 28px -10px rgb(var(--eg-shadow-rgb) / 45%);
+  color: var(--eg-color-canvas);
+  font-family: var(--eg-font-sans);
+  font-size: var(--eg-font-size-sm);
+  font-weight: 500;
+  line-height: 1.45;
+  padding: 0.5rem 0.7rem;
+  animation: help-tip-in 160ms var(--eg-ease);
+}
+
+.help-tip-arrow {
+  fill: var(--eg-color-text);
+}
+
+@keyframes help-tip-in { from { opacity: 0; transform: translateY(0.2rem); } }
+
+/* ---- Icon buttons (D6.5): the icon is the label; the name is in the tooltip and aria-label ---- */
+.icon-button {
+  display: inline-grid;
+  place-items: center;
+  /* Never below the 44px touch target, whatever the local type scale. */
+  inline-size: max(2.75rem, 44px);
+  block-size: max(2.75rem, 44px);
+  min-block-size: max(2.75rem, 44px);
+  min-inline-size: max(2.75rem, 44px);
+  flex: none;
+  border: 1px solid var(--eg-color-border-control);
+  border-radius: var(--eg-radius-control);
+  background: var(--eg-color-surface);
+  color: var(--eg-color-text);
+  padding: 0;
+}
+
+.icon-button:hover:not(:disabled) {
+  border-color: var(--eg-color-text);
+  background: var(--eg-color-surface-subtle);
+  color: var(--eg-color-text);
+}
+
+.icon-button.is-quiet {
+  border-color: transparent;
+  background: transparent;
+}
+
+.icon-button[aria-pressed='true'],
+.icon-button[aria-pressed='true']:hover:not(:disabled) {
+  border-color: var(--eg-color-primary);
+  background: var(--eg-color-primary-soft);
+  color: var(--eg-color-text);
+}
+
+.icon-button:disabled {
+  /* Transparent, so an unavailable tool recedes on the white paper in dark mode as well as on surfaces. */
+  border-color: var(--eg-color-border);
+  background: transparent;
+  color: var(--eg-color-disabled-text);
+  cursor: not-allowed;
+}
+
+.icon-button .eg-icon {
+  inline-size: 1.05rem;
+  block-size: 1.05rem;
+}
+
+.icon-button-tip {
+  z-index: 60;
+  border-radius: var(--eg-radius-sm);
+  background: var(--eg-color-text);
+  color: var(--eg-color-canvas);
+  font-size: var(--eg-font-size-xs);
+  font-weight: 600;
+  padding: 0.3rem 0.55rem;
+}
+
+.button-with-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--eg-space-2);
+}
+
+.icon-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--eg-space-2);
+}
+
+/* ---- File picker: the native input stays underneath; the zone speaks the interface language ---- */
+.file-pick {
+  display: grid;
+  gap: var(--eg-space-2);
+}
+
+.file-pick-label {
+  color: var(--eg-color-text);
+  font-weight: var(--eg-weight-medium);
+}
+
+.file-pick-zone {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--eg-space-3);
+  border: 1px dashed var(--eg-color-border-control);
+  border-radius: var(--eg-radius-control);
+  background: var(--eg-color-surface);
+  cursor: pointer;
+  font-weight: 400;
+  padding: var(--eg-space-3);
+  transition: background-color 160ms ease-out, border-color 160ms ease-out;
+}
+
+.file-pick-zone:hover,
+.file-pick-zone.is-dragging {
+  border-color: var(--eg-color-primary);
+  background: var(--eg-color-primary-soft);
+}
+
+.file-pick-zone:has(input:focus-visible) {
+  outline: 3px solid var(--eg-color-focus);
+  outline-offset: 2px;
+}
+
+.file-pick-zone:has(input:disabled) {
+  border-style: solid;
+  background: var(--eg-color-disabled-bg);
+  color: var(--eg-color-disabled-text);
+  cursor: not-allowed;
+}
+
+.file-pick-button {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--eg-space-2);
+  border: 1px solid var(--eg-color-border-control);
+  border-radius: var(--eg-radius-md);
+  background: var(--eg-color-surface);
+  color: var(--eg-color-text);
+  font-weight: var(--eg-weight-medium);
+  min-height: 2.75rem;
+  padding: 0 var(--eg-space-4);
+}
+
+.file-pick-status {
+  min-width: 0;
+  color: var(--eg-color-text-muted);
+  font-size: var(--eg-font-size-sm);
+  overflow-wrap: anywhere;
+}
+
+.file-pick-status bdi {
+  color: var(--eg-color-text);
+  font-weight: var(--eg-weight-medium);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .help-tip-content {
+    animation: none;
+  }
+}
+
+/* ---- D9.3 Settings: one section per scope ---- */
+.settings-page {
+  display: grid;
+  gap: var(--eg-space-5);
+  max-width: 44rem;
+  margin-inline: auto;
+}
+
+.settings-head h2 {
+  margin: 0;
+  font-size: var(--eg-font-size-display);
+  font-weight: 700;
+  letter-spacing: -0.035em;
+  line-height: 1.05;
+}
+
+.settings-head p {
+  margin: 0.4rem 0 0;
+}
+
+.settings-section {
+  display: grid;
+  gap: var(--eg-space-3);
+  border: 1px solid var(--eg-color-border);
+  border-radius: var(--eg-radius-card);
+  background: var(--eg-color-surface);
+  padding: var(--eg-space-4) var(--eg-space-5);
+}
+
+.settings-section h3 {
+  margin: 0;
+  font-size: var(--eg-font-size-lg);
+  font-weight: 600;
+}
+
+.settings-section p {
+  margin: 0;
+}
+
+.settings-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--eg-space-2);
+}
+
+.settings-status {
+  min-block-size: 1.2em;
+  color: var(--eg-color-primary);
+  font-size: var(--eg-font-size-sm);
+  font-weight: 600;
+}
+
+/* ---- D9.6 error summary: one announced list linking to each field ---- */
+.error-summary {
+  display: grid;
+  gap: var(--eg-space-2);
+  border: 2px solid var(--eg-color-error-text);
+  border-radius: var(--eg-radius-group);
+  background: var(--eg-color-error-bg);
+  padding: var(--eg-space-3) var(--eg-space-4);
+}
+
+.error-summary:focus-visible {
+  outline: 3px solid var(--eg-color-focus);
+  outline-offset: 3px;
+}
+
+.error-summary h3 {
+  margin: 0;
+  color: var(--eg-color-error-text);
+  font-size: var(--eg-font-size-md);
+  font-weight: 700;
+}
+
+.error-summary ul {
+  display: grid;
+  gap: var(--eg-space-1);
+  margin: 0;
+  padding-inline-start: var(--eg-space-4);
+}
+
+.error-summary a {
+  color: var(--eg-color-error-text);
+  font-weight: 600;
+}
+
+.stepper-group:focus-visible {
+  outline: 3px solid var(--eg-color-focus);
+  outline-offset: 3px;
+}
+
+.settings-seed {
+  display: grid;
+  gap: var(--eg-space-3);
+  max-width: 22rem;
+}

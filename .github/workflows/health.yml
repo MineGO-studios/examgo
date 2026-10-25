@@ -1,0 +1,53 @@
+name: ExamGO health
+
+# Checks the deployed site the way a teacher's browser first reaches it.
+# GitHub runs scheduled and manual workflows only from the default branch, so the
+# 15-minute schedule starts once this file is on main. Until then it runs on pull
+# requests and pushes that change it. A failed run notifies watchers through
+# GitHub's normal workflow-failure emails.
+
+on:
+  schedule:
+    - cron: '*/15 * * * *'
+  workflow_dispatch:
+  pull_request:
+    paths: ['.github/workflows/health.yml']
+  push:
+    branches: ['phase-*']
+    paths: ['.github/workflows/health.yml']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: health-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  site:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    env:
+      # Set the repository variable EXAMGO_HEALTH_URL to point at another deployment (e.g. production).
+      SITE: ${{ vars.EXAMGO_HEALTH_URL || 'https://ui-ux-refresh.examgo.pages.dev' }}
+    steps:
+      - name: Root page responds with security headers
+        run: |
+          set -euo pipefail
+          headers=$(curl -sS -D - -o /dev/null --max-time 20 --retry 2 --retry-all-errors "$SITE/")
+          echo "$headers" | head -1
+          echo "$headers" | grep -qiE '^HTTP/[0-9.]+ 200'
+          for name in content-security-policy x-frame-options x-content-type-options referrer-policy permissions-policy; do
+            echo "$headers" | grep -qi "^$name:" || { echo "::error::missing $name header"; exit 1; }
+          done
+      - name: Word templates are served
+        run: |
+          set -euo pipefail
+          for kind in exam answer-key; do
+            url="$SITE/templates/iraqi-mainstream-$kind-v1.docx"
+            code=$(curl -sS -o template.docx -w '%{http_code}' --max-time 20 --retry 2 --retry-all-errors "$url")
+            [ "$code" = 200 ] || { echo "::error::$url returned $code"; exit 1; }
+            # A DOCX is a ZIP package; an HTML fallback page would not start with PK.
+            [ "$(head -c 2 template.docx)" = PK ] || { echo "::error::$url is not a DOCX package"; exit 1; }
+            echo "$kind template OK ($(wc -c < template.docx) bytes)"
+          done
