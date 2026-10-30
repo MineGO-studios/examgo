@@ -2,7 +2,7 @@
 
 ExamGO by MineGO Studio · documentation checkpoint `1.0.0-alpha.1` · 30 October 2026 · [MIN-292](https://linear.app/minego/issue/MIN-292)
 
-Status: **specification with an interactive prototype, for owner review.** It sets how each question type prints on the student paper and the answer key. It changes no renderer or contract; app rendering belongs to [MIN-263](https://linear.app/minego/issue/MIN-263) and the paper structure to [MIN-295](https://linear.app/minego/issue/MIN-295). Word acceptance of any regenerated pair stays with the owner.
+Status: **specification with an interactive prototype; owner decisions recorded 30 October 2026.** It sets how each question type prints on the student paper and the answer key. It changes no renderer or contract; app rendering belongs to [MIN-263](https://linear.app/minego/issue/MIN-263) and the paper structure to [MIN-295](https://linear.app/minego/issue/MIN-295). Word acceptance of any regenerated pair stays with the owner.
 
 ## Evidence
 
@@ -51,7 +51,7 @@ One table for the whole paper with three columns, **Q | Point | Answer**:
 
 ## Variation seen in the sources
 
-- **Fill the blanks order.** The 2026 original numbers across rows (1 2 / 3 4); the 2022 and 2024 reconstructions number down columns (1–3, then 4–6). This specification follows the 2026 original and the owner's Figma example.
+- **Fill the blanks order.** The 2026 original numbers across rows (1 2 / 3 4); the 2022 and 2024 reconstructions number down columns (1–3, then 4–6). This specification follows the 2026 original, as the owner decided.
 - **Q4 order.** Rewrite and Fill the blanks swap between A and B across years; the type decides the layout, not the slot.
 - **Q3 B.** It is either matching (two lists) or a choice in brackets (`use ( glue / a party )`). Both use the layouts above.
 - **Item counts.** Some parts show 7 items with `(5 only)` (2026, Q2 A and Q4 A). Counts and attempts follow D8.2 and the paper structure contract.
@@ -61,7 +61,7 @@ One table for the whole paper with three columns, **Q | Point | Answer**:
 - **Prototype:** the question input prototype ([D9.2, MIN-250](https://linear.app/minego/issue/MIN-250)) previews every type with these conventions, including `B-` headings and the Q | Point | Answer key: https://claude.ai/artifact/9vhBf2AsVTCD9E45KGRM2i
 - **App:** not yet. The app's paper review mirrors the generated Word files exactly (D8.3) and today prints one question per number without parts, for three types. Applying this specification needs the paper structure (MIN-295) and renderer (MIN-263) first, so the preview and the Word file stay identical.
 
-## Open points for the owner
+## Owner decisions (30 October 2026)
 
-- Confirm row order for Fill the blanks (across rows, as in 2026).
-- Confirm that writing's answer key is one `Main` row with no model answer.
+- **Fill the blanks order:** across rows, as in the 2026 original (`1.` `2.` / `3.` `4.`).
+- **Writing in the answer key:** one `Main` row marked by the teacher. No model answer is printed for any writing subject.
