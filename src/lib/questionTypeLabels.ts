@@ -3,29 +3,30 @@ import type { Language } from './i18n'
 
 /*
  * One teacher-facing name per canonical question type, used on every screen (D9.1, MIN-249).
+ * Names follow the owner's Figma type list of 30 October 2026 where a type maps one to one.
  * Stored content and canonical type values are never renamed. Arabic needs native-teacher review.
  */
 const LABELS: Record<Language, Record<QuestionType, string>> = {
   en: {
-    'multiple-choice': 'Multiple choice',
+    'multiple-choice': 'Choose the correct answer between the brackets',
     binary: 'True/False or Yes/No',
     'short-answer': 'Short answer',
-    completion: 'Fill in from a word bank',
+    completion: 'Use the words in the box',
     'odd-word': 'Odd word out',
     matching: 'Match List A with List B',
-    'word-relationship': 'Word relationship',
-    rewrite: 'Rewrite (punctuation and capitals)',
+    'word-relationship': 'Fill the blank with missing words or letters',
+    rewrite: 'Rewrite with proper punctuation',
     'extended-writing': 'Writing',
   },
   ar: {
-    'multiple-choice': 'اختيار من متعدد',
+    'multiple-choice': 'اختر الإجابة الصحيحة من بين الأقواس',
     binary: 'صح/خطأ أو نعم/لا',
     'short-answer': 'إجابة قصيرة',
-    completion: 'إكمال من بنك كلمات',
+    completion: 'استخدم الكلمات في الصندوق',
     'odd-word': 'الكلمة المختلفة',
     matching: 'مطابقة القائمة أ بالقائمة ب',
-    'word-relationship': 'علاقة الكلمات',
-    rewrite: 'إعادة الكتابة (الترقيم والحروف الكبيرة)',
+    'word-relationship': 'املأ الفراغ بالكلمات أو الأحرف المفقودة',
+    rewrite: 'إعادة الكتابة بعلامات ترقيم صحيحة',
     'extended-writing': 'الكتابة',
   },
 }

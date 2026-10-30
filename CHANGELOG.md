@@ -40,6 +40,7 @@ Notable ExamGO changes are recorded here. Version labels identify development ch
 ### Changed
 
 - Use the window width on every page: content can reach 110rem (was 90rem for the shell and 64–84rem for individual pages), with side gutters that grow from 16px to 40px with the window. My papers, Question banks, the paper review page and the reviewer page fill the width; single-column forms, paragraphs and the paper sheet keep their readable width.
+- Use the owner's question-type names on every screen where a type maps one to one: "Choose the correct answer between the brackets" (multiple choice), "Use the words in the box" (word-bank completion), "Fill the blank with missing words or letters" (word relationship) and "Rewrite with proper punctuation". Arabic labels follow. Stored types and content are unchanged (D9.1, MIN-249).
 
 ### Fixed
 
