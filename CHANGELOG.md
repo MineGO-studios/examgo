@@ -6,6 +6,7 @@ Notable ExamGO changes are recorded here. Version labels identify development ch
 
 ### Documentation
 
+- Add the D9.8 question presentation specification (`docs/design/d9-8-question-presentation.md`): how each question type prints on the student paper and the answer key, taken from the ministerial exams (the 2026 original page and the 2019, 2022 and 2024 reconstructions, read as structure only). It covers `Q1)A-` and `B-` headings, the attempt rule, inline bracket choices, the word box, two-column fill-the-blanks, matching lists, rewrite and writing, and the Q | Point | Answer key. Applied in the question input prototype; app rendering waits for the paper structure and renderer (MIN-295, MIN-263) (MIN-292).
 - Set teacher-trial feedback and received-paper-copy retention to the owner-selected 30 days after the trial ends, with manual removal and no application-retention change; preserve the original Alpha evidence gates.
 - Add a short private-text teacher trial pack, a blank feedback record and a dated protocol clarification for one-person coordination without direct observation; preserve the existing Alpha success gates.
 - Specify school and exam-name presets: a school and footer-name default plus saved exam names in Settings, and a searchable Test title in paper setup where typing filters, picking fills and only an explicit action saves a name. Specification and prototype only; saving needs account storage (D9.4, MIN-252).
