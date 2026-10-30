@@ -63,14 +63,14 @@ There is one label per type, used on every screen. The Arabic labels need review
 
 | Canonical | English | Arabic |
 | --- | --- | --- |
-| multiple-choice | Multiple choice | اختيار من متعدد |
+| multiple-choice | Choose the correct answer between the brackets | اختر الإجابة الصحيحة من بين الأقواس |
 | binary | True/False or Yes/No | صح/خطأ أو نعم/لا |
 | short-answer | Short answer | إجابة قصيرة |
-| completion | Fill in from a word bank | إكمال من بنك كلمات |
+| completion | Use the words in the box | استخدم الكلمات في الصندوق |
 | odd-word | Odd word out | الكلمة المختلفة |
 | matching | Match List A with List B | مطابقة القائمة أ بالقائمة ب |
-| word-relationship | Word relationship | علاقة الكلمات |
-| rewrite | Rewrite (punctuation and capitals) | إعادة الكتابة (الترقيم والحروف الكبيرة) |
+| word-relationship | Fill the blank with missing words or letters | املأ الفراغ بالكلمات أو الأحرف المفقودة |
+| rewrite | Rewrite with proper punctuation | إعادة الكتابة بعلامات ترقيم صحيحة |
 | extended-writing | Writing | الكتابة |
 | passage group | Passage | قطعة قراءة |
 
@@ -119,3 +119,22 @@ Type-specific form layouts are D9.2 (MIN-250). Count feasibility and new type su
 - Checked in the running application (Question banks, then Add question).
 
 The Arabic labels are not yet shown on screens that are still English-only. The full Arabic interface is MIN-56. The per-type CSV column-mapping readback is handed to MIN-260.
+
+## 9. Owner type names (30 October 2026)
+
+The owner's Figma file *Question formats* names the question types a teacher starts from. Where a name maps one to one onto a canonical type, the shared labels now use it (section 4 is updated):
+
+| Canonical | Before | Now |
+| --- | --- | --- |
+| multiple-choice | Multiple choice | Choose the correct answer between the brackets |
+| completion | Fill in from a word bank | Use the words in the box |
+| word-relationship | Word relationship | Fill the blank with missing words or letters |
+| rewrite | Rewrite (punctuation and capitals) | Rewrite with proper punctuation |
+
+Unchanged: *Match List A with List B* and *Writing* already match the owner's names. *True/False or Yes/No*, *Short answer* and *Odd word out* are not named as standalone types in the owner's list and keep their labels.
+
+The owner's *Yes/No Passage*, *T/F Passage* and *Choose the correct answer (mixed styles)* are question groups rather than canonical types. They belong to the type-specific input forms (D9.2, MIN-250) and do not change stored types.
+
+Multiple choice takes the bracket name because ministerial papers print short choices inline in brackets (D8.2, section on selected response).
+
+Not changed here: validation messages from the domain still say "word bank"; aligning them is a separate change to shared domain text. Stored content and canonical type values are unchanged. Arabic labels still need native-teacher review (MIN-274).

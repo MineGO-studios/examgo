@@ -224,7 +224,6 @@ input[type='checkbox'] {
   display: grid;
   justify-items: start;
   gap: var(--eg-space-4);
-  max-width: 64rem;
   margin-inline: auto;
 }
 
@@ -602,9 +601,9 @@ input[type='checkbox'] {
   display: none;
 }
 
-/* The review page keeps the same centred column as every other page. */
+/* The review page uses the full page width, like every other page. */
 .card.exam-builder.has-review {
-  max-width: 84rem;
+  max-width: none;
   margin-inline: auto;
 }
 

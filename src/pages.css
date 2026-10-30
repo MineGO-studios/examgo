@@ -27,7 +27,7 @@ select {
 
 /* ---- Question banks ---- */
 .question-editor {
-  max-width: 64rem;
+  max-width: none;
   margin-inline: auto;
   border: 0;
   background: transparent;

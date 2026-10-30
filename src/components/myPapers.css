@@ -4,7 +4,6 @@
 .mp {
   display: grid;
   gap: 0;
-  max-width: 68rem;
   margin-inline: auto;
 }
 

@@ -2,7 +2,7 @@
    strip as the anchor, and index cards that flip to their answer side. */
 
 .question-editor {
-  max-width: 68rem;
+  max-width: none;
 }
 
 .qb-head {
