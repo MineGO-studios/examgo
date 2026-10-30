@@ -17,7 +17,7 @@
   background: color-mix(in srgb, var(--eg-color-canvas) 94%, transparent);
   backdrop-filter: saturate(1.2) blur(8px);
   color: var(--eg-color-text);
-  padding: var(--eg-space-3) max(1rem, calc((100% - var(--eg-content-width)) / 2));
+  padding: var(--eg-space-3) max(var(--eg-page-gutter), calc((100% - var(--eg-content-width)) / 2));
 }
 
 .shell-brand {

@@ -37,6 +37,10 @@ Notable ExamGO changes are recorded here. Version labels identify development ch
 - Rename Create exam to **New paper** and present the starts as three kinds of paper (Pick questions by type, Use an approved exercise, Iraqi exercises and writing) with honest Unit 1 coverage tags. A kind the teacher cannot make yet stays visible with its reason. The standalone approved pool becomes the **Shared MineGO questions** source under Pick questions by type, shown unavailable while supply is zero; the approved-exercise page shows complete exercises only. Paper generation contracts are unchanged (D6.2, MIN-248).
 - Add Unit 1–4 preset bank choices beside the combined published bank, sharing canonical content and read-only access.
 
+### Changed
+
+- Use the window width on every page: content can reach 110rem (was 90rem for the shell and 64–84rem for individual pages), with side gutters that grow from 16px to 40px with the window. My papers, Question banks, the paper review page and the reviewer page fill the width; single-column forms, paragraphs and the paper sheet keep their readable width.
+
 ### Fixed
 
 - Keep the finalized/ready stamp its own size on the paper: a My papers style stretched it down the sheet after My papers had been opened (MIN-275).

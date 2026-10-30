@@ -1,5 +1,5 @@
 main {
-  width: min(100% - 2rem, var(--eg-content-width));
+  width: min(100% - 2 * var(--eg-page-gutter), var(--eg-content-width));
   text-align: start;
   margin-inline: auto;
   padding-block: var(--eg-space-5) var(--eg-space-7);

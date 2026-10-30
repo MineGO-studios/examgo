@@ -96,7 +96,8 @@
   --eg-shadow-surface: 0 1px 2px rgb(17 12 8 / 5%), 0 8px 24px rgb(17 12 8 / 5%);
   --eg-shadow-paper: 0 2px 4px rgb(17 12 8 / 6%), 0 18px 40px rgb(17 12 8 / 9%);
   --eg-control-min-block-size: 2.75rem;
-  --eg-content-width: 90rem;
+  --eg-content-width: 110rem;
+  --eg-page-gutter: clamp(1rem, 2.5vw, 2.5rem);
 
   font-family: var(--eg-font-sans);
   font-size: var(--eg-font-size-md);
