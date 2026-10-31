@@ -4,6 +4,10 @@ ExamGO by MineGO Studio · documentation checkpoint `1.0.0-alpha.1` · 23 Octobe
 
 Status: **prototype for owner review.** The prototype is shared with the owner separately. It uses sample supply numbers and provisional type names (the owner will name the types later, MIN-249). Nothing here is wired; the data and output contract it needs is in the ExamGO issue linked at the end.
 
+## Main reference
+
+The ministerial papers (D8.2) are ExamGO's main reference for paper structure (owner decision, 31 October 2026). This set holds 23 papers from 2019 to 2026, reconstructed from page images, and it is authoritative. New designs and specs default to its shape: questions with lettered parts, items shown and answers required, part marks, the bilingual note, and Q | Point | Answer keys. The simple paper (counts per type, one question per heading) remains only as a compatibility path for existing drafts. Marks stay teacher-set and are never fixed.
+
 ## The problem
 
 New paper asks "how many of each type", one stepper per type, and prints one question per heading. Ministerial papers (D8.2) are built from parts: each part has a type, shows a number of items, asks the student to answer some of them, and carries marks. A single count cannot say which of those it means.
